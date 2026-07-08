@@ -607,7 +607,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                       eff.kind === "confirmed"
                         ? eff.items.map((b) => `${b.startTime}–${b.endTime}`).join(", ")
                         : eff.kind === "blocked"
-                        ? RESOURCE_LABELS[eff.by.resource]
+                        ? `${eff.by.startTime}–${eff.by.endTime}`
                         : eff.kind === "pending"
                         ? "čeká"
                         : "";
@@ -615,7 +615,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                       eff.kind === "confirmed"
                         ? eff.items.map((b) => `${b.title} ${b.startTime}–${b.endTime}`).join(", ")
                         : eff.kind === "blocked"
-                        ? `Blokováno: ${RESOURCE_LABELS[eff.by.resource]}`
+                        ? `Blokováno (${RESOURCE_LABELS[eff.by.resource]} ${eff.by.startTime}–${eff.by.endTime})`
                         : eff.kind === "pending"
                         ? "Čeká na schválení"
                         : "volno — klik pro rezervaci";
@@ -685,7 +685,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                             eff.kind === "confirmed"
                               ? eff.items.map((b) => `${b.title} ${b.startTime}–${b.endTime}`).join(", ")
                               : eff.kind === "blocked"
-                              ? `Blokováno: ${RESOURCE_LABELS[eff.by.resource]}`
+                              ? `Blokováno (${RESOURCE_LABELS[eff.by.resource]} ${eff.by.startTime}–${eff.by.endTime})`
                               : eff.kind === "pending"
                               ? "Čeká na schválení"
                               : "volno";
