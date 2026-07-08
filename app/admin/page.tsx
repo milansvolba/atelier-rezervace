@@ -20,7 +20,7 @@ import {
 
 type ViewMode = "day" | "week" | "month" | "quarter" | "year";
 
-const DAY_START = 8;
+const DAY_START = 6;
 const DAY_END = 20;
 
 function pct(time: string) {
@@ -35,6 +35,16 @@ function fmt(d: Date) {
 
 function fmtFull(d: Date) {
   return `${d.getDate()}. ${MONTH_NAMES[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+}
+
+// Rychlé dvouhodinové bloky pro pingpong / krátké rezervace — ať admin nemusí
+// pokaždé ručně vypisovat čas.
+function twoHourBlocks() {
+  const blocks: { start: string; end: string }[] = [];
+  for (let h = DAY_START; h < DAY_END; h += 2) {
+    blocks.push({ start: `${String(h).padStart(2, "0")}:00`, end: `${String(h + 2).padStart(2, "0")}:00` });
+  }
+  return blocks;
 }
 
 // Popisek aktuálního rozsahu — vždy viditelný, ať je jasné, na co se admin dívá.
@@ -233,6 +243,8 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
     }
   }
 
+  const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
+
   return (
     <main className="space-y-6">
       <div className="flex items-center justify-between">
@@ -400,6 +412,26 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                 />
               </label>
             </div>
+
+            {showQuickBlocks && (
+              <div className="flex flex-wrap gap-2">
+                {twoHourBlocks().map((b) => (
+                  <button
+                    type="button"
+                    key={b.start}
+                    onClick={() => setForm((f) => ({ ...f, startTime: b.start, endTime: b.end }))}
+                    className={`h-8 px-2.5 rounded-md border text-xs ${
+                      form.startTime === b.start && form.endTime === b.end
+                        ? "border-gray-800 font-medium"
+                        : "border-gray-300 text-gray-500"
+                    }`}
+                  >
+                    {b.start}–{b.end}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <button className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm">Zapsat rezervaci</button>
           </form>
         </>

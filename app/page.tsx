@@ -2,44 +2,30 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Booking, ResourceId, RESOURCE_LABELS } from "@/lib/types";
+import { DAY_NAMES, DAY_NAMES_MON_FIRST, MONTH_NAMES, iso, monthMatrix, nextDays } from "@/lib/calendar";
 
 type ViewMode = "week" | "month" | "quarter" | "year";
+type DayFlag = "free" | "on-request" | "pending" | "rental";
 
-const DAY_NAMES = ["Ne", "Po", "Út", "St", "Čt", "Pá", "So"];
-const DAY_NAMES_MON_FIRST = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
-const MONTH_NAMES = [
-  "Leden", "Únor", "Březen", "Duben", "Květen", "Červen",
-  "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec",
-];
-
-function iso(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
-
-function nextDays(n: number) {
-  const days = [];
-  for (let i = 0; i < n; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    days.push(d);
+function statusBg(status: DayFlag) {
+  switch (status) {
+    case "rental":
+      return "bg-rental";
+    case "pending":
+      return "bg-pending";
+    case "on-request":
+      return "bg-blue-100";
+    default:
+      return "bg-free";
   }
-  return days;
 }
 
-// Vrátí mřížku dnů pro daný měsíc, pondělím počínaje, včetně vyplňovacích
-// dnů z okolních měsíců (aby řádky vždy měly 7 dní).
-function monthMatrix(year: number, month: number): (Date | null)[][] {
-  const first = new Date(year, month, 1);
-  const startOffset = (first.getDay() + 6) % 7; // 0 = pondělí
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: (Date | null)[] = [];
-  for (let i = 0; i < startOffset; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
-  while (cells.length % 7 !== 0) cells.push(null);
-  const weeks: (Date | null)[][] = [];
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
-  return weeks;
-}
+// Rychlé předvolby pro pronájem celého prostoru — ať nemusí žadatel vypisovat čas ručně.
+const HALF_DAY_PRESETS: { label: string; start: string; end: string }[] = [
+  { label: "Dopoledne", start: "09:00", end: "13:00" },
+  { label: "Odpoledne", start: "13:00", end: "17:00" },
+  { label: "Celý den", start: "09:00", end: "17:00" },
+];
 
 export default function PublicPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -60,27 +46,30 @@ export default function PublicPage() {
       .then(setBookings);
   }, [submitted]);
 
-  // Den je pro veřejnost "obsazený", pokud existuje potvrzená rezervace typu
-  // atelier nebo klubovna (tedy něco, co blokuje celý prostor nebo jeho podstatnou část).
-  function dayStatus(d: Date) {
+  // Den je "pronajato", pokud existuje potvrzená rezervace celého ateliéru/klubovny.
+  // "Na vyžádání" znamená, že je obsazené jen nějaké coworkingové místo (stůl/pingpong) —
+  // pronájem celého prostoru má přednost (přináší víc peněz), takže to nejde rovnou
+  // označit za nedostupné, jen je potřeba se domluvit.
+  function dayStatus(d: Date): DayFlag {
     const key = iso(d);
     const dayBookings = bookings.filter((b) => b.date === key);
     const hasConfirmedWhole = dayBookings.some(
       (b) => b.status === "confirmed" && (b.resource === "atelier" || b.resource === "klubovna")
     );
+    if (hasConfirmedWhole) return "rental";
     const hasPendingWhole = dayBookings.some(
       (b) => b.status === "pending" && (b.resource === "atelier" || b.resource === "klubovna")
     );
-    if (hasConfirmedWhole) return "rental";
     if (hasPendingWhole) return "pending";
+    const hasIndividual = dayBookings.some(
+      (b) => b.status === "confirmed" && b.resource !== "atelier" && b.resource !== "klubovna"
+    );
+    if (hasIndividual) return "on-request";
     return "free";
   }
 
-  function statusBg(status: string) {
-    return status === "rental" ? "bg-rental" : status === "pending" ? "bg-pending" : "bg-free";
-  }
-
   const today = new Date();
+  const isWholeSpace = resource === "atelier" || resource === "klubovna";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -139,7 +128,7 @@ export default function PublicPage() {
           </div>
         </div>
         <p className="text-sm text-gray-500 mb-4">
-          Zobrazuje jen pronájem celého ateliéru nebo klubovny. Jednotlivá pracovní místa si rezervujeme interně.
+          Modrá = obsazené jen nějaké pracovní místo, o celý prostor si můžete i tak napsat — domluvíme se.
         </p>
 
         {view === "week" && (
@@ -200,15 +189,18 @@ export default function PublicPage() {
           </div>
         )}
 
-        <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+        <div className="flex items-center gap-4 flex-wrap text-xs text-gray-500 mb-4">
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-sm bg-free border border-gray-300 inline-block" /> volno
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-rental inline-block" /> pronajato
+            <span className="w-2.5 h-2.5 rounded-sm bg-blue-100 inline-block" /> na vyžádání
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-sm bg-pending inline-block" /> čeká na schválení
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-sm bg-rental inline-block" /> pronajato
           </span>
         </div>
         <button
@@ -246,17 +238,38 @@ export default function PublicPage() {
             </select>
           </label>
 
-          <div className="grid grid-cols-3 gap-3">
-            <label className="block text-sm">
-              Datum
-              <input
-                required
-                type="date"
-                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </label>
+          <label className="block text-sm">
+            Datum
+            <input
+              required
+              type="date"
+              className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </label>
+
+          {isWholeSpace && (
+            <div className="flex flex-wrap gap-2">
+              {HALF_DAY_PRESETS.map((p) => (
+                <button
+                  type="button"
+                  key={p.label}
+                  onClick={() => {
+                    setStartTime(p.start);
+                    setEndTime(p.end);
+                  }}
+                  className={`h-8 px-3 rounded-md border text-xs ${
+                    startTime === p.start && endTime === p.end ? "border-gray-800 font-medium" : "border-gray-300 text-gray-500"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm">
               Od
               <input
