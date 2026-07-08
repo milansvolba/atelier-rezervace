@@ -167,12 +167,152 @@ export default function AdminPage() {
   );
 }
 
+// Rychlé vytvoření rezervace z modálu — nepřepíná na celý denní pohled.
+function QuickAddModal({
+  token,
+  resource,
+  date,
+  onClose,
+  onSaved,
+  onOpenDay,
+}: {
+  token: string;
+  resource: ResourceId;
+  date: string;
+  onClose: () => void;
+  onSaved: () => void;
+  onOpenDay: () => void;
+}) {
+  const [form, setForm] = useState({ resource, startTime: "09:00", endTime: "11:00", title: "" });
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    const res = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      body: JSON.stringify({ ...form, date }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      onSaved();
+      onClose();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Nepodařilo se uložit.");
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <form onSubmit={save} className="bg-white rounded-xl p-5 w-full max-w-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="font-medium">
+            Nová rezervace · {fmt(new Date(date))}
+          </p>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-700 text-sm">
+            ✕
+          </button>
+        </div>
+
+        <label className="block text-sm">
+          Místo
+          <select
+            className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+            value={form.resource}
+            onChange={(e) => setForm((f) => ({ ...f, resource: e.target.value as ResourceId }))}
+          >
+            <option value="okno1">Okno 1</option>
+            <option value="stul1">Stůl 1</option>
+            <option value="stul2">Stůl 2</option>
+            <option value="bar">Bar</option>
+            <option value="pingpong">Pingpongový stůl</option>
+            <option value="klubovna">Klubovna (celá)</option>
+            <option value="atelier">Celý ateliér / kurz</option>
+          </select>
+        </label>
+
+        <label className="block text-sm">
+          Kdo / co
+          <input
+            required
+            autoFocus
+            className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            placeholder="Jméno nebo název akce"
+          />
+        </label>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="text-sm">
+            Od
+            <input
+              type="time"
+              className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+              value={form.startTime}
+              onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
+            />
+          </label>
+          <label className="text-sm">
+            Do
+            <input
+              type="time"
+              className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+              value={form.endTime}
+              onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
+            />
+          </label>
+        </div>
+
+        {showQuickBlocks && (
+          <div className="flex flex-wrap gap-2">
+            {twoHourBlocks().map((b) => (
+              <button
+                type="button"
+                key={b.start}
+                onClick={() => setForm((f) => ({ ...f, startTime: b.start, endTime: b.end }))}
+                className={`h-8 px-2.5 rounded-md border text-xs ${
+                  form.startTime === b.start && form.endTime === b.end
+                    ? "border-gray-800 font-medium"
+                    : "border-gray-300 text-gray-500"
+                }`}
+              >
+                {b.start}–{b.end}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <div className="flex items-center justify-between pt-1">
+          <button type="button" onClick={onOpenDay} className="text-xs text-gray-500 hover:text-gray-800">
+            Zobrazit celý den →
+          </button>
+          <button disabled={saving} className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm disabled:opacity-50">
+            {saving ? "Ukládám…" : "Zapsat rezervaci"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [view, setView] = useState<ViewMode>("day");
   const [anchor, setAnchor] = useState(new Date());
   const [filterResource, setFilterResource] = useState<ResourceId | "summary">("summary");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [quickAdd, setQuickAdd] = useState<{ resource: ResourceId; date: string } | null>(null);
   const [form, setForm] = useState<{ resource: ResourceId; startTime: string; endTime: string; title: string }>({
     resource: "stul1",
     startTime: "09:00",
@@ -461,25 +601,34 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                   <td className="text-sm py-1 pr-2 whitespace-nowrap">{RESOURCE_LABELS[r]}</td>
                   {Array.from({ length: 7 }).map((_, i) => {
                     const d = addDays(startOfWeekMon(anchor), i);
-                    const eff = effectiveStatus(r, iso(d), bookings);
-                    const label =
+                    const dISO = iso(d);
+                    const eff = effectiveStatus(r, dISO, bookings);
+                    const cellText =
                       eff.kind === "confirmed"
-                        ? eff.items.map((b) => b.title).join(", ")
+                        ? eff.items.map((b) => `${b.startTime}–${b.endTime}`).join(", ")
+                        : eff.kind === "blocked"
+                        ? RESOURCE_LABELS[eff.by.resource]
+                        : eff.kind === "pending"
+                        ? "čeká"
+                        : "";
+                    const hoverTitle =
+                      eff.kind === "confirmed"
+                        ? eff.items.map((b) => `${b.title} ${b.startTime}–${b.endTime}`).join(", ")
                         : eff.kind === "blocked"
                         ? `Blokováno: ${RESOURCE_LABELS[eff.by.resource]}`
                         : eff.kind === "pending"
                         ? "Čeká na schválení"
-                        : "";
+                        : "volno — klik pro rezervaci";
                     return (
                       <td key={i} className="p-1">
                         <button
-                          onClick={() => goto("day", d)}
-                          title={label || "volno"}
+                          onClick={() => setQuickAdd({ resource: r, date: dISO })}
+                          title={hoverTitle}
                           className={`w-full h-10 rounded-md text-[10px] px-1 flex items-center justify-center text-center overflow-hidden ${cellClasses(
                             eff.kind
                           )}`}
                         >
-                          <span className="truncate">{label}</span>
+                          <span className="truncate">{cellText}</span>
                         </button>
                       </td>
                     );
@@ -521,19 +670,20 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                     <div key={wi} className="grid grid-cols-7 gap-1">
                       {week.map((d, di) => {
                         if (!d) return <div key={di} />;
+                        const dISO = iso(d);
                         let kind: Effective["kind"] | "mixed" = "free";
                         let title = "";
                         if (filterResource === "summary") {
-                          const statuses = PHYSICAL_RESOURCES.map((r) => effectiveStatus(r, iso(d), bookings).kind);
+                          const statuses = PHYSICAL_RESOURCES.map((r) => effectiveStatus(r, dISO, bookings).kind);
                           const freeCount = statuses.filter((k) => k === "free").length;
                           title = `${freeCount} / ${PHYSICAL_RESOURCES.length} volno`;
                           kind = freeCount === PHYSICAL_RESOURCES.length ? "free" : freeCount === 0 ? "confirmed" : "pending";
                         } else {
-                          const eff = effectiveStatus(filterResource, iso(d), bookings);
+                          const eff = effectiveStatus(filterResource, dISO, bookings);
                           kind = eff.kind;
                           title =
                             eff.kind === "confirmed"
-                              ? eff.items.map((b) => b.title).join(", ")
+                              ? eff.items.map((b) => `${b.title} ${b.startTime}–${b.endTime}`).join(", ")
                               : eff.kind === "blocked"
                               ? `Blokováno: ${RESOURCE_LABELS[eff.by.resource]}`
                               : eff.kind === "pending"
@@ -543,7 +693,12 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                         return (
                           <button
                             key={di}
-                            onClick={() => goto("day", d)}
+                            onClick={() =>
+                              setQuickAdd({
+                                resource: filterResource === "summary" ? "stul1" : filterResource,
+                                date: dISO,
+                              })
+                            }
                             title={title}
                             className={`aspect-square rounded-sm text-[10px] flex items-center justify-center ${cellClasses(
                               kind as Effective["kind"]
@@ -576,6 +731,20 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
           <span className="w-2.5 h-2.5 rounded-sm bg-[#F0997B] inline-block" /> blokováno jiným místem
         </span>
       </div>
+
+      {quickAdd && (
+        <QuickAddModal
+          token={token}
+          resource={quickAdd.resource}
+          date={quickAdd.date}
+          onClose={() => setQuickAdd(null)}
+          onSaved={load}
+          onOpenDay={() => {
+            goto("day", new Date(quickAdd.date));
+            setQuickAdd(null);
+          }}
+        />
+      )}
     </main>
   );
 }

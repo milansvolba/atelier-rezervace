@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Booking, ResourceId, RESOURCE_LABELS } from "@/lib/types";
-import { DAY_NAMES, DAY_NAMES_MON_FIRST, MONTH_NAMES, iso, monthMatrix, nextDays } from "@/lib/calendar";
+import { DAY_NAMES, DAY_NAMES_MON_FIRST, MONTH_NAMES, addDays, iso, monthMatrix, nextDays } from "@/lib/calendar";
 
 type ViewMode = "week" | "month" | "quarter" | "year";
 type DayFlag = "free" | "on-request" | "pending" | "rental";
@@ -18,6 +18,24 @@ function statusBg(status: DayFlag) {
     default:
       return "bg-free";
   }
+}
+
+// Popisek zobrazeného rozsahu — veřejná stránka nemá navigaci vzad/vpřed,
+// vždy ukazuje aktuální týden/měsíc/kvartál/rok od dneška, ale ať je jasné, co přesně to je.
+function publicRangeLabel(view: ViewMode, today: Date): string {
+  if (view === "week") {
+    const end = addDays(today, 6);
+    const sameMonth = today.getMonth() === end.getMonth();
+    const left = sameMonth ? `${today.getDate()}.` : `${today.getDate()}. ${today.getMonth() + 1}.`;
+    return `${left} – ${end.getDate()}. ${end.getMonth() + 1}. ${end.getFullYear()}`;
+  }
+  if (view === "month") return `${MONTH_NAMES[today.getMonth()]} ${today.getFullYear()}`;
+  if (view === "quarter") {
+    const end = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+    return `${MONTH_NAMES[today.getMonth()]} – ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
+  }
+  const end = new Date(today.getFullYear(), today.getMonth() + 11, 1);
+  return `${MONTH_NAMES[today.getMonth()]} ${today.getFullYear()} – ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
 }
 
 // Rychlé předvolby pro pronájem celého prostoru — ať nemusí žadatel vypisovat čas ručně.
@@ -127,6 +145,7 @@ export default function PublicPage() {
             ))}
           </div>
         </div>
+        <p className="text-sm font-medium text-gray-700 mb-1">{publicRangeLabel(view, today)}</p>
         <p className="text-sm text-gray-500 mb-4">
           Modrá = obsazené jen nějaké pracovní místo, o celý prostor si můžete i tak napsat — domluvíme se.
         </p>

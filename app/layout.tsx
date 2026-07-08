@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Atelier na Pobřeží
             </a>
             <a href="/admin" className="text-sm text-gray-500 hover:text-gray-800">
-              Admin
+              Přihlásit
             </a>
           </header>
           {children}
