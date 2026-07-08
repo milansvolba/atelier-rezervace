@@ -215,4 +215,114 @@ export default function PublicPage() {
           onClick={() => setShowForm((s) => !s)}
           className="h-10 px-4 rounded-md border border-gray-300 text-sm hover:bg-gray-50"
         >
-          Požádat 
+          Požádat o rezervaci
+        </button>
+      </div>
+
+      {submitted === "ok" && (
+        <div className="bg-white border border-gray-200 rounded-xl p-4 text-sm">
+          Žádost jsme přijali. Ozveme se co nejdřív, nejpozději následující pracovní den.
+        </div>
+      )}
+
+      {showForm && (
+        <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+          <p className="font-medium">Žádost o rezervaci</p>
+
+          <label className="block text-sm">
+            Co chcete rezervovat
+            <select
+              className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+              value={resource}
+              onChange={(e) => setResource(e.target.value as ResourceId)}
+            >
+              <option value="atelier">Celý ateliér (oslava, akce)</option>
+              <option value="klubovna">Klubovna (posezení s přáteli)</option>
+              <option value="pingpong">Pingpongový stůl</option>
+              <option value="stul1">Stůl 1 (coworking)</option>
+              <option value="stul2">Stůl 2 (coworking)</option>
+              <option value="bar">Bar / Stůl 3 (coworking)</option>
+              <option value="okno1">Okno 1 (coworking)</option>
+            </select>
+          </label>
+
+          <div className="grid grid-cols-3 gap-3">
+            <label className="block text-sm">
+              Datum
+              <input
+                required
+                type="date"
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </label>
+            <label className="block text-sm">
+              Od
+              <input
+                required
+                type="time"
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              />
+            </label>
+            <label className="block text-sm">
+              Do
+              <input
+                required
+                type="time"
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              />
+            </label>
+          </div>
+
+          <label className="block text-sm">
+            Jméno
+            <input
+              required
+              className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Jana Nováková"
+            />
+          </label>
+
+          <label className="block text-sm">
+            Kontakt (e-mail nebo telefon)
+            <input
+              required
+              className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              placeholder="jana@example.com"
+            />
+          </label>
+
+          <label className="block text-sm">
+            Poznámka (nepovinné)
+            <textarea
+              className="mt-1 w-full border border-gray-300 rounded-md px-2 py-2"
+              rows={3}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="K čemu prostor potřebujete, kolik lidí přijde…"
+            />
+          </label>
+
+          <p className="text-xs text-gray-400">
+            Údaje použijeme jen ke komunikaci o téhle rezervaci a smažeme je nejpozději 12 měsíců po akci.
+          </p>
+
+          {submitted === "err" && <p className="text-sm text-red-600">Něco se nepovedlo, zkuste to prosím znovu.</p>}
+
+          <button type="submit" className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm">
+            Odeslat žádost
+          </button>
+        </form>
+      )}
+    </main>
+  );
+}
