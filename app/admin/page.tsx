@@ -1198,11 +1198,17 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                     return (
                       <td key={i} className="p-1">
                         <button
-                          onClick={() =>
-                            eff.kind === "confirmed" && eff.items.length === 1
-                              ? setDetailBooking(eff.items[0])
-                              : setQuickAdd({ resource: r, date: dISO })
-                          }
+                          onClick={() => {
+                            if (eff.kind === "confirmed" && eff.items.length === 1) {
+                              setDetailBooking(eff.items[0]);
+                              return;
+                            }
+                            if (eff.kind === "blocked") {
+                              setDetailBooking(eff.by);
+                              return;
+                            }
+                            setQuickAdd({ resource: r, date: dISO });
+                          }}
                           title={hoverTitle}
                           className={`w-full h-10 rounded-md text-[10px] px-1 flex items-center justify-center text-center overflow-hidden ${cellClasses(
                             eff.kind
@@ -1278,6 +1284,10 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                                 const eff = effectiveStatus(filterResource, dISO, bookings);
                                 if (eff.kind === "confirmed" && eff.items.length === 1) {
                                   setDetailBooking(eff.items[0]);
+                                  return;
+                                }
+                                if (eff.kind === "blocked") {
+                                  setDetailBooking(eff.by);
                                   return;
                                 }
                               }
