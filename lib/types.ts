@@ -42,7 +42,7 @@ export const CONFLICTS: Record<ResourceId, ResourceId[]> = {
 };
 
 export type BookingStatus = "confirmed" | "pending" | "rejected";
-export type BookingSource = "admin" | "public";
+export type BookingSource = "admin" | "member" | "public";
 
 export interface Booking {
   id: string;
@@ -56,6 +56,7 @@ export interface Booking {
   note?: string;
   status: BookingStatus;
   source: BookingSource;
+  userId?: string; // vyplněno, pokud rezervaci založil přihlášený admin/člen — pro "Moje rezervace"
   extraMonitor?: boolean; // mobilní druhý monitor přisazený ke stolu
   createdAt: string;
 }

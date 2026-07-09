@@ -5,7 +5,7 @@ import { sendRequesterDecisionEmail } from "@/lib/email";
 
 // PATCH /api/requests/:id  { action: "approve" | "reject" }
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!requireAdmin(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { action, note } = await req.json();
   const all = await store.all();
   const booking = all.find((b) => b.id === params.id);

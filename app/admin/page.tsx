@@ -19,6 +19,21 @@ import {
 } from "@/lib/calendar";
 
 type ViewMode = "day" | "week" | "month" | "quarter" | "year";
+type Role = "admin" | "member";
+
+interface SessionUser {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+}
+
+interface AppUser {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+}
 
 const DAY_START = 6;
 const DAY_END = 20;
@@ -47,8 +62,8 @@ const RESOURCE_OPTIONS: { value: ResourceId; label: string }[] = [
   { value: "atelier", label: "Celý ateliér / kurz" },
 ];
 
-// Rychlé dvouhodinové bloky pro pingpong / krátké rezervace — ať admin nemusí
-// pokaždé ručně vypisovat čas.
+// Rychlé dvouhodinové bloky pro pingpong / krátké rezervace — ať nikdo
+// pokaždé nemusí ručně vypisovat čas.
 function twoHourBlocks() {
   const blocks: { start: string; end: string }[] = [];
   for (let h = DAY_START; h < DAY_END; h += 2) {
@@ -57,7 +72,7 @@ function twoHourBlocks() {
   return blocks;
 }
 
-// Popisek aktuálního rozsahu — vždy viditelný, ať je jasné, na co se admin dívá.
+// Popisek aktuálního rozsahu — vždy viditelný, ať je jasné, na co se člověk dívá.
 function rangeLabel(view: ViewMode, anchor: Date): string {
   if (view === "day") return fmtFull(anchor);
   if (view === "week") {
@@ -119,74 +134,112 @@ function cellClasses(kind: Effective["kind"]) {
 }
 
 export default function AdminPage() {
-  const [token, setToken] = useState<string | null>(null);
-  const [pw, setPw] = useState("");
-  const [loginErr, setLoginErr] = useState(false);
+  const [session, setSession] = useState<SessionUser | null | undefined>(undefined);
+
+  async function load() {
+    const res = await fetch("/api/auth/me");
+    const data = await res.json();
+    setSession(data.user);
+  }
 
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
-    if (saved) setToken(saved);
+    load();
   }, []);
 
-  async function login(e: React.FormEvent) {
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setSession(null);
+  }
+
+  if (session === undefined) {
+    return <main className="max-w-sm mx-auto mt-12 text-sm text-gray-400">Načítám…</main>;
+  }
+
+  if (!session) {
+    return <LoginForm />;
+  }
+
+  return <AdminDashboard session={session} onLogout={logout} />;
+}
+
+// Přihlášení bez hesla — magic link poslaný e-mailem (funguje jen pro účty,
+// které existují v tabulce users; nové členy zakládá admin ručně).
+function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const chyba = params.get("chyba");
+    if (chyba === "neplatny_odkaz") setError("Odkaz už není platný — vyžádejte si nový.");
+    else if (chyba === "ucet_nenalezen") setError("Tenhle účet v systému nemáme.");
+    else if (chyba === "chybi_token") setError("Odkaz je neúplný — vyžádejte si nový.");
+  }, []);
+
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const res = await fetch("/api/login", {
+    setError(null);
+    setSending(true);
+    const res = await fetch("/api/auth/request-link", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: pw }),
+      body: JSON.stringify({ email }),
     });
+    setSending(false);
     if (res.ok) {
-      localStorage.setItem("admin_token", pw);
-      setToken(pw);
-      setLoginErr(false);
+      setSent(true);
     } else {
-      setLoginErr(true);
+      const data = await res.json();
+      setError(data.error || "Nepodařilo se odeslat odkaz.");
     }
   }
 
-  if (!token) {
+  if (sent) {
     return (
       <main className="max-w-sm mx-auto mt-12">
-        <form onSubmit={login} className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-          <p className="font-medium">Přihlášení adminů</p>
-          <p className="text-xs text-gray-500">
-            Zatím jednoduché sdílené heslo (demo). Před ostrým provozem vyměnit za jmenné účty Milana a Petra.
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
+          <p className="font-medium">Zkontrolujte e-mail</p>
+          <p className="text-sm text-gray-500">
+            Na <strong>{email}</strong> jsme poslali přihlašovací odkaz. Klikněte na něj — platí 15 minut.
           </p>
-          <input
-            type="password"
-            className="w-full h-10 border border-gray-300 rounded-md px-2"
-            placeholder="Heslo"
-            value={pw}
-            onChange={(e) => setPw(e.target.value)}
-          />
-          {loginErr && <p className="text-sm text-red-600">Špatné heslo.</p>}
-          <button className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm">Přihlásit</button>
-        </form>
+        </div>
       </main>
     );
   }
 
   return (
-    <AdminDashboard
-      token={token}
-      onLogout={() => {
-        localStorage.removeItem("admin_token");
-        setToken(null);
-      }}
-    />
+    <main className="max-w-sm mx-auto mt-12">
+      <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+        <p className="font-medium">Přihlášení</p>
+        <p className="text-xs text-gray-500">Zadejte e-mail, na který máte založený účet — pošleme vám přihlašovací odkaz.</p>
+        <input
+          type="email"
+          required
+          autoFocus
+          className="w-full h-10 border border-gray-300 rounded-md px-2"
+          placeholder="vas@email.cz"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <button disabled={sending} className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm disabled:opacity-50">
+          {sending ? "Odesílám…" : "Poslat přihlašovací odkaz"}
+        </button>
+      </form>
+    </main>
   );
 }
 
 // Rychlé vytvoření rezervace z modálu — nepřepíná na celý denní pohled.
 function QuickAddModal({
-  token,
   resource,
   date,
   onClose,
   onSaved,
   onOpenDay,
 }: {
-  token: string;
   resource: ResourceId;
   date: string;
   onClose: () => void;
@@ -204,7 +257,7 @@ function QuickAddModal({
     setSaving(true);
     const res = await fetch("/api/bookings", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, date }),
     });
     setSaving(false);
@@ -325,14 +378,13 @@ function QuickAddModal({
 }
 
 // Detail existující rezervace — náhled, úprava, nebo smazání, s volitelným
-// upozorněním rezervisty e-mailem (pokud u rezervace máme kontakt).
+// upozorněním rezervisty e-mailem (pokud u rezervace máme kontakt). Server hlídá,
+// že člen smí takhle sahat jen na vlastní rezervace — admin na cokoli.
 function BookingDetailModal({
-  token,
   booking,
   onClose,
   onSaved,
 }: {
-  token: string;
   booking: Booking;
   onClose: () => void;
   onSaved: () => void;
@@ -358,7 +410,7 @@ function BookingDetailModal({
     setSaving(true);
     const res = await fetch(`/api/bookings/${booking.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, notify }),
     });
     setSaving(false);
@@ -376,7 +428,7 @@ function BookingDetailModal({
     setSaving(true);
     const res = await fetch(`/api/bookings/${booking.id}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ notify }),
     });
     setSaving(false);
@@ -572,7 +624,118 @@ function BookingDetailModal({
   );
 }
 
-function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
+// Správa účtů (jen admin) — ruční přidání/odebrání jmenných účtů.
+function MembersPanel() {
+  const [list, setList] = useState<AppUser[]>([]);
+  const [form, setForm] = useState<{ name: string; email: string; role: Role }>({
+    name: "",
+    email: "",
+    role: "member",
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function load() {
+    const res = await fetch("/api/users");
+    if (res.ok) setList(await res.json());
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function addUser(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    const res = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    setSaving(false);
+    if (res.ok) {
+      setForm({ name: "", email: "", role: "member" });
+      load();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Nepodařilo se přidat.");
+    }
+  }
+
+  async function removeUser(id: string) {
+    if (!confirm("Opravdu odebrat tento účet?")) return;
+    setError(null);
+    const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      load();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Nepodařilo se odebrat.");
+    }
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+      <p className="font-medium">Účty</p>
+      {list.length > 0 && (
+        <div className="space-y-2">
+          {list.map((u) => (
+            <div
+              key={u.id}
+              className="flex items-center justify-between text-sm border-t border-gray-100 pt-2 first:border-t-0 first:pt-0"
+            >
+              <span>
+                {u.name} · {u.email} · <span className="text-gray-400">{u.role === "admin" ? "admin" : "člen"}</span>
+              </span>
+              <button onClick={() => removeUser(u.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">
+                Odebrat
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <form onSubmit={addUser} className="flex flex-wrap items-end gap-2 pt-2 border-t border-gray-100">
+        <label className="text-xs">
+          Jméno
+          <input
+            required
+            className="mt-1 h-9 w-32 border border-gray-300 rounded-md px-2 text-sm block"
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+          />
+        </label>
+        <label className="text-xs">
+          E-mail
+          <input
+            required
+            type="email"
+            className="mt-1 h-9 w-48 border border-gray-300 rounded-md px-2 text-sm block"
+            value={form.email}
+            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+          />
+        </label>
+        <label className="text-xs">
+          Role
+          <select
+            className="mt-1 h-9 border border-gray-300 rounded-md px-2 text-sm block"
+            value={form.role}
+            onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}
+          >
+            <option value="member">Člen</option>
+            <option value="admin">Admin</option>
+          </select>
+        </label>
+        <button disabled={saving} className="h-9 px-3 rounded-md bg-gray-900 text-white text-sm disabled:opacity-50">
+          {saving ? "Přidávám…" : "Přidat"}
+        </button>
+      </form>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout: () => void }) {
   const [view, setView] = useState<ViewMode>("day");
   const [anchor, setAnchor] = useState(new Date());
   const [filterResource, setFilterResource] = useState<ResourceId | "summary">("summary");
@@ -590,6 +753,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
   });
 
   const date = iso(anchor);
+  const isAdmin = session.role === "admin";
 
   async function load() {
     const res = await fetch("/api/bookings");
@@ -610,6 +774,14 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
     [bookings]
   );
 
+  const myBookings = useMemo(
+    () =>
+      bookings
+        .filter((b) => b.userId === session.id && b.status === "confirmed" && b.date >= iso(new Date()))
+        .sort((a, b) => (a.date === b.date ? (a.startTime < b.startTime ? -1 : 1) : a.date < b.date ? -1 : 1)),
+    [bookings, session.id]
+  );
+
   const confirmedByResourceToday = useMemo(() => {
     const map: Record<string, Booking[]> = {};
     for (const r of PHYSICAL_RESOURCES) map[r] = [];
@@ -625,7 +797,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
     setError(null);
     const res = await fetch("/api/bookings", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, date }),
     });
     if (res.ok) {
@@ -641,7 +813,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
     setError(null);
     const res = await fetch(`/api/requests/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, note: noteDrafts[id] }),
     });
     if (res.ok) {
@@ -673,9 +845,14 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
             </button>
           ))}
         </div>
-        <button onClick={onLogout} className="text-sm text-gray-500 hover:text-gray-800">
-          Odhlásit
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">
+            {session.name} · {isAdmin ? "admin" : "člen"}
+          </span>
+          <button onClick={onLogout} className="text-sm text-gray-500 hover:text-gray-800">
+            Odhlásit
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
@@ -721,15 +898,12 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
 
       {error && <div className="bg-white border border-red-200 text-red-600 rounded-xl p-3 text-sm">{error}</div>}
 
-      {pending.length > 0 && (
+      {isAdmin && pending.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="font-medium mb-3">Žádosti ke schválení ({pending.length})</p>
           <div className="space-y-3">
             {pending.map((p) => (
-              <div
-                key={p.id}
-                className="border-t border-gray-100 pt-3 first:border-t-0 first:pt-0 space-y-2"
-              >
+              <div key={p.id} className="border-t border-gray-100 pt-3 first:border-t-0 first:pt-0 space-y-2">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium">
@@ -760,6 +934,32 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
           </div>
         </div>
       )}
+
+      {myBookings.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="font-medium mb-3">Moje rezervace</p>
+          <div className="space-y-2">
+            {myBookings.map((b) => (
+              <div
+                key={b.id}
+                className="flex items-center justify-between text-sm border-t border-gray-100 pt-2 first:border-t-0 first:pt-0 gap-3"
+              >
+                <span>
+                  {RESOURCE_LABELS[b.resource]} · {fmt(new Date(b.date))} {b.startTime}–{b.endTime} · {b.title}
+                </span>
+                <button
+                  onClick={() => setDetailBooking(b)}
+                  className="h-7 px-2.5 rounded-md border border-gray-300 text-xs shrink-0"
+                >
+                  Změnit
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isAdmin && <MembersPanel />}
 
       {view === "day" && (
         <>
@@ -1036,7 +1236,6 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
 
       {quickAdd && (
         <QuickAddModal
-          token={token}
           resource={quickAdd.resource}
           date={quickAdd.date}
           onClose={() => setQuickAdd(null)}
@@ -1049,12 +1248,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
       )}
 
       {detailBooking && (
-        <BookingDetailModal
-          token={token}
-          booking={detailBooking}
-          onClose={() => setDetailBooking(null)}
-          onSaved={load}
-        />
+        <BookingDetailModal booking={detailBooking} onClose={() => setDetailBooking(null)} onSaved={load} />
       )}
     </main>
   );

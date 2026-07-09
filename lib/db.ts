@@ -44,6 +44,26 @@ export function ensureSchema() {
         );
       `;
       await sql`CREATE INDEX IF NOT EXISTS bookings_date_idx ON bookings (date);`;
+      await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS user_id text;`;
+
+      await sql`
+        CREATE TABLE IF NOT EXISTS users (
+          id text PRIMARY KEY,
+          name text NOT NULL,
+          email text NOT NULL UNIQUE,
+          role text NOT NULL,
+          created_at timestamptz NOT NULL DEFAULT now()
+        );
+      `;
+      // Počáteční admini podle specifikace — jde jen o seed, ON CONFLICT nic nepřepíše,
+      // pokud si e-mail nebo roli později v adminu upravíte.
+      await sql`
+        INSERT INTO users (id, name, email, role)
+        VALUES
+          (${crypto.randomUUID()}, 'Milan', 'milan.svolba@gmail.com', 'admin'),
+          (${crypto.randomUUID()}, 'Petr', 'petr.svolba@gmail.com', 'admin')
+        ON CONFLICT (email) DO NOTHING
+      `;
     })();
   }
   return ready;

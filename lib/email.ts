@@ -48,6 +48,18 @@ function wrap(bodyHtml: string) {
   return `<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;">${bodyHtml}<p style="margin-top:24px;color:#888;font-size:12px;">Atelier na Pobřeží · rezervace.ateliernapobrezi.cz</p></div>`;
 }
 
+// --- Přihlašovací odkaz (magic link) pro admina/člena ---
+export async function sendMagicLinkEmail(user: { name: string; email: string }, link: string) {
+  const subject = "Přihlášení do rezervací — Atelier na Pobřeží";
+  const html = wrap(`
+    <p>Dobrý den${user.name ? ` ${user.name}` : ""},</p>
+    <p>klikněte na tlačítko níže a budete přihlášeni. Odkaz platí 15 minut a jde použít jen jednou.</p>
+    <p style="margin-top:20px;"><a href="${link}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Račte vstoupit</a></p>
+    <p style="color:#888;font-size:13px;margin-top:16px;">Pokud jste o přihlášení nežádali, tento e-mail prostě ignorujte.</p>
+  `);
+  await send(user.email, subject, html);
+}
+
 // --- Adminům: nová žádost od veřejnosti ---
 export async function sendAdminNewRequestEmail(booking: Booking) {
   const what = isWholeSpace(booking.resource)

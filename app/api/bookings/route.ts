@@ -1,20 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { store, findConflict } from "@/lib/data";
 import { Booking } from "@/lib/types";
-import { requireAdmin } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
-// GET /api/bookings?date=YYYY-MM-DD  — vrátí rezervace pro daný den (interní mřížka)
+// Veřejnosti (nepřihlášeným) vracíme jen to, co potřebuje veřejný kalendář na
+// vykreslení obsazenosti — žádná jména, kontakty ani názvy rezervací.
+function publicSafe(b: Booking) {
+  return { id: b.id, resource: b.resource, date: b.date, startTime: b.startTime, endTime: b.endTime, status: b.status };
+}
+
+// GET /api/bookings?date=YYYY-MM-DD — přihlášení (admin/člen) vidí vše, veřejnost jen obsazenost.
 export async function GET(req: NextRequest) {
   const date = req.nextUrl.searchParams.get("date");
   const all = await store.all();
-  return NextResponse.json(date ? all.filter((b) => b.date === date) : all);
+  const filtered = date ? all.filter((b) => b.date === date) : all;
+  const session = await requireUser(req);
+  return NextResponse.json(session ? filtered : filtered.map(publicSafe));
 }
 
-// POST /api/bookings — admin rovnou vytváří potvrzenou rezervaci (bez schvalování)
+// POST /api/bookings — přihlášený admin/člen rovnou vytváří potvrzenou rezervaci (bez schvalování)
 export async function POST(req: NextRequest) {
-  if (!requireAdmin(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await requireUser(req);
+  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const body = await req.json();
-  const { resource, date, startTime, endTime, title, extraMonitor } = body;
+  const { resource, date, startTime, endTime, title, extraMonitor, requesterContact } = body;
   if (!resource || !date || !startTime || !endTime || !title) {
     return NextResponse.json({ error: "chybí povinné údaje" }, { status: 400 });
   }
@@ -32,9 +42,11 @@ export async function POST(req: NextRequest) {
     startTime,
     endTime,
     title,
+    requesterContact: requesterContact || undefined,
     extraMonitor: !!extraMonitor,
     status: "confirmed",
-    source: "admin",
+    source: session.role === "admin" ? "admin" : "member",
+    userId: session.id,
     createdAt: new Date().toISOString(),
   };
   await store.add(booking);

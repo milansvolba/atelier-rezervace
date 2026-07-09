@@ -16,6 +16,7 @@ function rowToBooking(r: Record<string, unknown>): Booking {
     note: (r.note as string) ?? undefined,
     status: r.status as Booking["status"],
     source: r.source as Booking["source"],
+    userId: (r.user_id as string) ?? undefined,
     extraMonitor: (r.extra_monitor as boolean) ?? false,
     createdAt: typeof created === "string" ? created : created.toISOString(),
   };
@@ -32,11 +33,11 @@ export const store = {
     await ensureSchema();
     await sql`
       INSERT INTO bookings
-        (id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, created_at)
+        (id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at)
       VALUES
         (${b.id}, ${b.resource}, ${b.date}, ${b.startTime}, ${b.endTime}, ${b.title},
          ${b.requesterName ?? null}, ${b.requesterContact ?? null}, ${b.note ?? null},
-         ${b.status}, ${b.source}, ${b.extraMonitor ?? false}, ${b.createdAt})
+         ${b.status}, ${b.source}, ${b.extraMonitor ?? false}, ${b.userId ?? null}, ${b.createdAt})
     `;
     return b;
   },
@@ -61,6 +62,12 @@ export const store = {
   async byDate(date: string): Promise<Booking[]> {
     await ensureSchema();
     const rows = await sql`SELECT * FROM bookings WHERE date = ${date}`;
+    return rows.map(rowToBooking);
+  },
+
+  async byUser(userId: string): Promise<Booking[]> {
+    await ensureSchema();
+    const rows = await sql`SELECT * FROM bookings WHERE user_id = ${userId} ORDER BY date, start_time`;
     return rows.map(rowToBooking);
   },
 
