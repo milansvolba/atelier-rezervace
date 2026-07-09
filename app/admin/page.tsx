@@ -834,7 +834,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
   const confirmedByResourceToday = useMemo(() => {
     const map: Record<string, Booking[]> = {};
-    for (const r of PHYSICAL_RESOURCES) map[r] = [];
+    for (const r of Object.keys(RESOURCE_LABELS)) map[r] = [];
     for (const b of bookings) {
       if (b.status !== "confirmed" || b.date !== date) continue;
       if (map[b.resource]) map[b.resource].push(b);
@@ -1025,6 +1025,26 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           <div className="bg-white border border-gray-200 rounded-xl p-5">
             <p className="font-medium mb-3">Rozpis {fmt(anchor)}</p>
             <div className="space-y-2.5">
+              {(["atelier", "klubovna"] as ResourceId[]).map((r) =>
+                confirmedByResourceToday[r].length > 0 ? (
+                  <div key={r} className="flex items-center gap-3">
+                    <div className="w-24 shrink-0 text-sm font-medium">{RESOURCE_LABELS[r]}</div>
+                    <div className="relative flex-1 h-7 bg-gray-100 rounded-md">
+                      {confirmedByResourceToday[r].map((b) => (
+                        <button
+                          key={b.id}
+                          onClick={() => setDetailBooking(b)}
+                          className="absolute top-0 bottom-0 bg-[#F0997B] rounded-md text-[11px] text-[#4A1B0C] flex items-center px-1.5 overflow-hidden whitespace-nowrap hover:opacity-80"
+                          style={{ left: `${pct(b.startTime)}%`, width: `${pct(b.endTime) - pct(b.startTime)}%` }}
+                          title={`${b.title} ${b.startTime}–${b.endTime} — klik pro detail`}
+                        >
+                          {b.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null
+              )}
               {PHYSICAL_RESOURCES.map((r) => (
                 <div key={r} className="flex items-center gap-3">
                   <div className="w-24 shrink-0 text-sm">{RESOURCE_LABELS[r]}</div>
