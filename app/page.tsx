@@ -38,11 +38,31 @@ function publicRangeLabel(view: ViewMode, today: Date): string {
   return `${MONTH_NAMES[today.getMonth()]} ${today.getFullYear()} – ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
 }
 
-// Rychlé předvolby pro pronájem celého prostoru — ať nemusí žadatel vypisovat čas ručně.
-const HALF_DAY_PRESETS: { label: string; start: string; end: string }[] = [
-  { label: "Dopoledne", start: "09:00", end: "13:00" },
-  { label: "Odpoledne", start: "13:00", end: "17:00" },
-  { label: "Celý den", start: "09:00", end: "17:00" },
+// Rychlé předvolby pro pronájem celého prostoru — časy jsou rovnou v popisku,
+// ať je jasné, co která volba znamená.
+const WHOLE_SPACE_PRESETS: { label: string; start: string; end: string }[] = [
+  { label: "8:00–12:00", start: "08:00", end: "12:00" },
+  { label: "12:00–16:00", start: "12:00", end: "16:00" },
+  { label: "Celý den (8:00–20:00)", start: "08:00", end: "20:00" },
+];
+
+// Pingpong se pronajímá po dvouhodinových blocích od 6:00 do 20:00.
+function pingpongBlocks(): { label: string; start: string; end: string }[] {
+  const blocks: { label: string; start: string; end: string }[] = [];
+  for (let h = 6; h < 20; h += 2) {
+    const start = `${String(h).padStart(2, "0")}:00`;
+    const end = `${String(h + 2).padStart(2, "0")}:00`;
+    blocks.push({ label: `${h}:00–${h + 2}:00`, start, end });
+  }
+  return blocks;
+}
+
+// Veřejnost smí žádat jen o tyhle tři produkty — jednotlivá coworkingová místa
+// (stoly, okno, bar) rezervuje jen tým dovnitř.
+const PUBLIC_RESOURCE_OPTIONS: { value: ResourceId; label: string }[] = [
+  { value: "atelier", label: "Celý ateliér (oslava, akce)" },
+  { value: "klubovna", label: "Klubovna (posezení s přáteli)" },
+  { value: "pingpong", label: "Pingpongový stůl" },
 ];
 
 export default function PublicPage() {
@@ -51,12 +71,13 @@ export default function PublicPage() {
   const [showForm, setShowForm] = useState(false);
   const [resource, setResource] = useState<ResourceId>("atelier");
   const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("17:00");
+  const [startTime, setStartTime] = useState("08:00");
+  const [endTime, setEndTime] = useState("12:00");
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [note, setNote] = useState("");
   const [submitted, setSubmitted] = useState<null | "ok" | "err">(null);
+  const [customTime, setCustomTime] = useState(false);
 
   useEffect(() => {
     fetch("/api/bookings")
@@ -88,6 +109,19 @@ export default function PublicPage() {
 
   const today = new Date();
   const isWholeSpace = resource === "atelier" || resource === "klubovna";
+  const isPingpong = resource === "pingpong";
+
+  // Při přepnutí typu rezervace rovnou nastavit rozumný výchozí čas, ať vidí
+  // konkrétní hodiny a nemusí nic manuálně dopočítávat.
+  useEffect(() => {
+    if (resource === "pingpong") {
+      setStartTime("06:00");
+      setEndTime("08:00");
+    } else {
+      setStartTime("08:00");
+      setEndTime("12:00");
+    }
+  }, [resource]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -247,13 +281,11 @@ export default function PublicPage() {
               value={resource}
               onChange={(e) => setResource(e.target.value as ResourceId)}
             >
-              <option value="atelier">Celý ateliér (oslava, akce)</option>
-              <option value="klubovna">Klubovna (posezení s přáteli)</option>
-              <option value="pingpong">Pingpongový stůl</option>
-              <option value="stul1">Stůl 1 (coworking)</option>
-              <option value="stul2">Stůl 2 (coworking)</option>
-              <option value="bar">Bar / Stůl 3 (coworking)</option>
-              <option value="okno1">Okno 1 (coworking)</option>
+              {PUBLIC_RESOURCE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -262,54 +294,77 @@ export default function PublicPage() {
             <input
               required
               type="date"
-              className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+              className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2 cursor-pointer"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              onClick={(e) => {
+                const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                if (typeof el.showPicker === "function") {
+                  try {
+                    el.showPicker();
+                  } catch {
+                    // některé prohlížeče showPicker nepodporují — normální klik na pole pak stačí
+                  }
+                }
+              }}
             />
           </label>
 
-          {isWholeSpace && (
-            <div className="flex flex-wrap gap-2">
-              {HALF_DAY_PRESETS.map((p) => (
-                <button
-                  type="button"
-                  key={p.label}
-                  onClick={() => {
-                    setStartTime(p.start);
-                    setEndTime(p.end);
-                  }}
-                  className={`h-8 px-3 rounded-md border text-xs ${
-                    startTime === p.start && endTime === p.end ? "border-gray-800 font-medium" : "border-gray-300 text-gray-500"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
+          {(isWholeSpace || isPingpong) && (
+            <div>
+              <p className="text-xs text-gray-500 mb-1.5">Vyberte čas</p>
+              <div className="flex flex-wrap gap-2">
+                {(isWholeSpace ? WHOLE_SPACE_PRESETS : pingpongBlocks()).map((p) => (
+                  <button
+                    type="button"
+                    key={p.label}
+                    onClick={() => {
+                      setStartTime(p.start);
+                      setEndTime(p.end);
+                    }}
+                    className={`h-8 px-3 rounded-md border text-xs ${
+                      startTime === p.start && endTime === p.end ? "border-gray-800 font-medium" : "border-gray-300 text-gray-500"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm">
-              Od
-              <input
-                required
-                type="time"
-                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-            </label>
-            <label className="block text-sm">
-              Do
-              <input
-                required
-                type="time"
-                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-              />
-            </label>
-          </div>
+          {!customTime ? (
+            <button
+              type="button"
+              onClick={() => setCustomTime(true)}
+              className="text-xs text-gray-500 hover:text-gray-800 underline"
+            >
+              Upravit čas ručně (teď: {startTime}–{endTime})
+            </button>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-sm">
+                Od
+                <input
+                  required
+                  type="time"
+                  className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
+              </label>
+              <label className="block text-sm">
+                Do
+                <input
+                  required
+                  type="time"
+                  className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
+              </label>
+            </div>
+          )}
 
           <label className="block text-sm">
             Jméno
