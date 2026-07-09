@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { store, findConflict } from "@/lib/data";
 import { Booking } from "@/lib/types";
 import { requireUser } from "@/lib/auth";
+import { users } from "@/lib/users";
 
 // Veřejnosti (nepřihlášeným) vracíme jen to, co potřebuje veřejný kalendář na
 // vykreslení obsazenosti — žádná jména, kontakty ani názvy rezervací.
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { resource, date, startTime, endTime, title, extraMonitor, requesterContact } = body;
+  const { resource, date, startTime, endTime, title, extraMonitor, requesterContact, memberUserId } = body;
   if (!resource || !date || !startTime || !endTime || !title) {
     return NextResponse.json({ error: "chybí povinné údaje" }, { status: 400 });
   }
@@ -35,6 +36,20 @@ export async function POST(req: NextRequest) {
       { status: 409 }
     );
   }
+
+  // Admin může rezervaci rovnou přiřadit konkrétnímu členovi (rozpoznanému z
+  // našeptávače) — pak se objeví i v jeho vlastní sekci "Moje rezervace" a
+  // dotáhne se jeho kontakt, pokud admin žádný neuvedl ručně.
+  let ownerId = session.id;
+  let contact = requesterContact || undefined;
+  if (session.role === "admin" && memberUserId) {
+    const target = await users.byId(memberUserId);
+    if (target) {
+      ownerId = target.id;
+      contact = contact || target.email;
+    }
+  }
+
   const booking: Booking = {
     id: crypto.randomUUID(),
     resource,
@@ -42,11 +57,11 @@ export async function POST(req: NextRequest) {
     startTime,
     endTime,
     title,
-    requesterContact: requesterContact || undefined,
+    requesterContact: contact,
     extraMonitor: !!extraMonitor,
     status: "confirmed",
     source: session.role === "admin" ? "admin" : "member",
-    userId: session.id,
+    userId: ownerId,
     createdAt: new Date().toISOString(),
   };
   await store.add(booking);

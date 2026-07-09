@@ -236,12 +236,14 @@ function LoginForm() {
 function QuickAddModal({
   resource,
   date,
+  members,
   onClose,
   onSaved,
   onOpenDay,
 }: {
   resource: ResourceId;
   date: string;
+  members: AppUser[];
   onClose: () => void;
   onSaved: () => void;
   onOpenDay: () => void;
@@ -249,7 +251,18 @@ function QuickAddModal({
   const [form, setForm] = useState({ resource, startTime: "09:00", endTime: "11:00", title: "", requesterContact: "" });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [matchedMemberId, setMatchedMemberId] = useState<string | null>(null);
   const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
+
+  function onTitleChange(value: string) {
+    const match = members.find((m) => m.name.toLowerCase() === value.trim().toLowerCase());
+    setMatchedMemberId(match ? match.id : null);
+    setForm((f) => ({
+      ...f,
+      title: value,
+      requesterContact: match && !f.requesterContact ? match.email : f.requesterContact,
+    }));
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -258,7 +271,7 @@ function QuickAddModal({
     const res = await fetch("/api/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, date }),
+      body: JSON.stringify({ ...form, date, memberUserId: matchedMemberId }),
     });
     setSaving(false);
     if (res.ok) {
@@ -305,11 +318,17 @@ function QuickAddModal({
           <input
             required
             autoFocus
+            list="quickadd-member-suggestions"
             className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
             value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            onChange={(e) => onTitleChange(e.target.value)}
             placeholder="Jméno nebo název akce"
           />
+          <datalist id="quickadd-member-suggestions">
+            {members.map((m) => (
+              <option key={m.id} value={m.name} />
+            ))}
+          </datalist>
         </label>
 
         <div className="grid grid-cols-2 gap-3">
@@ -753,6 +772,8 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [showMembers, setShowMembers] = useState(false);
+  const [members, setMembers] = useState<AppUser[]>([]);
+  const [matchedMemberId, setMatchedMemberId] = useState<string | null>(null);
   const [form, setForm] = useState<{ resource: ResourceId; startTime: string; endTime: string; title: string; requesterContact: string }>({
     resource: "stul1",
     startTime: "09:00",
@@ -772,6 +793,26 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   useEffect(() => {
     load();
   }, []);
+
+  // Pro našeptávání jmen registrovaných členů při zadávání rezervace — jen admin
+  // (GET /api/users je admin-only a jen admin zadává rezervace "za někoho jiného").
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetch("/api/users")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setMembers);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function onTitleChange(value: string) {
+    const match = members.find((m) => m.name.toLowerCase() === value.trim().toLowerCase());
+    setMatchedMemberId(match ? match.id : null);
+    setForm((f) => ({
+      ...f,
+      title: value,
+      requesterContact: match && !f.requesterContact ? match.email : f.requesterContact,
+    }));
+  }
 
   function goto(view_: ViewMode, d: Date) {
     setAnchor(d);
@@ -807,10 +848,11 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     const res = await fetch("/api/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, date }),
+      body: JSON.stringify({ ...form, date, memberUserId: matchedMemberId }),
     });
     if (res.ok) {
       setForm((f) => ({ ...f, title: "", requesterContact: "" }));
+      setMatchedMemberId(null);
       load();
     } else {
       const data = await res.json();
@@ -1025,11 +1067,17 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                 Kdo / co
                 <input
                   required
+                  list="dayform-member-suggestions"
                   className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
                   value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  onChange={(e) => onTitleChange(e.target.value)}
                   placeholder="Jméno nebo název akce"
                 />
+                <datalist id="dayform-member-suggestions">
+                  {members.map((m) => (
+                    <option key={m.id} value={m.name} />
+                  ))}
+                </datalist>
               </label>
               <label className="text-sm">
                 Od
@@ -1255,6 +1303,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
         <QuickAddModal
           resource={quickAdd.resource}
           date={quickAdd.date}
+          members={members}
           onClose={() => setQuickAdd(null)}
           onSaved={load}
           onOpenDay={() => {
