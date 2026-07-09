@@ -383,6 +383,21 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
     }
   }
 
+  async function deleteBooking(id: string) {
+    if (!confirm("Smazat tuto rezervaci?")) return;
+    setError(null);
+    const res = await fetch(`/api/bookings/${id}`, {
+      method: "DELETE",
+      headers: { "x-admin-token": token },
+    });
+    if (res.ok) {
+      load();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Nepodařilo se smazat.");
+    }
+  }
+
   const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
 
   return (
@@ -489,14 +504,15 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                   <div className="w-24 shrink-0 text-sm">{RESOURCE_LABELS[r]}</div>
                   <div className="relative flex-1 h-7 bg-gray-100 rounded-md">
                     {confirmedByResourceToday[r].map((b) => (
-                      <div
+                      <button
                         key={b.id}
-                        className="absolute top-0 bottom-0 bg-[#5DCAA5] rounded-md text-[11px] text-[#04342C] flex items-center px-1.5 overflow-hidden whitespace-nowrap"
+                        onClick={() => deleteBooking(b.id)}
+                        className="absolute top-0 bottom-0 bg-[#5DCAA5] rounded-md text-[11px] text-[#04342C] flex items-center px-1.5 overflow-hidden whitespace-nowrap hover:bg-red-200 hover:text-red-900"
                         style={{ left: `${pct(b.startTime)}%`, width: `${pct(b.endTime) - pct(b.startTime)}%` }}
-                        title={`${b.title} ${b.startTime}–${b.endTime}`}
+                        title={`${b.title} ${b.startTime}–${b.endTime} — klik pro smazání`}
                       >
                         {b.title}
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>

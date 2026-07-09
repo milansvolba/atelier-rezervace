@@ -55,6 +55,11 @@ export const store = {
     const rows = await sql`SELECT * FROM bookings WHERE date = ${date}`;
     return rows.map(rowToBooking);
   },
+
+  async remove(id: string): Promise<void> {
+    await ensureSchema();
+    await sql`DELETE FROM bookings WHERE id = ${id}`;
+  },
 };
 
 // Zjistí, jestli by nová rezervace kolidovala s existujícími potvrzenými.
