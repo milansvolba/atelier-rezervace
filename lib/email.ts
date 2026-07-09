@@ -60,6 +60,18 @@ export async function sendMagicLinkEmail(user: { name: string; email: string }, 
   await send(user.email, subject, html);
 }
 
+// --- Uvítací e-mail pro nově založený účet (rovnou s přihlašovacím odkazem) ---
+export async function sendWelcomeEmail(user: { name: string; email: string; role: "admin" | "member" }, link: string) {
+  const subject = "Vítejte v Atelieru na Pobřeží! 🎉";
+  const html = wrap(`
+    <p>Ahoj ${user.name}!</p>
+    <p>Právě jsi dostal/a přístup do rezervačního systému Atelieru na Pobřeží 🎨 — od teď si můžeš sám/sama zabookovat stůl, okno, pingpong, nebo klidně celou klubovnu, bez čekání na schválení.</p>
+    <p style="margin-top:20px;"><a href="${link}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Pojď dovnitř →</a></p>
+    <p style="color:#888;font-size:13px;margin-top:16px;">Tenhle odkaz platí 15 minut. Až vyprší, stačí na přihlašovací stránce znovu zadat svůj e-mail a pošleme nový.</p>
+  `);
+  await send(user.email, subject, html);
+}
+
 // --- Adminům: nová žádost od veřejnosti ---
 export async function sendAdminNewRequestEmail(booking: Booking) {
   const what = isWholeSpace(booking.resource)

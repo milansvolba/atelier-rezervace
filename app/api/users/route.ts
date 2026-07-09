@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { users } from "@/lib/users";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, createMagicLinkToken } from "@/lib/auth";
+import { sendWelcomeEmail } from "@/lib/email";
 
 // GET /api/users — seznam účtů (jen admin)
 export async function GET(req: NextRequest) {
@@ -18,5 +19,11 @@ export async function POST(req: NextRequest) {
   const existing = await users.byEmail(email);
   if (existing) return NextResponse.json({ error: "tento e-mail už účet má" }, { status: 409 });
   const user = await users.add({ name, email, role });
+
+  const token = await createMagicLinkToken(user.email);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rezervace.ateliernapobrezi.cz";
+  const link = `${appUrl}/api/auth/verify?token=${encodeURIComponent(token)}`;
+  await sendWelcomeEmail(user, link);
+
   return NextResponse.json(user, { status: 201 });
 }
