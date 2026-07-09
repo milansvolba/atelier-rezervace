@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { store } from "@/lib/data";
 import { Booking } from "@/lib/types";
+import { sendAdminNewRequestEmail, sendRequesterReceivedEmail } from "@/lib/email";
 
 // POST /api/requests — veřejný formulář žádosti o pronájem ateliéru / rezervaci místa.
 // Nevytváří potvrzenou rezervaci, jen "pending" záznam čekající na schválení adminem.
@@ -26,9 +27,7 @@ export async function POST(req: NextRequest) {
   };
   await store.add(booking);
 
-  // TODO: až bude appka mít napojený e-mail (Resend), odsud odeslat:
-  // 1) upozornění adminům s deep linkem /admin?focus=<booking.id>
-  // 2) potvrzení přijetí žadateli — texty jsou hotové ve specifikaci.
+  await Promise.all([sendAdminNewRequestEmail(booking), sendRequesterReceivedEmail(booking)]);
 
   return NextResponse.json(booking, { status: 201 });
 }

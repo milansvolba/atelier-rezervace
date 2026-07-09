@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { store, findConflict } from "@/lib/data";
 import { requireAdmin } from "@/lib/auth";
+import { sendBookingChangedEmail, sendBookingCancelledEmail } from "@/lib/email";
 
 // PATCH /api/bookings/:id — admin upravuje existující rezervaci (místo, čas, kdo, kontakt).
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -34,9 +35,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     requesterContact,
   });
 
-  if (notify && (requesterContact || existing.requesterContact)) {
-    // TODO: až bude appka mít napojený e-mail (Resend), odsud poslat žadateli
-    // upozornění o změně termínu na requesterContact ?? existing.requesterContact.
+  const contact = requesterContact || existing.requesterContact;
+  if (notify && contact && updated) {
+    await sendBookingChangedEmail(contact, existing, updated);
   }
 
   return NextResponse.json(updated);
@@ -58,8 +59,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   await store.remove(params.id);
 
   if (notify && existing?.requesterContact) {
-    // TODO: až bude appka mít napojený e-mail (Resend), odsud poslat žadateli
-    // upozornění o zrušení rezervace na existing.requesterContact.
+    await sendBookingCancelledEmail(existing.requesterContact, existing);
   }
 
   return NextResponse.json({ ok: true });

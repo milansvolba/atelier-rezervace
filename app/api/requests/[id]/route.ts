@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { store, findConflict } from "@/lib/data";
 import { requireAdmin } from "@/lib/auth";
+import { sendRequesterDecisionEmail } from "@/lib/email";
 
 // PATCH /api/requests/:id  { action: "approve" | "reject" }
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -19,14 +20,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       );
     }
     await store.update(booking.id, { status: "confirmed" });
-    // TODO: e-mail žadateli "schváleno" (text ve specifikaci)
   } else if (action === "reject") {
     await store.update(booking.id, { status: "rejected" });
-    // TODO: e-mail žadateli "zamítnuto" (text ve specifikaci)
   } else {
     return NextResponse.json({ error: "neznámá akce" }, { status: 400 });
   }
 
   const updated = (await store.all()).find((b) => b.id === params.id);
+  if (updated) await sendRequesterDecisionEmail(updated, action === "approve");
   return NextResponse.json(updated);
 }
