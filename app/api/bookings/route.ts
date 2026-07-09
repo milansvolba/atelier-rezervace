@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 // GET /api/bookings?date=YYYY-MM-DD  — vrátí rezervace pro daný den (interní mřížka)
 export async function GET(req: NextRequest) {
   const date = req.nextUrl.searchParams.get("date");
-  const all = store.all();
+  const all = await store.all();
   return NextResponse.json(date ? all.filter((b) => b.date === date) : all);
 }
 
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   if (!resource || !date || !startTime || !endTime || !title) {
     return NextResponse.json({ error: "chybí povinné údaje" }, { status: 400 });
   }
-  const conflict = findConflict(resource, date, startTime, endTime);
+  const conflict = await findConflict(resource, date, startTime, endTime);
   if (conflict) {
     return NextResponse.json(
       { error: `Termín koliduje s existující rezervací: ${conflict.title} (${conflict.startTime}–${conflict.endTime})` },
@@ -37,6 +37,6 @@ export async function POST(req: NextRequest) {
     source: "admin",
     createdAt: new Date().toISOString(),
   };
-  store.add(booking);
+  await store.add(booking);
   return NextResponse.json(booking, { status: 201 });
 }

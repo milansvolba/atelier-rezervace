@@ -1,134 +1,73 @@
+import { sql, ensureSchema } from "./db";
 import { Booking, ResourceId, resourcesConflict, timesOverlap } from "./types";
 
-// DEMO ÚLOŽIŠTĚ — pole v paměti procesu. Přežije jen v rámci jednoho "teplého"
-// serverless běhu na Vercelu, po chvíli nečinnosti nebo redeploy zmizí.
-// Než appku začnete používat naostro, tohle je potřeba vyměnit za skutečnou
-// databázi (např. Vercel Postgres) — viz poznámka v README.md.
-
-function todayISO(offsetDays = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+function rowToBooking(r: Record<string, unknown>): Booking {
+  const date = r.date as string | Date;
+  const created = r.created_at as string | Date;
+  return {
+    id: r.id as string,
+    resource: r.resource as ResourceId,
+    date: typeof date === "string" ? date.slice(0, 10) : date.toISOString().slice(0, 10),
+    startTime: r.start_time as string,
+    endTime: r.end_time as string,
+    title: r.title as string,
+    requesterName: (r.requester_name as string) ?? undefined,
+    requesterContact: (r.requester_contact as string) ?? undefined,
+    note: (r.note as string) ?? undefined,
+    status: r.status as Booking["status"],
+    source: r.source as Booking["source"],
+    extraMonitor: (r.extra_monitor as boolean) ?? false,
+    createdAt: typeof created === "string" ? created : created.toISOString(),
+  };
 }
 
-const seed: Booking[] = [
-  {
-    id: "b1",
-    resource: "okno1",
-    date: todayISO(0),
-    startTime: "09:00",
-    endTime: "12:00",
-    title: "Petra — coworking",
-    status: "confirmed",
-    source: "admin",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "b2",
-    resource: "stul1",
-    date: todayISO(0),
-    startTime: "10:00",
-    endTime: "13:00",
-    title: "Jakub — coworking",
-    status: "confirmed",
-    source: "admin",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "b3",
-    resource: "stul1",
-    date: todayISO(0),
-    startTime: "14:00",
-    endTime: "18:00",
-    title: "Tomáš — coworking",
-    extraMonitor: true,
-    status: "confirmed",
-    source: "admin",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "b4",
-    resource: "bar",
-    date: todayISO(0),
-    startTime: "13:00",
-    endTime: "15:00",
-    title: "host",
-    status: "confirmed",
-    source: "admin",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "b5",
-    resource: "atelier",
-    date: todayISO(3),
-    startTime: "16:00",
-    endTime: "19:00",
-    title: "Kurz keramiky se Zuzkou",
-    status: "confirmed",
-    source: "admin",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "b6",
-    resource: "atelier",
-    date: todayISO(3),
-    startTime: "9:00",
-    endTime: "17:00",
-    title: "Oslava narozenin — Tomáš V.",
-    requesterName: "Tomáš V.",
-    requesterContact: "tomas@example.com",
-    status: "confirmed",
-    source: "public",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "b7",
-    resource: "stul2",
-    date: todayISO(11),
-    startTime: "09:00",
-    endTime: "17:00",
-    title: "Kurz keramiky (jiný lektor) — čeká na schválení",
-    requesterName: "Klára N.",
-    requesterContact: "klara@example.com",
-    note: "Ráda by využila i druhý monitor.",
-    status: "pending",
-    source: "public",
-    createdAt: new Date().toISOString(),
-  },
-];
-
-// globalThis trik, aby pole přežilo hot-reload v dev módu
-const g = globalThis as unknown as { __bookings?: Booking[] };
-if (!g.__bookings) g.__bookings = seed;
 export const store = {
-  all(): Booking[] {
-    return g.__bookings!;
+  async all(): Promise<Booking[]> {
+    await ensureSchema();
+    const rows = await sql`SELECT * FROM bookings ORDER BY date, start_time`;
+    return rows.map(rowToBooking);
   },
-  add(b: Booking) {
-    g.__bookings!.push(b);
+
+  async add(b: Booking): Promise<Booking> {
+    await ensureSchema();
+    await sql`
+      INSERT INTO bookings
+        (id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, created_at)
+      VALUES
+        (${b.id}, ${b.resource}, ${b.date}, ${b.startTime}, ${b.endTime}, ${b.title},
+         ${b.requesterName ?? null}, ${b.requesterContact ?? null}, ${b.note ?? null},
+         ${b.status}, ${b.source}, ${b.extraMonitor ?? false}, ${b.createdAt})
+    `;
     return b;
   },
-  update(id: string, patch: Partial<Booking>) {
-    const b = g.__bookings!.find((x) => x.id === id);
-    if (!b) return null;
-    Object.assign(b, patch);
-    return b;
+
+  async update(id: string, patch: Partial<Booking>): Promise<Booking | null> {
+    await ensureSchema();
+    if (patch.status) {
+      await sql`UPDATE bookings SET status = ${patch.status} WHERE id = ${id}`;
+    }
+    const rows = await sql`SELECT * FROM bookings WHERE id = ${id}`;
+    return rows[0] ? rowToBooking(rows[0]) : null;
   },
-  byDate(date: string) {
-    return g.__bookings!.filter((b) => b.date === date);
+
+  async byDate(date: string): Promise<Booking[]> {
+    await ensureSchema();
+    const rows = await sql`SELECT * FROM bookings WHERE date = ${date}`;
+    return rows.map(rowToBooking);
   },
 };
 
 // Zjistí, jestli by nová rezervace kolidovala s existujícími potvrzenými.
 // Nepotvrzené (pending) žádosti podle specifikace nic neblokují, dokud je admin neschválí.
-export function findConflict(
+export async function findConflict(
   resource: ResourceId,
   date: string,
   startTime: string,
   endTime: string,
   ignoreId?: string
-): Booking | null {
-  const existing = store.byDate(date).filter((b) => b.status === "confirmed" && b.id !== ignoreId);
+): Promise<Booking | null> {
+  const dayBookings = await store.byDate(date);
+  const existing = dayBookings.filter((b) => b.status === "confirmed" && b.id !== ignoreId);
   for (const b of existing) {
     if (resourcesConflict(resource, b.resource) && timesOverlap(startTime, endTime, b.startTime, b.endTime)) {
       return b;

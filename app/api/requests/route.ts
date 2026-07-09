@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     source: "public",
     createdAt: new Date().toISOString(),
   };
-  store.add(booking);
+  await store.add(booking);
 
   // TODO: až bude appka mít napojený e-mail (Resend), odsud odeslat:
   // 1) upozornění adminům s deep linkem /admin?focus=<booking.id>
