@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import HeaderNav from "@/components/HeaderNav";
 
 export const metadata: Metadata = {
   title: "Atelier na Pobřeží — rezervace",
@@ -15,9 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/" className="font-medium text-lg">
               Atelier na Pobřeží
             </a>
-            <a href="/admin" className="text-sm text-gray-500 hover:text-gray-800">
-              Přihlásit
-            </a>
+            <HeaderNav />
           </header>
           {children}
         </div>
