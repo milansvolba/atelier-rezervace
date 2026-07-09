@@ -580,6 +580,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
   const [error, setError] = useState<string | null>(null);
   const [quickAdd, setQuickAdd] = useState<{ resource: ResourceId; date: string } | null>(null);
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [form, setForm] = useState<{ resource: ResourceId; startTime: string; endTime: string; title: string; requesterContact: string }>({
     resource: "stul1",
     startTime: "09:00",
@@ -641,9 +642,14 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
     const res = await fetch(`/api/requests/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", "x-admin-token": token },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, note: noteDrafts[id] }),
     });
     if (res.ok) {
+      setNoteDrafts((d) => {
+        const next = { ...d };
+        delete next[id];
+        return next;
+      });
       load();
     } else {
       const data = await res.json();
@@ -722,25 +728,33 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
             {pending.map((p) => (
               <div
                 key={p.id}
-                className="border-t border-gray-100 pt-3 first:border-t-0 first:pt-0 flex items-center justify-between gap-3"
+                className="border-t border-gray-100 pt-3 first:border-t-0 first:pt-0 space-y-2"
               >
-                <div>
-                  <p className="text-sm font-medium">
-                    {RESOURCE_LABELS[p.resource]} · {fmt(new Date(p.date))} {p.startTime}–{p.endTime}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {p.requesterName} · {p.requesterContact}
-                    {p.note ? ` · ${p.note}` : ""}
-                  </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {RESOURCE_LABELS[p.resource]} · {fmt(new Date(p.date))} {p.startTime}–{p.endTime}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {p.requesterName} · {p.requesterContact}
+                      {p.note ? ` · ${p.note}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => decide(p.id, "approve")} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
+                      Schválit
+                    </button>
+                    <button onClick={() => decide(p.id, "reject")} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
+                      Zamítnout
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <button onClick={() => decide(p.id, "approve")} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
-                    Schválit
-                  </button>
-                  <button onClick={() => decide(p.id, "reject")} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
-                    Zamítnout
-                  </button>
-                </div>
+                <input
+                  className="w-full h-8 border border-gray-200 rounded-md px-2 text-xs"
+                  placeholder="Poznámka pro žadatele (nepovinné, přidá se do e-mailu s rozhodnutím)"
+                  value={noteDrafts[p.id] || ""}
+                  onChange={(e) => setNoteDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
+                />
               </div>
             ))}
           </div>

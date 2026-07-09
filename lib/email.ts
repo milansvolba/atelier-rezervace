@@ -77,18 +77,19 @@ export async function sendRequesterReceivedEmail(booking: Booking) {
   if (booking.requesterContact) await send(booking.requesterContact, subject, html);
 }
 
-// --- Žadateli: rozhodnutí (schváleno / zamítnuto) ---
-export async function sendRequesterDecisionEmail(booking: Booking, approved: boolean) {
+// --- Žadateli: rozhodnutí (schváleno / zamítnuto), volitelně s poznámkou od admina ---
+export async function sendRequesterDecisionEmail(booking: Booking, approved: boolean, adminNote?: string) {
   const what = isWholeSpace(booking.resource)
     ? `pronájem ${RESOURCE_LABELS[booking.resource].toLowerCase()}`
     : `rezervaci místa ${RESOURCE_LABELS[booking.resource]}`;
   const subject = approved
     ? `Vaše rezervace je potvrzená — ${fmtDate(booking.date)}`
     : `K vaší žádosti — ${fmtDate(booking.date)}`;
+  const note = adminNote?.trim();
   const html = wrap(
     approved
-      ? `<p>Dobrý den ${booking.requesterName || ""},</p><p>vaše žádost o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} je potvrzená.</p><p>Těšíme se na vás.</p>`
-      : `<p>Dobrý den ${booking.requesterName || ""},</p><p>vaši žádost o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} bohužel nemůžeme potvrdit. Pokud vám vyhovuje jiný termín, napište nám znovu.</p>`
+      ? `<p>Dobrý den ${booking.requesterName || ""},</p><p>vaše žádost o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} je potvrzená.</p>${note ? `<p>Poznámka: ${note}</p>` : ""}<p>Těšíme se na vás.</p>`
+      : `<p>Dobrý den ${booking.requesterName || ""},</p><p>vaši žádost o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} bohužel nemůžeme potvrdit${note ? `, ${note}` : ""}.</p><p>Pokud vám vyhovuje jiný termín, napište nám znovu.</p>`
   );
   if (booking.requesterContact) await send(booking.requesterContact, subject, html);
 }
