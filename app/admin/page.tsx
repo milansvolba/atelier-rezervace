@@ -625,7 +625,7 @@ function BookingDetailModal({
 }
 
 // Správa účtů (jen admin) — ruční přidání/odebrání jmenných účtů.
-function MembersPanel() {
+function MembersPanel({ onClose }: { onClose: () => void }) {
   const [list, setList] = useState<AppUser[]>([]);
   const [form, setForm] = useState<{ name: string; email: string; role: Role }>({
     name: "",
@@ -676,8 +676,15 @@ function MembersPanel() {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-      <p className="font-medium">Účty</p>
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+    <div className="bg-white rounded-xl p-5 w-full max-w-md space-y-4 max-h-[85vh] overflow-y-auto">
+      <div className="flex items-center justify-between">
+        <p className="font-medium">Účty</p>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-sm">✕</button>
+      </div>
       {list.length > 0 && (
         <div className="space-y-2">
           {list.map((u) => (
@@ -732,6 +739,7 @@ function MembersPanel() {
       </form>
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
+    </div>
   );
 }
 
@@ -744,6 +752,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   const [quickAdd, setQuickAdd] = useState<{ resource: ResourceId; date: string } | null>(null);
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
+  const [showMembers, setShowMembers] = useState(false);
   const [form, setForm] = useState<{ resource: ResourceId; startTime: string; endTime: string; title: string; requesterContact: string }>({
     resource: "stul1",
     startTime: "09:00",
@@ -849,6 +858,11 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           <span className="text-xs text-gray-400">
             {session.name} · {isAdmin ? "admin" : "člen"}
           </span>
+          {isAdmin && (
+            <button onClick={() => setShowMembers(true)} className="text-sm text-gray-500 hover:text-gray-800">
+              Účty
+            </button>
+          )}
           <button onClick={onLogout} className="text-sm text-gray-500 hover:text-gray-800">
             Odhlásit
           </button>
@@ -899,32 +913,37 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
       {error && <div className="bg-white border border-red-200 text-red-600 rounded-xl p-3 text-sm">{error}</div>}
 
       {isAdmin && pending.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="font-medium mb-3">Žádosti ke schválení ({pending.length})</p>
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-full bg-amber-500 text-white text-xs font-bold">
+              {pending.length}
+            </span>
+            <p className="font-semibold text-amber-900">Žádosti ke schválení</p>
+          </div>
           <div className="space-y-3">
             {pending.map((p) => (
-              <div key={p.id} className="border-t border-gray-100 pt-3 first:border-t-0 first:pt-0 space-y-2">
+              <div key={p.id} className="border-t border-amber-200 pt-3 first:border-t-0 first:pt-0 space-y-2">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium">
+                    <p className="text-sm font-medium text-amber-950">
                       {RESOURCE_LABELS[p.resource]} · {fmt(new Date(p.date))} {p.startTime}–{p.endTime}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-amber-800/70">
                       {p.requesterName} · {p.requesterContact}
                       {p.note ? ` · ${p.note}` : ""}
                     </p>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button onClick={() => decide(p.id, "approve")} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
+                    <button onClick={() => decide(p.id, "approve")} className="h-8 px-3 rounded-md bg-white border border-amber-300 text-xs hover:bg-amber-100">
                       Schválit
                     </button>
-                    <button onClick={() => decide(p.id, "reject")} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
+                    <button onClick={() => decide(p.id, "reject")} className="h-8 px-3 rounded-md bg-white border border-amber-300 text-xs hover:bg-amber-100">
                       Zamítnout
                     </button>
                   </div>
                 </div>
                 <input
-                  className="w-full h-8 border border-gray-200 rounded-md px-2 text-xs"
+                  className="w-full h-8 border border-amber-200 rounded-md px-2 text-xs bg-white"
                   placeholder="Poznámka pro žadatele (nepovinné, přidá se do e-mailu s rozhodnutím)"
                   value={noteDrafts[p.id] || ""}
                   onChange={(e) => setNoteDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
@@ -958,8 +977,6 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           </div>
         </div>
       )}
-
-      {isAdmin && <MembersPanel />}
 
       {view === "day" && (
         <>
@@ -1250,6 +1267,8 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
       {detailBooking && (
         <BookingDetailModal booking={detailBooking} onClose={() => setDetailBooking(null)} onSaved={load} />
       )}
+
+      {showMembers && <MembersPanel onClose={() => setShowMembers(false)} />}
     </main>
   );
 }
