@@ -67,7 +67,7 @@ const PUBLIC_RESOURCE_OPTIONS: { value: ResourceId; label: string }[] = [
 
 export default function PublicPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [view, setView] = useState<ViewMode>("week");
+  const [view, setView] = useState<ViewMode>("month");
   const [showForm, setShowForm] = useState(false);
   const [resource, setResource] = useState<ResourceId>("atelier");
   const [date, setDate] = useState("");
@@ -181,7 +181,7 @@ export default function PublicPage() {
         </div>
         <p className="text-sm font-medium text-gray-700 mb-1">{publicRangeLabel(view, today)}</p>
         <p className="text-sm text-gray-500 mb-4">
-          Modrá = obsazené jen nějaké pracovní místo, o celý prostor si můžete i tak napsat — domluvíme se.
+          Modrá = zkuste to i tak napsat, obvykle se dá domluvit.
         </p>
 
         {view === "week" && (
@@ -203,7 +203,11 @@ export default function PublicPage() {
         {view !== "week" && (
           <div
             className={`mb-4 grid gap-4 ${
-              view === "month" ? "grid-cols-1" : view === "quarter" ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+              view === "month"
+                ? "grid-cols-1 max-w-xs"
+                : view === "quarter"
+                ? "grid-cols-1 sm:grid-cols-3"
+                : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
             }`}
           >
             {monthsToShow.map(({ year, month }) => (
@@ -218,9 +222,9 @@ export default function PublicPage() {
                     </div>
                   ))}
                 </div>
-                <div className="space-y-1">
+                <div className={view === "month" ? "space-y-0.5" : "space-y-1"}>
                   {monthMatrix(year, month).map((week, wi) => (
-                    <div key={wi} className="grid grid-cols-7 gap-1">
+                    <div key={wi} className={`grid grid-cols-7 ${view === "month" ? "gap-0.5" : "gap-1"}`}>
                       {week.map((d, di) =>
                         d ? (
                           <div
