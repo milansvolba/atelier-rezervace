@@ -37,6 +37,16 @@ function fmtFull(d: Date) {
   return `${d.getDate()}. ${MONTH_NAMES[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
 }
 
+const RESOURCE_OPTIONS: { value: ResourceId; label: string }[] = [
+  { value: "okno1", label: "Okno 1" },
+  { value: "stul1", label: "Stůl 1" },
+  { value: "stul2", label: "Stůl 2" },
+  { value: "bar", label: "Bar" },
+  { value: "pingpong", label: "Pingpongový stůl" },
+  { value: "klubovna", label: "Klubovna (celá)" },
+  { value: "atelier", label: "Celý ateliér / kurz" },
+];
+
 // Rychlé dvouhodinové bloky pro pingpong / krátké rezervace — ať admin nemusí
 // pokaždé ručně vypisovat čas.
 function twoHourBlocks() {
@@ -183,7 +193,7 @@ function QuickAddModal({
   onSaved: () => void;
   onOpenDay: () => void;
 }) {
-  const [form, setForm] = useState({ resource, startTime: "09:00", endTime: "11:00", title: "" });
+  const [form, setForm] = useState({ resource, startTime: "09:00", endTime: "11:00", title: "", requesterContact: "" });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
@@ -229,13 +239,11 @@ function QuickAddModal({
             value={form.resource}
             onChange={(e) => setForm((f) => ({ ...f, resource: e.target.value as ResourceId }))}
           >
-            <option value="okno1">Okno 1</option>
-            <option value="stul1">Stůl 1</option>
-            <option value="stul2">Stůl 2</option>
-            <option value="bar">Bar</option>
-            <option value="pingpong">Pingpongový stůl</option>
-            <option value="klubovna">Klubovna (celá)</option>
-            <option value="atelier">Celý ateliér / kurz</option>
+            {RESOURCE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
           </select>
         </label>
 
@@ -291,6 +299,16 @@ function QuickAddModal({
           </div>
         )}
 
+        <label className="block text-sm">
+          Kontakt (pro upozornění, nepovinné)
+          <input
+            className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+            value={form.requesterContact}
+            onChange={(e) => setForm((f) => ({ ...f, requesterContact: e.target.value }))}
+            placeholder="e-mail nebo telefon"
+          />
+        </label>
+
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="flex items-center justify-between pt-1">
@@ -306,6 +324,254 @@ function QuickAddModal({
   );
 }
 
+// Detail existující rezervace — náhled, úprava, nebo smazání, s volitelným
+// upozorněním rezervisty e-mailem (pokud u rezervace máme kontakt).
+function BookingDetailModal({
+  token,
+  booking,
+  onClose,
+  onSaved,
+}: {
+  token: string;
+  booking: Booking;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [mode, setMode] = useState<"view" | "edit" | "delete">("view");
+  const [form, setForm] = useState({
+    resource: booking.resource,
+    date: booking.date,
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    title: booking.title,
+    requesterContact: booking.requesterContact || "",
+  });
+  const [notify, setNotify] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
+  const hasContact = !!(booking.requesterContact || form.requesterContact);
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    const res = await fetch(`/api/bookings/${booking.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      body: JSON.stringify({ ...form, notify }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      onSaved();
+      onClose();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Nepodařilo se uložit.");
+    }
+  }
+
+  async function confirmDelete() {
+    setError(null);
+    setSaving(true);
+    const res = await fetch(`/api/bookings/${booking.id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      body: JSON.stringify({ notify }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      onSaved();
+      onClose();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Nepodařilo se smazat.");
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="font-medium">
+            {mode === "view" ? "Detail rezervace" : mode === "edit" ? "Změnit rezervaci" : "Smazat rezervaci"}
+          </p>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-sm">
+            ✕
+          </button>
+        </div>
+
+        {mode === "view" && (
+          <>
+            <div className="text-sm space-y-1">
+              <p>
+                <span className="text-gray-500">Kde:</span> {RESOURCE_LABELS[booking.resource]}
+              </p>
+              <p>
+                <span className="text-gray-500">Kdy:</span> {fmt(new Date(booking.date))} {booking.startTime}–{booking.endTime}
+              </p>
+              <p>
+                <span className="text-gray-500">Kdo:</span> {booking.title}
+              </p>
+              <p>
+                <span className="text-gray-500">Kontakt:</span> {booking.requesterContact || "— (nezadán)"}
+              </p>
+            </div>
+            <div className="flex items-center justify-between pt-2">
+              <button
+                onClick={() => setMode("delete")}
+                className="h-9 px-3 rounded-md border border-red-200 text-red-600 text-sm"
+              >
+                Smazat
+              </button>
+              <button onClick={() => setMode("edit")} className="h-9 px-3 rounded-md bg-gray-900 text-white text-sm">
+                Změnit
+              </button>
+            </div>
+          </>
+        )}
+
+        {mode === "edit" && (
+          <form onSubmit={saveEdit} className="space-y-3">
+            <label className="block text-sm">
+              Místo
+              <select
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={form.resource}
+                onChange={(e) => setForm((f) => ({ ...f, resource: e.target.value as ResourceId }))}
+              >
+                {RESOURCE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm">
+              Kdo / co
+              <input
+                required
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              />
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              <label className="text-sm">
+                Datum
+                <input
+                  type="date"
+                  className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                  value={form.date}
+                  onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                />
+              </label>
+              <label className="text-sm">
+                Od
+                <input
+                  type="time"
+                  className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                  value={form.startTime}
+                  onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
+                />
+              </label>
+              <label className="text-sm">
+                Do
+                <input
+                  type="time"
+                  className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                  value={form.endTime}
+                  onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
+                />
+              </label>
+            </div>
+            {showQuickBlocks && (
+              <div className="flex flex-wrap gap-2">
+                {twoHourBlocks().map((b) => (
+                  <button
+                    type="button"
+                    key={b.start}
+                    onClick={() => setForm((f) => ({ ...f, startTime: b.start, endTime: b.end }))}
+                    className={`h-8 px-2.5 rounded-md border text-xs ${
+                      form.startTime === b.start && form.endTime === b.end
+                        ? "border-gray-800 font-medium"
+                        : "border-gray-300 text-gray-500"
+                    }`}
+                  >
+                    {b.start}–{b.end}
+                  </button>
+                ))}
+              </div>
+            )}
+            <label className="block text-sm">
+              Kontakt (pro upozornění, nepovinné)
+              <input
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={form.requesterContact}
+                onChange={(e) => setForm((f) => ({ ...f, requesterContact: e.target.value }))}
+                placeholder="e-mail nebo telefon"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                disabled={!hasContact}
+                checked={notify}
+                onChange={(e) => setNotify(e.target.checked)}
+              />
+              Informovat rezervistu o změně
+              {!hasContact && <span className="text-xs text-gray-400">(chybí kontakt)</span>}
+            </label>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <div className="flex items-center justify-between pt-1">
+              <button type="button" onClick={() => setMode("view")} className="text-xs text-gray-500 hover:text-gray-800">
+                ← Zpět
+              </button>
+              <button disabled={saving} className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm disabled:opacity-50">
+                {saving ? "Ukládám…" : "Uložit změny"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {mode === "delete" && (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">
+              Opravdu smazat rezervaci „{booking.title}" ({fmt(new Date(booking.date))} {booking.startTime}–{booking.endTime})?
+            </p>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                disabled={!hasContact}
+                checked={notify}
+                onChange={(e) => setNotify(e.target.checked)}
+              />
+              Informovat rezervistu o zrušení
+              {!hasContact && <span className="text-xs text-gray-400">(chybí kontakt)</span>}
+            </label>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <div className="flex items-center justify-between pt-1">
+              <button type="button" onClick={() => setMode("view")} className="text-xs text-gray-500 hover:text-gray-800">
+                ← Zpět
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={saving}
+                className="h-10 px-4 rounded-md bg-red-600 text-white text-sm disabled:opacity-50"
+              >
+                {saving ? "Mažu…" : "Potvrdit smazání"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [view, setView] = useState<ViewMode>("day");
   const [anchor, setAnchor] = useState(new Date());
@@ -313,11 +579,13 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [quickAdd, setQuickAdd] = useState<{ resource: ResourceId; date: string } | null>(null);
-  const [form, setForm] = useState<{ resource: ResourceId; startTime: string; endTime: string; title: string }>({
+  const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
+  const [form, setForm] = useState<{ resource: ResourceId; startTime: string; endTime: string; title: string; requesterContact: string }>({
     resource: "stul1",
     startTime: "09:00",
     endTime: "11:00",
     title: "",
+    requesterContact: "",
   });
 
   const date = iso(anchor);
@@ -360,7 +628,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
       body: JSON.stringify({ ...form, date }),
     });
     if (res.ok) {
-      setForm((f) => ({ ...f, title: "" }));
+      setForm((f) => ({ ...f, title: "", requesterContact: "" }));
       load();
     } else {
       const data = await res.json();
@@ -380,21 +648,6 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
     } else {
       const data = await res.json();
       setError(data.error || "Nepodařilo se rozhodnout.");
-    }
-  }
-
-  async function deleteBooking(id: string) {
-    if (!confirm("Smazat tuto rezervaci?")) return;
-    setError(null);
-    const res = await fetch(`/api/bookings/${id}`, {
-      method: "DELETE",
-      headers: { "x-admin-token": token },
-    });
-    if (res.ok) {
-      load();
-    } else {
-      const data = await res.json();
-      setError(data.error || "Nepodařilo se smazat.");
     }
   }
 
@@ -506,10 +759,10 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                     {confirmedByResourceToday[r].map((b) => (
                       <button
                         key={b.id}
-                        onClick={() => deleteBooking(b.id)}
-                        className="absolute top-0 bottom-0 bg-[#5DCAA5] rounded-md text-[11px] text-[#04342C] flex items-center px-1.5 overflow-hidden whitespace-nowrap hover:bg-red-200 hover:text-red-900"
+                        onClick={() => setDetailBooking(b)}
+                        className="absolute top-0 bottom-0 bg-[#5DCAA5] rounded-md text-[11px] text-[#04342C] flex items-center px-1.5 overflow-hidden whitespace-nowrap hover:opacity-80"
                         style={{ left: `${pct(b.startTime)}%`, width: `${pct(b.endTime) - pct(b.startTime)}%` }}
-                        title={`${b.title} ${b.startTime}–${b.endTime} — klik pro smazání`}
+                        title={`${b.title} ${b.startTime}–${b.endTime} — klik pro detail`}
                       >
                         {b.title}
                       </button>
@@ -530,13 +783,11 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                   value={form.resource}
                   onChange={(e) => setForm((f) => ({ ...f, resource: e.target.value as ResourceId }))}
                 >
-                  <option value="okno1">Okno 1</option>
-                  <option value="stul1">Stůl 1</option>
-                  <option value="stul2">Stůl 2</option>
-                  <option value="bar">Bar</option>
-                  <option value="pingpong">Pingpongový stůl</option>
-                  <option value="klubovna">Klubovna (celá)</option>
-                  <option value="atelier">Celý ateliér / kurz</option>
+                  {RESOURCE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="text-sm">
@@ -588,6 +839,16 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
               </div>
             )}
 
+            <label className="block text-sm">
+              Kontakt (pro upozornění, nepovinné)
+              <input
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={form.requesterContact}
+                onChange={(e) => setForm((f) => ({ ...f, requesterContact: e.target.value }))}
+                placeholder="e-mail nebo telefon"
+              />
+            </label>
+
             <button className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm">Zapsat rezervaci</button>
           </form>
         </>
@@ -638,7 +899,11 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                     return (
                       <td key={i} className="p-1">
                         <button
-                          onClick={() => setQuickAdd({ resource: r, date: dISO })}
+                          onClick={() =>
+                            eff.kind === "confirmed" && eff.items.length === 1
+                              ? setDetailBooking(eff.items[0])
+                              : setQuickAdd({ resource: r, date: dISO })
+                          }
                           title={hoverTitle}
                           className={`w-full h-10 rounded-md text-[10px] px-1 flex items-center justify-center text-center overflow-hidden ${cellClasses(
                             eff.kind
@@ -709,12 +974,19 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
                         return (
                           <button
                             key={di}
-                            onClick={() =>
+                            onClick={() => {
+                              if (filterResource !== "summary") {
+                                const eff = effectiveStatus(filterResource, dISO, bookings);
+                                if (eff.kind === "confirmed" && eff.items.length === 1) {
+                                  setDetailBooking(eff.items[0]);
+                                  return;
+                                }
+                              }
                               setQuickAdd({
                                 resource: filterResource === "summary" ? "stul1" : filterResource,
                                 date: dISO,
-                              })
-                            }
+                              });
+                            }}
                             title={title}
                             className={`aspect-square rounded-sm text-[10px] flex items-center justify-center ${cellClasses(
                               kind as Effective["kind"]
@@ -759,6 +1031,15 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
             goto("day", new Date(quickAdd.date));
             setQuickAdd(null);
           }}
+        />
+      )}
+
+      {detailBooking && (
+        <BookingDetailModal
+          token={token}
+          booking={detailBooking}
+          onClose={() => setDetailBooking(null)}
+          onSaved={load}
         />
       )}
     </main>

@@ -43,9 +43,17 @@ export const store = {
 
   async update(id: string, patch: Partial<Booking>): Promise<Booking | null> {
     await ensureSchema();
-    if (patch.status) {
-      await sql`UPDATE bookings SET status = ${patch.status} WHERE id = ${id}`;
-    }
+    await sql`
+      UPDATE bookings SET
+        resource = COALESCE(${patch.resource ?? null}, resource),
+        date = COALESCE(${patch.date ?? null}, date),
+        start_time = COALESCE(${patch.startTime ?? null}, start_time),
+        end_time = COALESCE(${patch.endTime ?? null}, end_time),
+        title = COALESCE(${patch.title ?? null}, title),
+        requester_contact = COALESCE(${patch.requesterContact ?? null}, requester_contact),
+        status = COALESCE(${patch.status ?? null}, status)
+      WHERE id = ${id}
+    `;
     const rows = await sql`SELECT * FROM bookings WHERE id = ${id}`;
     return rows[0] ? rowToBooking(rows[0]) : null;
   },
