@@ -7,8 +7,15 @@ export const MONTH_NAMES = [
   "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec",
 ];
 
+// POZOR: záměrně NEpoužívá toISOString() — ten převádí na UTC a podle časového
+// pásma/hodiny prohlížeče by mohl posunout kalendářní den o jeden vpřed/vzad
+// (typicky kolem půlnoci). Bereme rovnou lokální rok/měsíc/den tak, jak je
+// uživatel v prohlížeči vidí.
 export function iso(d: Date) {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export function addDays(d: Date, n: number) {

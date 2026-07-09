@@ -7,7 +7,13 @@ function rowToBooking(r: Record<string, unknown>): Booking {
   return {
     id: r.id as string,
     resource: r.resource as ResourceId,
-    date: typeof date === "string" ? date.slice(0, 10) : date.toISOString().slice(0, 10),
+    // Postgres date sloupec nemá časové pásmo — pokud by ho ovladač vrátil jako
+    // Date objekt (Neon HTTP driver ale běžně vrací rovnou řetězec), bereme
+    // UTC složky, ne lokální/toISOString (to by mohlo posunout den, viz lib/calendar.ts).
+    date:
+      typeof date === "string"
+        ? date.slice(0, 10)
+        : `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`,
     startTime: r.start_time as string,
     endTime: r.end_time as string,
     title: r.title as string,
