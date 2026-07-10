@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Booking, ResourceId, RESOURCE_LABELS } from "@/lib/types";
 import { DAY_NAMES, DAY_NAMES_MON_FIRST, MONTH_NAMES, addDays, iso, monthMatrix, nextDays } from "@/lib/calendar";
 
@@ -78,6 +78,7 @@ export default function PublicPage() {
   const [note, setNote] = useState("");
   const [submitted, setSubmitted] = useState<null | "ok" | "err">(null);
   const [customTime, setCustomTime] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     fetch("/api/bookings")
@@ -108,7 +109,19 @@ export default function PublicPage() {
   }
 
   const today = new Date();
+  const todayISO = iso(today);
   const isWholeSpace = resource === "atelier" || resource === "klubovna";
+
+  // Lidi v testování klikali rovnou na den v kalendáři a čekali, že tím
+  // rezervaci začnou — tak ať to tak i funguje, místo aby museli hledat
+  // samostatné tlačítko "Požádat o rezervaci".
+  function startBookingFor(d: Date) {
+    setDate(iso(d));
+    setShowForm(true);
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
   const isPingpong = resource === "pingpong";
 
   // Při přepnutí typu rezervace rovnou nastavit rozumný výchozí čas, ať vidí
@@ -191,9 +204,14 @@ export default function PublicPage() {
               return (
                 <div key={iso(d)} className="text-center">
                   <div className="text-xs text-gray-400 mb-1">{DAY_NAMES[d.getDay()]}</div>
-                  <div className={`h-10 rounded-md ${statusBg(status)} flex items-center justify-center text-xs`}>
+                  <button
+                    type="button"
+                    onClick={() => startBookingFor(d)}
+                    className={`w-full h-10 rounded-md ${statusBg(status)} flex items-center justify-center text-xs hover:ring-2 hover:ring-gray-300`}
+                    title="Klikněte pro rezervaci tohoto dne"
+                  >
                     {d.getDate()}.
-                  </div>
+                  </button>
                 </div>
               );
             })}
@@ -225,19 +243,24 @@ export default function PublicPage() {
                 <div className={view === "month" ? "space-y-0.5" : "space-y-1"}>
                   {monthMatrix(year, month).map((week, wi) => (
                     <div key={wi} className={`grid grid-cols-7 ${view === "month" ? "gap-0.5" : "gap-1"}`}>
-                      {week.map((d, di) =>
-                        d ? (
-                          <div
+                      {week.map((d, di) => {
+                        if (!d) return <div key={di} />;
+                        const past = iso(d) < todayISO;
+                        return (
+                          <button
+                            type="button"
                             key={di}
-                            className={`aspect-square rounded-sm ${statusBg(dayStatus(d))} flex items-center justify-center text-[10px]`}
-                            title={iso(d)}
+                            disabled={past}
+                            onClick={() => startBookingFor(d)}
+                            title={past ? undefined : "Klikněte pro rezervaci tohoto dne"}
+                            className={`aspect-square rounded-sm ${statusBg(dayStatus(d))} flex items-center justify-center text-[10px] ${
+                              past ? "opacity-40 cursor-default" : "hover:ring-2 hover:ring-gray-300"
+                            }`}
                           >
                             {view === "year" ? "" : d.getDate()}
-                          </div>
-                        ) : (
-                          <div key={di} />
-                        )
-                      )}
+                          </button>
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
@@ -275,7 +298,7 @@ export default function PublicPage() {
       )}
 
       {showForm && (
-        <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+        <form ref={formRef} onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
           <p className="font-medium">Žádost o rezervaci</p>
 
           <label className="block text-sm">
