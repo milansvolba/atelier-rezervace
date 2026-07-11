@@ -75,29 +75,39 @@ export async function sendWelcomeEmail(user: { name: string; email: string; role
 
 // --- Adminům: nová žádost od veřejnosti ---
 export async function sendAdminNewRequestEmail(booking: Booking) {
-  const what = isWholeSpace(booking.resource)
+  const isCourse = booking.category === "kurz";
+  const what = isCourse
+    ? "poptávku na skupinový kurz na míru"
+    : isWholeSpace(booking.resource)
     ? `pronájem ${RESOURCE_LABELS[booking.resource].toLowerCase()}`
     : `rezervaci místa ${RESOURCE_LABELS[booking.resource]}`;
-  const subject = `Nová žádost — ${RESOURCE_LABELS[booking.resource]} (${fmtDate(booking.date)})`;
+  const subject = isCourse
+    ? `Nová poptávka na skupinový kurz (${fmtDate(booking.date)})`
+    : `Nová žádost — ${RESOURCE_LABELS[booking.resource]} (${fmtDate(booking.date)})`;
   const html = wrap(`
-    <p><strong>${booking.requesterName}</strong> žádá o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime}.</p>
-    ${booking.note ? `<p>Účel: ${booking.note}</p>` : ""}
+    <p><strong>${booking.requesterName}</strong> má zájem o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime}.</p>
+    ${booking.note ? `<p>${isCourse ? "Poznámka" : "Účel"}: ${booking.note}</p>` : ""}
     <p>Kontakt: ${booking.requesterContact}</p>
     <p style="margin-top:16px;"><a href="${APP_URL}/admin" style="background:#111;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Zobrazit a rozhodnout</a></p>
-    <p style="color:#888;font-size:13px;">Termín se v rozpisu zablokuje až po schválení.</p>
+    <p style="color:#888;font-size:13px;">${isCourse ? "Termín kurzu se v rozpisu zablokuje až po potvrzení." : "Termín se v rozpisu zablokuje až po schválení."}</p>
   `);
   await send(ADMIN_EMAILS, subject, html);
 }
 
 // --- Žadateli: potvrzení přijetí žádosti ---
 export async function sendRequesterReceivedEmail(booking: Booking) {
-  const what = isWholeSpace(booking.resource)
+  const isCourse = booking.category === "kurz";
+  const what = isCourse
+    ? "poptávku na skupinový kurz na míru"
+    : isWholeSpace(booking.resource)
     ? `pronájem ${RESOURCE_LABELS[booking.resource].toLowerCase()}`
     : `rezervaci místa ${RESOURCE_LABELS[booking.resource]}`;
-  const subject = "Přijali jsme vaši žádost — Atelier na Pobřeží";
+  const subject = isCourse
+    ? "Přijali jsme vaši poptávku na kurz — Atelier na Pobřeží"
+    : "Přijali jsme vaši žádost — Atelier na Pobřeží";
   const html = wrap(`
     <p>Dobrý den ${booking.requesterName || ""},</p>
-    <p>vaši žádost o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} jsme přijali. Ozveme se co nejdřív, nejpozději následující pracovní den.</p>
+    <p>vaši ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} jsme přijali. Ozveme se co nejdřív, nejpozději následující pracovní den${isCourse ? " s potvrzením nebo návrhem nejbližšího volného termínu" : ""}.</p>
   `);
   if (booking.requesterContact) await send(booking.requesterContact, subject, html);
 }
