@@ -44,6 +44,10 @@ export const CONFLICTS: Record<ResourceId, ResourceId[]> = {
 export type BookingStatus = "confirmed" | "pending" | "rejected";
 export type BookingSource = "admin" | "member" | "public";
 
+// Kategorie rezervace: "pronajem" = klasický pronájem prostoru/míst,
+// "kurz" = termín kurzu (veřejně zobrazovaný na /kurzy, se zápisem účastníků).
+export type BookingCategory = "pronajem" | "kurz";
+
 export interface Booking {
   id: string;
   resource: ResourceId;
@@ -58,6 +62,23 @@ export interface Booking {
   source: BookingSource;
   userId?: string; // vyplněno, pokud rezervaci založil přihlášený admin/člen — pro "Moje rezervace"
   extraMonitor?: boolean; // mobilní druhý monitor přisazený ke stolu
+  createdAt: string;
+  category?: BookingCategory; // default "pronajem" u starých záznamů
+  capacity?: number; // kapacita kurzu (počet míst), jen category="kurz"
+  price?: number; // cena kurzu za osobu v Kč, jen category="kurz"
+}
+
+// Přihláška účastníka na vypsaný termín kurzu (Booking s category="kurz").
+export type SignupStatus = "pending" | "confirmed" | "rejected";
+
+export interface CourseSignup {
+  id: string;
+  bookingId: string;
+  name: string;
+  contact: string;
+  people: number; // počet osob
+  note?: string;
+  status: SignupStatus;
   createdAt: string;
 }
 

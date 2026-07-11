@@ -1,5 +1,5 @@
 import { sql, ensureSchema } from "./db";
-import { Booking, ResourceId, resourcesConflict, timesOverlap } from "./types";
+import { Booking, BookingCategory, ResourceId, resourcesConflict, timesOverlap } from "./types";
 
 function rowToBooking(r: Record<string, unknown>): Booking {
   const date = r.date as string | Date;
@@ -25,6 +25,9 @@ function rowToBooking(r: Record<string, unknown>): Booking {
     userId: (r.user_id as string) ?? undefined,
     extraMonitor: (r.extra_monitor as boolean) ?? false,
     createdAt: typeof created === "string" ? created : created.toISOString(),
+    category: ((r.category as BookingCategory) ?? "pronajem") as BookingCategory,
+    capacity: (r.capacity as number) ?? undefined,
+    price: (r.price as number) ?? undefined,
   };
 }
 
@@ -39,11 +42,12 @@ export const store = {
     await ensureSchema();
     await sql`
       INSERT INTO bookings
-        (id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at)
+        (id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price)
       VALUES
         (${b.id}, ${b.resource}, ${b.date}, ${b.startTime}, ${b.endTime}, ${b.title},
          ${b.requesterName ?? null}, ${b.requesterContact ?? null}, ${b.note ?? null},
-         ${b.status}, ${b.source}, ${b.extraMonitor ?? false}, ${b.userId ?? null}, ${b.createdAt})
+         ${b.status}, ${b.source}, ${b.extraMonitor ?? false}, ${b.userId ?? null}, ${b.createdAt},
+         ${b.category ?? "pronajem"}, ${b.capacity ?? null}, ${b.price ?? null})
     `;
     return b;
   },
@@ -58,7 +62,10 @@ export const store = {
         end_time = COALESCE(${patch.endTime ?? null}, end_time),
         title = COALESCE(${patch.title ?? null}, title),
         requester_contact = COALESCE(${patch.requesterContact ?? null}, requester_contact),
-        status = COALESCE(${patch.status ?? null}, status)
+        status = COALESCE(${patch.status ?? null}, status),
+        category = COALESCE(${patch.category ?? null}, category),
+        capacity = COALESCE(${patch.capacity ?? null}, capacity),
+        price = COALESCE(${patch.price ?? null}, price)
       WHERE id = ${id}
     `;
     const rows = await sql`SELECT * FROM bookings WHERE id = ${id}`;

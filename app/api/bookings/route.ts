@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { resource, date, startTime, endTime, title, extraMonitor, requesterContact, memberUserId } = body;
+  const { resource, date, startTime, endTime, title, extraMonitor, requesterContact, memberUserId, category, capacity, price } = body;
   if (!resource || !date || !startTime || !endTime || !title) {
     return NextResponse.json({ error: "chybí povinné údaje" }, { status: 400 });
   }
@@ -63,6 +63,9 @@ export async function POST(req: NextRequest) {
     source: session.role === "admin" ? "admin" : "member",
     userId: ownerId,
     createdAt: new Date().toISOString(),
+    category: category === "kurz" ? "kurz" : "pronajem",
+    capacity: capacity ? Number(capacity) : undefined,
+    price: price ? Number(price) : undefined,
   };
   await store.add(booking);
   return NextResponse.json(booking, { status: 201 });

@@ -45,6 +45,23 @@ export function ensureSchema() {
       `;
       await sql`CREATE INDEX IF NOT EXISTS bookings_date_idx ON bookings (date);`;
       await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS user_id text;`;
+      await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS category text NOT NULL DEFAULT 'pronajem';`;
+      await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS capacity integer;`;
+      await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS price integer;`;
+
+      await sql`
+        CREATE TABLE IF NOT EXISTS course_signups (
+          id text PRIMARY KEY,
+          booking_id text NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+          name text NOT NULL,
+          contact text NOT NULL,
+          people integer NOT NULL DEFAULT 1,
+          note text,
+          status text NOT NULL DEFAULT 'pending',
+          created_at timestamptz NOT NULL DEFAULT now()
+        );
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS course_signups_booking_idx ON course_signups (booking_id);`;
 
       await sql`
         CREATE TABLE IF NOT EXISTS users (

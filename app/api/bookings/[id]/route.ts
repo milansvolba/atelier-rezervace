@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { resource, date, startTime, endTime, title, requesterContact, notify } = body;
+  const { resource, date, startTime, endTime, title, requesterContact, notify, category, capacity, price } = body;
 
   const all = await store.all();
   const existing = all.find((b) => b.id === params.id);
@@ -43,6 +43,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     endTime: nextEnd,
     title,
     requesterContact,
+    category,
+    capacity: capacity === "" || capacity === undefined ? undefined : Number(capacity),
+    price: price === "" || price === undefined ? undefined : Number(price),
   });
 
   const contact = requesterContact || existing.requesterContact;

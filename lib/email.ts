@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { Booking, RESOURCE_LABELS } from "./types";
+import { Booking, CourseSignup, RESOURCE_LABELS } from "./types";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Atelier na Pobřeží <rezervace@ateliernapobrezi.cz>";
@@ -140,4 +140,40 @@ export async function sendBookingCancelledEmail(contact: string, booking: Bookin
     <p>Pokud budete chtít nový termín, napište nám.</p>
   `);
   await send(contact, subject, html);
+}
+
+// --- Adminům: nová přihláška na kurz ---
+export async function sendAdminNewSignupEmail(booking: Booking, signup: CourseSignup) {
+  const subject = `Nová přihláška na kurz — ${booking.title} (${fmtDate(booking.date)})`;
+  const html = wrap(`
+    <p><strong>${signup.name}</strong> (${signup.people} ${signup.people === 1 ? "osoba" : "osoby/osob"}) se přihlásil/a na kurz <strong>${booking.title}</strong>, ${fmtDate(booking.date)} od ${booking.startTime} do ${booking.endTime}.</p>
+    ${signup.note ? `<p>Poznámka: ${signup.note}</p>` : ""}
+    <p>Kontakt: ${signup.contact}</p>
+    <p style="margin-top:16px;"><a href="${APP_URL}/admin" style="background:#111;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Zobrazit a rozhodnout</a></p>
+  `);
+  await send(ADMIN_EMAILS, subject, html);
+}
+
+// --- Přihlášenému: potvrzení přijetí přihlášky ---
+export async function sendSignupReceivedEmail(booking: Booking, signup: CourseSignup) {
+  const subject = `Přihláška přijata — ${booking.title} (${fmtDate(booking.date)})`;
+  const html = wrap(`
+    <p>Dobrý den ${signup.name},</p>
+    <p>děkujeme za přihlášku na kurz <strong>${booking.title}</strong>, ${fmtDate(booking.date)} od ${booking.startTime} do ${booking.endTime}.</p>
+    <p>Ozveme se vám co nejdřív s potvrzením místa.</p>
+  `);
+  await send(signup.contact, subject, html);
+}
+
+// --- Přihlášenému: rozhodnutí o přihlášce ---
+export async function sendSignupDecisionEmail(booking: Booking, signup: CourseSignup, approved: boolean) {
+  const subject = approved
+    ? `Vaše místo na kurzu je potvrzené — ${fmtDate(booking.date)}`
+    : `K vaší přihlášce na kurz — ${fmtDate(booking.date)}`;
+  const html = wrap(
+    approved
+      ? `<p>Dobrý den ${signup.name},</p><p>vaše místo na kurzu <strong>${booking.title}</strong> (${fmtDate(booking.date)} ${booking.startTime}–${booking.endTime}) je potvrzené. Těšíme se na vás.</p>`
+      : `<p>Dobrý den ${signup.name},</p><p>na kurz <strong>${booking.title}</strong> (${fmtDate(booking.date)} ${booking.startTime}–${booking.endTime}) vás bohužel nemůžeme zapsat — kapacita je bohužel plná. Ozveme se s dalším možným termínem.</p>`
+  );
+  await send(signup.contact, subject, html);
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Booking,
+  CourseSignup,
   PHYSICAL_RESOURCES,
   RESOURCE_LABELS,
   ResourceId,
@@ -248,7 +249,16 @@ function QuickAddModal({
   onSaved: () => void;
   onOpenDay: () => void;
 }) {
-  const [form, setForm] = useState({ resource, startTime: "09:00", endTime: "11:00", title: "", requesterContact: "" });
+  const [form, setForm] = useState({
+    resource,
+    startTime: "09:00",
+    endTime: "11:00",
+    title: "",
+    requesterContact: "",
+    category: "pronajem" as "pronajem" | "kurz",
+    capacity: "",
+    price: "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [matchedMemberId, setMatchedMemberId] = useState<string | null>(null);
@@ -314,6 +324,18 @@ function QuickAddModal({
         </label>
 
         <label className="block text-sm">
+          Kategorie
+          <select
+            className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+            value={form.category}
+            onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as "pronajem" | "kurz" }))}
+          >
+            <option value="pronajem">Pronájem</option>
+            <option value="kurz">Kurz</option>
+          </select>
+        </label>
+
+        <label className="block text-sm">
           Kdo / co
           <input
             required
@@ -371,6 +393,33 @@ function QuickAddModal({
           </div>
         )}
 
+        {form.category === "kurz" && (
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-sm">
+              Kapacita
+              <input
+                type="number"
+                min={1}
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={form.capacity}
+                onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
+                placeholder="např. 8"
+              />
+            </label>
+            <label className="text-sm">
+              Cena (Kč/os.)
+              <input
+                type="number"
+                min={0}
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={form.price}
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                placeholder="nepovinné"
+              />
+            </label>
+          </div>
+        )}
+
         <label className="block text-sm">
           Kontakt (pro upozornění, nepovinné)
           <input
@@ -416,6 +465,9 @@ function BookingDetailModal({
     endTime: booking.endTime,
     title: booking.title,
     requesterContact: booking.requesterContact || "",
+    category: (booking.category || "pronajem") as "pronajem" | "kurz",
+    capacity: booking.capacity ? String(booking.capacity) : "",
+    price: booking.price ? String(booking.price) : "",
   });
   const [notify, setNotify] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -480,6 +532,9 @@ function BookingDetailModal({
             <div className="text-sm space-y-1">
               <p>
                 <span className="text-gray-500">Kde:</span> {RESOURCE_LABELS[booking.resource]}
+                {booking.category === "kurz" && (
+                  <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Kurz</span>
+                )}
               </p>
               <p>
                 <span className="text-gray-500">Kdy:</span> {fmt(new Date(booking.date))} {booking.startTime}–{booking.endTime}
@@ -522,6 +577,17 @@ function BookingDetailModal({
               </select>
             </label>
             <label className="block text-sm">
+              Kategorie
+              <select
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={form.category}
+                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as "pronajem" | "kurz" }))}
+              >
+                <option value="pronajem">Pronájem</option>
+                <option value="kurz">Kurz</option>
+              </select>
+            </label>
+            <label className="block text-sm">
               Kdo / co
               <input
                 required
@@ -530,6 +596,30 @@ function BookingDetailModal({
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               />
             </label>
+            {form.category === "kurz" && (
+              <div className="grid grid-cols-2 gap-3">
+                <label className="text-sm">
+                  Kapacita
+                  <input
+                    type="number"
+                    min={1}
+                    className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                    value={form.capacity}
+                    onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
+                  />
+                </label>
+                <label className="text-sm">
+                  Cena (Kč/os.)
+                  <input
+                    type="number"
+                    min={0}
+                    className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                    value={form.price}
+                    onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                  />
+                </label>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3">
               <label className="text-sm">
                 Datum
@@ -774,13 +864,26 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   const [showMembers, setShowMembers] = useState(false);
   const [members, setMembers] = useState<AppUser[]>([]);
   const [matchedMemberId, setMatchedMemberId] = useState<string | null>(null);
-  const [form, setForm] = useState<{ resource: ResourceId; startTime: string; endTime: string; title: string; requesterContact: string }>({
+  const [form, setForm] = useState<{
+    resource: ResourceId;
+    startTime: string;
+    endTime: string;
+    title: string;
+    requesterContact: string;
+    category: "pronajem" | "kurz";
+    capacity: string;
+    price: string;
+  }>({
     resource: "stul1",
     startTime: "09:00",
     endTime: "11:00",
     title: "",
     requesterContact: "",
+    category: "pronajem",
+    capacity: "",
+    price: "",
   });
+  const [signups, setSignups] = useState<CourseSignup[]>([]);
 
   const date = iso(anchor);
   const isAdmin = session.role === "admin";
@@ -790,8 +893,14 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     setBookings(await res.json());
   }
 
+  async function loadSignups() {
+    const res = await fetch("/api/signups");
+    if (res.ok) setSignups(await res.json());
+  }
+
   useEffect(() => {
     load();
+    loadSignups();
   }, []);
 
   // Pro našeptávání jmen registrovaných členů při zadávání rezervace — jen admin
@@ -823,6 +932,13 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     () => bookings.filter((b) => b.status === "pending").sort((a, b) => (a.date < b.date ? -1 : 1)),
     [bookings]
   );
+
+  const pendingSignups = useMemo(() => signups.filter((s) => s.status === "pending"), [signups]);
+  const signupBookingTitle = (bookingId: string) => bookings.find((b) => b.id === bookingId)?.title || "kurz";
+  const signupBookingDate = (bookingId: string) => {
+    const b = bookings.find((b) => b.id === bookingId);
+    return b ? `${fmt(new Date(b.date))} ${b.startTime}–${b.endTime}` : "";
+  };
 
   const myBookings = useMemo(
     () =>
@@ -857,6 +973,21 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     } else {
       const data = await res.json();
       setError(data.error || "Nepodařilo se uložit.");
+    }
+  }
+
+  async function decideSignup(id: string, action: "approve" | "reject") {
+    setError(null);
+    const res = await fetch(`/api/signups/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    if (res.ok) {
+      loadSignups();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Nepodařilo se rozhodnout.");
     }
   }
 
@@ -969,6 +1100,9 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                   <div>
                     <p className="text-sm font-medium text-amber-950">
                       {RESOURCE_LABELS[p.resource]} · {fmt(new Date(p.date))} {p.startTime}–{p.endTime}
+                      {p.category === "kurz" && (
+                        <span className="ml-2 text-xs bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded">Kurz</span>
+                      )}
                     </p>
                     <p className="text-xs text-amber-800/70">
                       {p.requesterName} · {p.requesterContact}
@@ -990,6 +1124,42 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                   value={noteDrafts[p.id] || ""}
                   onChange={(e) => setNoteDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
                 />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isAdmin && pendingSignups.length > 0 && (
+        <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-full bg-blue-500 text-white text-xs font-bold">
+              {pendingSignups.length}
+            </span>
+            <p className="font-semibold text-blue-900">Přihlášky na kurzy</p>
+          </div>
+          <div className="space-y-3">
+            {pendingSignups.map((s) => (
+              <div key={s.id} className="border-t border-blue-200 pt-3 first:border-t-0 first:pt-0 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-blue-950">
+                      {signupBookingTitle(s.bookingId)} · {signupBookingDate(s.bookingId)}
+                    </p>
+                    <p className="text-xs text-blue-800/70">
+                      {s.name} · {s.contact} · {s.people} {s.people === 1 ? "osoba" : "osoby/osob"}
+                      {s.note ? ` · ${s.note}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => decideSignup(s.id, "approve")} className="h-8 px-3 rounded-md bg-white border border-blue-300 text-xs hover:bg-blue-100">
+                      Schválit
+                    </button>
+                    <button onClick={() => decideSignup(s.id, "reject")} className="h-8 px-3 rounded-md bg-white border border-blue-300 text-xs hover:bg-blue-100">
+                      Zamítnout
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -1068,6 +1238,17 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
           <form onSubmit={createBooking} className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
             <p className="font-medium">Nová rezervace ({fmt(anchor)})</p>
+            <label className="block text-sm">
+              Kategorie
+              <select
+                className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                value={form.category}
+                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as "pronajem" | "kurz" }))}
+              >
+                <option value="pronajem">Pronájem</option>
+                <option value="kurz">Kurz</option>
+              </select>
+            </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="text-sm">
                 Místo
@@ -1135,6 +1316,33 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                     {b.start}–{b.end}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {form.category === "kurz" && (
+              <div className="grid grid-cols-2 gap-3">
+                <label className="text-sm">
+                  Kapacita
+                  <input
+                    type="number"
+                    min={1}
+                    className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                    value={form.capacity}
+                    onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
+                    placeholder="např. 8"
+                  />
+                </label>
+                <label className="text-sm">
+                  Cena (Kč/os.)
+                  <input
+                    type="number"
+                    min={0}
+                    className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+                    value={form.price}
+                    onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                    placeholder="nepovinné"
+                  />
+                </label>
               </div>
             )}
 
