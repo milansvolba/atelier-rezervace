@@ -114,13 +114,39 @@ export async function sendRequesterReceivedEmail(booking: Booking) {
 
 // --- Žadateli: rozhodnutí (schváleno / zamítnuto), volitelně s poznámkou od admina ---
 export async function sendRequesterDecisionEmail(booking: Booking, approved: boolean, adminNote?: string) {
+  const isCourse = booking.category === "kurz";
+  const note = adminNote?.trim();
+
+  if (isCourse) {
+    const subject = approved
+      ? `Kurz potvrzen — ${fmtDate(booking.date)}`
+      : `K vaší poptávce na kurz — ${fmtDate(booking.date)}`;
+    const html = wrap(
+      approved
+        ? `
+          <p>Dobrý den ${booking.requesterName || ""},</p>
+          <p>váš skupinový kurz na míru je potvrzený na <strong>${fmtDate(booking.date)}</strong>, od ${booking.startTime} do ${booking.endTime}.</p>
+          ${note ? `<p>${note}</p>` : ""}
+          <p><strong>Kde nás najdete:</strong> Ateliér na pobřeží, Na pobřeží 67, Kolín (areál bývalé továrny Kolinea).</p>
+          <p><strong>Co s sebou:</strong> pohodlné oblečení, které může být od hlíny — materiál a pomůcky zajišťujeme.</p>
+          <p>Těšíme se na vás.</p>
+        `
+        : `
+          <p>Dobrý den ${booking.requesterName || ""},</p>
+          <p>termín kurzu na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} vám bohužel nemůžeme potvrdit${note ? `, ${note}` : ""}.</p>
+          <p>Napište nám prosím jiný termín, který by vám vyhovoval, a zkusíme ho domluvit.</p>
+        `
+    );
+    if (booking.requesterContact) await send(booking.requesterContact, subject, html);
+    return;
+  }
+
   const what = isWholeSpace(booking.resource)
     ? `pronájem ${RESOURCE_LABELS[booking.resource].toLowerCase()}`
     : `rezervaci místa ${RESOURCE_LABELS[booking.resource]}`;
   const subject = approved
     ? `Vaše rezervace je potvrzená — ${fmtDate(booking.date)}`
     : `K vaší žádosti — ${fmtDate(booking.date)}`;
-  const note = adminNote?.trim();
   const html = wrap(
     approved
       ? `<p>Dobrý den ${booking.requesterName || ""},</p><p>vaše žádost o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} je potvrzená.</p>${note ? `<p>Poznámka: ${note}</p>` : ""}<p>Těšíme se na vás.</p>`
@@ -131,10 +157,11 @@ export async function sendRequesterDecisionEmail(booking: Booking, approved: boo
 
 // --- Rezervistovi: admin změnil termín/místo existující rezervace ---
 export async function sendBookingChangedEmail(contact: string, before: Booking, after: Booking) {
-  const subject = `Změna rezervace — ${fmtDate(after.date)}`;
+  const isCourse = after.category === "kurz" || before.category === "kurz";
+  const subject = isCourse ? `Změna termínu kurzu — ${fmtDate(after.date)}` : `Změna rezervace — ${fmtDate(after.date)}`;
   const html = wrap(`
     <p>Dobrý den,</p>
-    <p>administrátor upravil vaši rezervaci „${before.title}".</p>
+    <p>administrátor upravil ${isCourse ? "termín vašeho kurzu" : `vaši rezervaci „${before.title}"`}.</p>
     <p><strong>Původně:</strong> ${RESOURCE_LABELS[before.resource]}, ${fmtDate(before.date)} ${before.startTime}–${before.endTime}</p>
     <p><strong>Nově:</strong> ${RESOURCE_LABELS[after.resource]}, ${fmtDate(after.date)} ${after.startTime}–${after.endTime}</p>
   `);
@@ -143,10 +170,11 @@ export async function sendBookingChangedEmail(contact: string, before: Booking, 
 
 // --- Rezervistovi: admin zrušil rezervaci ---
 export async function sendBookingCancelledEmail(contact: string, booking: Booking) {
-  const subject = `Zrušení rezervace — ${fmtDate(booking.date)}`;
+  const isCourse = booking.category === "kurz";
+  const subject = isCourse ? `Zrušení termínu kurzu — ${fmtDate(booking.date)}` : `Zrušení rezervace — ${fmtDate(booking.date)}`;
   const html = wrap(`
     <p>Dobrý den,</p>
-    <p>administrátor zrušil vaši rezervaci „${booking.title}" (${RESOURCE_LABELS[booking.resource]}, ${fmtDate(booking.date)} ${booking.startTime}–${booking.endTime}).</p>
+    <p>administrátor zrušil ${isCourse ? "termín kurzu" : `vaši rezervaci „${booking.title}"`} (${RESOURCE_LABELS[booking.resource]}, ${fmtDate(booking.date)} ${booking.startTime}–${booking.endTime}).</p>
     <p>Pokud budete chtít nový termín, napište nám.</p>
   `);
   await send(contact, subject, html);
