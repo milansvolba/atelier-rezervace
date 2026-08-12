@@ -118,3 +118,10 @@ Později: napojení GoPay/ComGate/Stripe (rozhodnutí odložené) změní jen to
 - Platnost voucheru 12 měsíců, nebo jinak?
 - Cena za skupinu: `pricePerPerson × people`, nebo chceš mít možnost slevy za skupinu?
 - Má jít koupit i "kurz na míru" (bez vypsaného termínu vůbec, viz stávající formulář poptávky), nebo vouchery jen pro už vypsané termíny?
+
+
+## Aktualizace po zpětné vazbě (Milan, 12. 8. 2026)
+
+- Uplatnění voucheru se v UI bude jmenovat **"Využít poukaz"** (ne interní název "uplatnit"). Zákazník zadá kód ručně, uvidí vypsané veřejné termíny a vybere si jeden.
+- Fáze 2 (později): každý voucher bude mít vlastní unikátní URL (např. `/kurzy/vyuzit-poukaz/{code}`), na kterou povede QR kód vytištěný na voucheru — zákazník tak přeskočí ruční zadávání kódu a rovnou vybere termín + potvrdí.
+- **Sleva za skupinu — rozhodnuto:** skupinová objednávka bude mít slevu, která roste s tím, jak velkou část kapacity termínu skupina zabere. Největší sleva je, když skupina zaplní celou kapacitu termínu sama (proto administrátor nemusí řešit dolaďování zbylých míst). Konkrétní čísla/tiery slevy (kolik % při jaké zaplněnosti) je potřeba s Milanem doladit — sledovat jako otevřený bod.
