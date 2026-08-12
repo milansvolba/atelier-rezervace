@@ -141,3 +141,15 @@ Pro standardní kapacitu kurzu 6 osob (potvrdit, jestli je 6 fixní kapacita pro
 Do `CourseOrder` přibude computed/uložené pole `discountPercent`, dopočtené při vytvoření objednávky podle tabulky výše (na základě `people` a kapacity zvoleného/cílového termínu). `totalPrice = pricePerPerson × people × (1 − discountPercent/100)`.
 
 Otevřené: pokud se kapacita 6 liší termín od termínu (např. `capacity` pole na `Booking` je proměnlivé), přepočítat tabulku na procenta zaplnění místo pevných počtů osob (5/6 → 83 %, 4/6 → 67 %), aby fungovalo i pro termíny s jinou kapacitou.
+
+
+## Slevové parametry musí být nastavitelné (Milan, 12. 8. 2026)
+
+Tabulka výše (30 % / 20 % / 15 %) není napevno v kódu — Milan chce moct tiery i procenta měnit bez zásahu do kódu, a změna se musí projevit jak ve výpočtu ceny, tak v textech/nabídkách na webu (aby web nikdy neslibovat jinou slevu, než se reálně použije při výpočtu).
+
+Návrh:
+
+- Nová tabulka `discount_tiers` v Neon DB: `id, min_fill_percent integer, discount_percent integer, sort_order integer`. Seednout výchozími řádky (67 % → 15 %, 83 % → 20 %, 100 % → 30 %). Výpočet: najde nejvyšší `min_fill_percent`, který skupina svým počtem osob vůči kapacitě termínu splňuje nebo přesahuje, a použije jeho `discount_percent`.
+- Admin UI (`app/admin/page.tsx`): nová sekce "Slevy za skupinu" — tabulka řádků s možností upravit/přidat/smazat tier (procento zaplnění → procento slevy).
+- Nový veřejný endpoint `GET /api/discount-tiers` — vrací aktuální tiery. Používá ho jak nákupní formulář (dopočet ceny v reálném čase), tak **statický web (`kurzy.php` na ateliernapobrezi.cz)**, aby mohl zobrazit aktuální nabídku slev v textu (stejný princip jako `fetch_live_courses()` — server-side fetch s fallbackem na obecný text typu "slevy pro skupiny", pokud fetch selže).
+- Cílem je jedno místo pravdy (DB tabulka) — jak výpočet ceny, tak marketingový text na webu čtou stejná aktuální čísla, takže nemůže dojít k rozjetí (web slibuje 25 %, systém počítá 30 %).
