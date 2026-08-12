@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 body {
-  background: #faf9f6;
-  color: #2c2c2a;
+  background: #f2f2f0;
+  color: #1c1c1c;
+}
+
+a {
+  color: #2f4a4a;
+}
+a:hover {
+  color: #d3a53c;
 }
