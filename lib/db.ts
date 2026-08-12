@@ -107,6 +107,25 @@ export function ensureSchema() {
         );
       `;
       await sql`CREATE INDEX IF NOT EXISTS email_log_created_idx ON email_log (created_at DESC);`;
+
+      await sql`
+        CREATE TABLE IF NOT EXISTS discount_tiers (
+          id text PRIMARY KEY,
+          min_fill_percent integer NOT NULL,
+          discount_percent integer NOT NULL,
+          sort_order integer NOT NULL DEFAULT 0,
+          updated_at timestamptz NOT NULL DEFAULT now()
+        );
+      `;
+      const existingTiers = await sql`SELECT COUNT(*)::int AS count FROM discount_tiers`;
+      if (Number(existingTiers[0]?.count ?? 0) === 0) {
+        await sql`
+          INSERT INTO discount_tiers (id, min_fill_percent, discount_percent, sort_order) VALUES
+            (${crypto.randomUUID()}, 100, 30, 1),
+            (${crypto.randomUUID()}, 83, 20, 2),
+            (${crypto.randomUUID()}, 67, 15, 3)
+        `;
+      }
     })();
   }
   return ready;
