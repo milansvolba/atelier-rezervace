@@ -852,6 +852,230 @@ function MembersPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+interface EmailTemplateAdmin {
+  key: string;
+  label: string;
+  description: string;
+  vars: string[];
+  subject: string;
+  body: string;
+  defaultSubject: string;
+  defaultBody: string;
+  customized: boolean;
+  updatedAt: string | null;
+}
+
+interface EmailLogEntry {
+  id: string;
+  type: string;
+  recipient: string;
+  subject: string;
+  status: "sent" | "failed" | "skipped";
+  error?: string;
+  createdAt: string;
+}
+
+function statusLabel(status: EmailLogEntry["status"]) {
+  if (status === "sent") return { text: "Odesláno", cls: "text-green-700 bg-green-50" };
+  if (status === "failed") return { text: "Chyba", cls: "text-red-700 bg-red-50" };
+  return { text: "Přeskočeno", cls: "text-gray-500 bg-gray-100" };
+}
+
+// Editace textů e-mailových šablon a přehled odeslaných e-mailů. Šablony se
+// needitují v kódu, ale přes tenhle formulář — text s {{promennymi}} se uloží
+// do databáze a při odesílání nahradí výchozí verzi v kódu.
+function EmailsPanel({ onClose }: { onClose: () => void }) {
+  const [tab, setTab] = useState<"templates" | "log">("templates");
+  const [templates, setTemplates] = useState<EmailTemplateAdmin[]>([]);
+  const [log, setLog] = useState<EmailLogEntry[]>([]);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, { subject: string; body: string }>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  async function loadTemplates() {
+    const res = await fetch("/api/admin/email-templates");
+    if (res.ok) setTemplates(await res.json());
+  }
+
+  async function loadLog() {
+    const res = await fetch("/api/admin/email-log?limit=100");
+    if (res.ok) setLog(await res.json());
+  }
+
+  useEffect(() => {
+    Promise.all([loadTemplates(), loadLog()]).finally(() => setLoading(false));
+  }, []);
+
+  function draftFor(t: EmailTemplateAdmin) {
+    return drafts[t.key] ?? { subject: t.subject, body: t.body };
+  }
+
+  async function save(t: EmailTemplateAdmin) {
+    const draft = draftFor(t);
+    setSaving(t.key);
+    setError(null);
+    const res = await fetch(`/api/admin/email-templates/${t.key}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(draft),
+    });
+    setSaving(null);
+    if (res.ok) {
+      await loadTemplates();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Nepodařilo se uložit.");
+    }
+  }
+
+  async function resetToDefault(t: EmailTemplateAdmin) {
+    if (!confirm("Vrátit tuhle šablonu zpátky na výchozí text?")) return;
+    setSaving(t.key);
+    setError(null);
+    const res = await fetch(`/api/admin/email-templates/${t.key}`, { method: "DELETE" });
+    setSaving(null);
+    if (res.ok) {
+      setDrafts((d) => {
+        const next = { ...d };
+        delete next[t.key];
+        return next;
+      });
+      await loadTemplates();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Nepodařilo se obnovit výchozí text.");
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-xl p-5 w-full max-w-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between">
+          <p className="font-medium">E-maily</p>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-sm">✕</button>
+        </div>
+
+        <div className="flex gap-1 bg-gray-100 rounded-md p-1 text-xs w-fit">
+          <button
+            onClick={() => setTab("templates")}
+            className={`h-7 px-2.5 rounded ${tab === "templates" ? "bg-white shadow-sm font-medium" : "text-gray-500"}`}
+          >
+            Šablony
+          </button>
+          <button
+            onClick={() => setTab("log")}
+            className={`h-7 px-2.5 rounded ${tab === "log" ? "bg-white shadow-sm font-medium" : "text-gray-500"}`}
+          >
+            Log odeslaných
+          </button>
+        </div>
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {loading && <p className="text-sm text-gray-400">Načítám…</p>}
+
+        {!loading && tab === "templates" && (
+          <div className="space-y-2">
+            {templates.map((t) => {
+              const draft = draftFor(t);
+              const open = openKey === t.key;
+              const dirty = draft.subject !== t.subject || draft.body !== t.body;
+              return (
+                <div key={t.key} className="border border-gray-200 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setOpenKey(open ? null : t.key)}
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left"
+                  >
+                    <span>
+                      <span className="text-sm font-medium">{t.label}</span>
+                      {t.customized && (
+                        <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">upraveno</span>
+                      )}
+                      <span className="block text-xs text-gray-400 mt-0.5">{t.description}</span>
+                    </span>
+                    <span className="text-gray-400 text-xs shrink-0">{open ? "skrýt ▲" : "upravit ▼"}</span>
+                  </button>
+                  {open && (
+                    <div className="px-3 pb-3 space-y-2 border-t border-gray-100 pt-3">
+                      <p className="text-xs text-gray-400">
+                        Dostupné proměnné: {t.vars.map((v) => `{{${v}}}`).join(", ")}
+                      </p>
+                      <label className="block text-xs">
+                        Předmět
+                        <input
+                          className="mt-1 w-full h-9 border border-gray-300 rounded-md px-2 text-sm"
+                          value={draft.subject}
+                          onChange={(e) =>
+                            setDrafts((d) => ({ ...d, [t.key]: { subject: e.target.value, body: draft.body } }))
+                          }
+                        />
+                      </label>
+                      <label className="block text-xs">
+                        Text (HTML)
+                        <textarea
+                          className="mt-1 w-full h-40 border border-gray-300 rounded-md px-2 py-1.5 text-sm font-mono"
+                          value={draft.body}
+                          onChange={(e) =>
+                            setDrafts((d) => ({ ...d, [t.key]: { subject: draft.subject, body: e.target.value } }))
+                          }
+                        />
+                      </label>
+                      <div className="flex items-center justify-between pt-1">
+                        <button
+                          type="button"
+                          onClick={() => resetToDefault(t)}
+                          disabled={saving === t.key}
+                          className="text-xs text-gray-500 hover:text-gray-800 disabled:opacity-50"
+                        >
+                          Obnovit výchozí text
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => save(t)}
+                          disabled={saving === t.key || !dirty}
+                          className="h-9 px-4 rounded-md bg-gray-900 text-white text-sm disabled:opacity-40"
+                        >
+                          {saving === t.key ? "Ukládám…" : "Uložit"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && tab === "log" && (
+          <div className="space-y-2">
+            {log.length === 0 && <p className="text-sm text-gray-400">Zatím žádné odeslané e-maily.</p>}
+            {log.map((entry) => {
+              const s = statusLabel(entry.status);
+              return (
+                <div key={entry.id} className="border-t border-gray-100 pt-2 first:border-t-0 first:pt-0 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-medium">{entry.subject}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded shrink-0 ${s.cls}`}>{s.text}</span>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    {entry.type} · {entry.recipient} · {new Date(entry.createdAt).toLocaleString("cs-CZ")}
+                  </p>
+                  {entry.error && <p className="text-xs text-red-600 mt-0.5">{entry.error}</p>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout: () => void }) {
   const [view, setView] = useState<ViewMode>("day");
   const [anchor, setAnchor] = useState(new Date());
@@ -862,6 +1086,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [showMembers, setShowMembers] = useState(false);
+  const [showEmails, setShowEmails] = useState(false);
   const [members, setMembers] = useState<AppUser[]>([]);
   const [matchedMemberId, setMatchedMemberId] = useState<string | null>(null);
   const [form, setForm] = useState<{
@@ -1034,6 +1259,11 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           {isAdmin && (
             <button onClick={() => setShowMembers(true)} className="text-sm text-gray-500 hover:text-gray-800">
               Účty
+            </button>
+          )}
+          {isAdmin && (
+            <button onClick={() => setShowEmails(true)} className="text-sm text-gray-500 hover:text-gray-800">
+              E-maily
             </button>
           )}
           <button onClick={onLogout} className="text-sm text-gray-500 hover:text-gray-800">
@@ -1556,6 +1786,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
       )}
 
       {showMembers && <MembersPanel onClose={() => setShowMembers(false)} />}
+      {showEmails && <EmailsPanel onClose={() => setShowEmails(false)} />}
     </main>
   );
 }

@@ -81,6 +81,32 @@ export function ensureSchema() {
           (${crypto.randomUUID()}, 'Petr', 'petr.svolba@gmail.com', 'admin')
         ON CONFLICT (email) DO NOTHING
       `;
+
+      // Upravené texty e-mailových šablon (přepisují výchozí texty v kódu, viz lib/emailTemplates.ts).
+      await sql`
+        CREATE TABLE IF NOT EXISTS email_templates (
+          key text PRIMARY KEY,
+          subject text NOT NULL,
+          body text NOT NULL,
+          updated_at timestamptz NOT NULL DEFAULT now()
+        );
+      `;
+
+      // Log každého pokusu o odeslání e-mailu — pro přehled v adminu.
+      await sql`
+        CREATE TABLE IF NOT EXISTS email_log (
+          id text PRIMARY KEY,
+          type text NOT NULL,
+          recipient text NOT NULL,
+          subject text NOT NULL,
+          booking_id text,
+          signup_id text,
+          status text NOT NULL,
+          error text,
+          created_at timestamptz NOT NULL DEFAULT now()
+        );
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS email_log_created_idx ON email_log (created_at DESC);`;
     })();
   }
   return ready;

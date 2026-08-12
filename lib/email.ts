@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 import { Booking, CourseSignup, RESOURCE_LABELS } from "./types";
+import { getTemplate, renderTemplate } from "./emailTemplates";
+import { logEmail } from "./emailLog";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Atelier na Pobřeží <rezervace@ateliernapobrezi.cz>";
@@ -20,18 +22,30 @@ function getClient(): Resend | null {
   return client;
 }
 
-async function send(to: string | string[], subject: string, html: string) {
+// Odešle e-mail a zapíše pokus do email_log (bez ohledu na to, jestli se
+// odeslání povedlo) — meta.type odpovídá klíči šablony nebo systémovému typu
+// e-mailu (magic_link, welcome), meta.bookingId/signupId je jen pro přehled v adminu.
+async function send(
+  to: string | string[],
+  subject: string,
+  html: string,
+  meta: { type: string; bookingId?: string; signupId?: string }
+) {
+  const recipient = Array.isArray(to) ? to.join(", ") : to;
   const c = getClient();
   if (!c) {
     // RESEND_API_KEY zatím není nastavený (např. lokální vývoj) — jen zalogujeme a pokračujeme,
     // ať kvůli chybějícímu klíči nespadne celá žádost/rezervace.
-    console.warn(`[email] RESEND_API_KEY není nastavený, e-mail "${subject}" pro ${to} se neodeslal.`);
+    console.warn(`[email] RESEND_API_KEY není nastavený, e-mail "${subject}" pro ${recipient} se neodeslal.`);
+    await logEmail({ ...meta, recipient, subject, status: "skipped", error: "RESEND_API_KEY není nastavený" });
     return;
   }
   try {
     await c.emails.send({ from: FROM, to, subject, html });
+    await logEmail({ ...meta, recipient, subject, status: "sent" });
   } catch (err) {
-    console.error(`[email] Odeslání "${subject}" pro ${to} selhalo:`, err);
+    console.error(`[email] Odeslání "${subject}" pro ${recipient} selhalo:`, err);
+    await logEmail({ ...meta, recipient, subject, status: "failed", error: String(err) });
   }
 }
 
@@ -48,7 +62,21 @@ function wrap(bodyHtml: string) {
   return `<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;">${bodyHtml}<p style="margin-top:24px;color:#888;font-size:12px;">Atelier na Pobřeží · rezervace.ateliernapobrezi.cz</p></div>`;
 }
 
+// Sestaví e-mail ze šablony (výchozí, nebo upravená adminem) a odešle ho.
+async function sendFromTemplate(
+  key: Parameters<typeof getTemplate>[0],
+  to: string | string[],
+  vars: Record<string, string>,
+  meta: { bookingId?: string; signupId?: string }
+) {
+  const tpl = await getTemplate(key);
+  const subject = renderTemplate(tpl.subject, vars);
+  const html = wrap(renderTemplate(tpl.body, vars));
+  await send(to, subject, html, { type: key, ...meta });
+}
+
 // --- Přihlašovací odkaz (magic link) pro admina/člena ---
+// Systémový e-mail, needitovatelný přes admin šablony (bezpečnostně citlivé).
 export async function sendMagicLinkEmail(user: { name: string; email: string }, link: string) {
   const subject = "Přihlášení do rezervací — Atelier na Pobřeží";
   const html = wrap(`
@@ -57,7 +85,7 @@ export async function sendMagicLinkEmail(user: { name: string; email: string }, 
     <p style="margin-top:20px;"><a href="${link}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Račte vstoupit</a></p>
     <p style="color:#888;font-size:13px;margin-top:16px;">Pokud jste o přihlášení nežádali, tento e-mail prostě ignorujte.</p>
   `);
-  await send(user.email, subject, html);
+  await send(user.email, subject, html, { type: "magic_link" });
 }
 
 // --- Uvítací e-mail pro nově založený účet (rovnou s přihlašovacím odkazem) ---
@@ -70,148 +98,170 @@ export async function sendWelcomeEmail(user: { name: string; email: string; role
     <p style="margin-top:10px;"><a href="${link}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaber si flek</a></p>
     <p style="color:#888;font-size:13px;margin-top:16px;">Tenhle odkaz platí 15 minut. Až vyprší, stačí na přihlašovací stránce znovu zadat svůj e-mail a pošleme nový.</p>
   `);
-  await send(user.email, subject, html);
+  await send(user.email, subject, html, { type: "welcome" });
 }
 
-// --- Adminům: nová žádost od veřejnosti ---
+// --- Adminům: nová žádost od veřejnosti (pronájem, nebo poptávka na kurz) ---
 export async function sendAdminNewRequestEmail(booking: Booking) {
   const isCourse = booking.category === "kurz";
-  const what = isCourse
-    ? "poptávku na skupinový kurz na míru"
-    : isWholeSpace(booking.resource)
+  const noteBlock = booking.note ? `<p>${isCourse ? "Poznámka" : "Účel"}: ${booking.note}</p>` : "";
+  const vars = {
+    name: booking.requesterName || "",
+    date: fmtDate(booking.date),
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    noteBlock,
+    contact: booking.requesterContact || "",
+    adminUrl: `${APP_URL}/admin`,
+  };
+  if (isCourse) {
+    await sendFromTemplate("admin_new_request_kurz", ADMIN_EMAILS, vars, { bookingId: booking.id });
+    return;
+  }
+  const what = isWholeSpace(booking.resource)
     ? `pronájem ${RESOURCE_LABELS[booking.resource].toLowerCase()}`
     : `rezervaci místa ${RESOURCE_LABELS[booking.resource]}`;
-  const subject = isCourse
-    ? `Nová poptávka na skupinový kurz (${fmtDate(booking.date)})`
-    : `Nová žádost — ${RESOURCE_LABELS[booking.resource]} (${fmtDate(booking.date)})`;
-  const html = wrap(`
-    <p><strong>${booking.requesterName}</strong> má zájem o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime}.</p>
-    ${booking.note ? `<p>${isCourse ? "Poznámka" : "Účel"}: ${booking.note}</p>` : ""}
-    <p>Kontakt: ${booking.requesterContact}</p>
-    <p style="margin-top:16px;"><a href="${APP_URL}/admin" style="background:#111;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Zobrazit a rozhodnout</a></p>
-    <p style="color:#888;font-size:13px;">${isCourse ? "Termín kurzu se v rozpisu zablokuje až po potvrzení." : "Termín se v rozpisu zablokuje až po schválení."}</p>
-  `);
-  await send(ADMIN_EMAILS, subject, html);
+  await sendFromTemplate(
+    "admin_new_request_pronajem",
+    ADMIN_EMAILS,
+    { ...vars, what, resourceLabel: RESOURCE_LABELS[booking.resource] },
+    { bookingId: booking.id }
+  );
 }
 
-// --- Žadateli: potvrzení přijetí žádosti ---
+// --- Žadateli: potvrzení přijetí žádosti (pronájem, nebo poptávka na kurz) ---
 export async function sendRequesterReceivedEmail(booking: Booking) {
+  if (!booking.requesterContact) return;
   const isCourse = booking.category === "kurz";
-  const what = isCourse
-    ? "poptávku na skupinový kurz na míru"
-    : isWholeSpace(booking.resource)
+  const vars = {
+    name: booking.requesterName || "",
+    date: fmtDate(booking.date),
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+  };
+  if (isCourse) {
+    await sendFromTemplate("requester_received_kurz", booking.requesterContact, vars, { bookingId: booking.id });
+    return;
+  }
+  const what = isWholeSpace(booking.resource)
     ? `pronájem ${RESOURCE_LABELS[booking.resource].toLowerCase()}`
     : `rezervaci místa ${RESOURCE_LABELS[booking.resource]}`;
-  const subject = isCourse
-    ? "Přijali jsme vaši poptávku na kurz — Atelier na Pobřeží"
-    : "Přijali jsme vaši žádost — Atelier na Pobřeží";
-  const html = wrap(`
-    <p>Dobrý den ${booking.requesterName || ""},</p>
-    <p>vaši ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} jsme přijali. Ozveme se co nejdřív, nejpozději následující pracovní den${isCourse ? " s potvrzením nebo návrhem nejbližšího volného termínu" : ""}.</p>
-  `);
-  if (booking.requesterContact) await send(booking.requesterContact, subject, html);
+  await sendFromTemplate("requester_received_pronajem", booking.requesterContact, { ...vars, what }, { bookingId: booking.id });
 }
 
 // --- Žadateli: rozhodnutí (schváleno / zamítnuto), volitelně s poznámkou od admina ---
 export async function sendRequesterDecisionEmail(booking: Booking, approved: boolean, adminNote?: string) {
+  if (!booking.requesterContact) return;
   const isCourse = booking.category === "kurz";
   const note = adminNote?.trim();
-
+  const vars = {
+    name: booking.requesterName || "",
+    date: fmtDate(booking.date),
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    noteBlock: note ? `<p>${note}</p>` : "",
+    noteSuffix: note ? `, ${note}` : "",
+  };
   if (isCourse) {
-    const subject = approved
-      ? `Kurz potvrzen — ${fmtDate(booking.date)}`
-      : `K vaší poptávce na kurz — ${fmtDate(booking.date)}`;
-    const html = wrap(
-      approved
-        ? `
-          <p>Dobrý den ${booking.requesterName || ""},</p>
-          <p>váš skupinový kurz na míru je potvrzený na <strong>${fmtDate(booking.date)}</strong>, od ${booking.startTime} do ${booking.endTime}.</p>
-          ${note ? `<p>${note}</p>` : ""}
-          <p><strong>Kde nás najdete:</strong> Ateliér na pobřeží, Na pobřeží 67, Kolín (areál bývalé továrny Kolinea).</p>
-          <p><strong>Co s sebou:</strong> pohodlné oblečení, které může být od hlíny — materiál a pomůcky zajišťujeme.</p>
-          <p>Těšíme se na vás.</p>
-        `
-        : `
-          <p>Dobrý den ${booking.requesterName || ""},</p>
-          <p>termín kurzu na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} vám bohužel nemůžeme potvrdit${note ? `, ${note}` : ""}.</p>
-          <p>Napište nám prosím jiný termín, který by vám vyhovoval, a zkusíme ho domluvit.</p>
-        `
-    );
-    if (booking.requesterContact) await send(booking.requesterContact, subject, html);
+    const key = approved ? "requester_decision_kurz_approved" : "requester_decision_kurz_rejected";
+    await sendFromTemplate(key, booking.requesterContact, vars, { bookingId: booking.id });
     return;
   }
-
   const what = isWholeSpace(booking.resource)
     ? `pronájem ${RESOURCE_LABELS[booking.resource].toLowerCase()}`
     : `rezervaci místa ${RESOURCE_LABELS[booking.resource]}`;
-  const subject = approved
-    ? `Vaše rezervace je potvrzená — ${fmtDate(booking.date)}`
-    : `K vaší žádosti — ${fmtDate(booking.date)}`;
-  const html = wrap(
-    approved
-      ? `<p>Dobrý den ${booking.requesterName || ""},</p><p>vaše žádost o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} je potvrzená.</p>${note ? `<p>Poznámka: ${note}</p>` : ""}<p>Těšíme se na vás.</p>`
-      : `<p>Dobrý den ${booking.requesterName || ""},</p><p>vaši žádost o ${what} na <strong>${fmtDate(booking.date)}</strong> od ${booking.startTime} do ${booking.endTime} bohužel nemůžeme potvrdit${note ? `, ${note}` : ""}.</p><p>Pokud vám vyhovuje jiný termín, napište nám znovu.</p>`
-  );
-  if (booking.requesterContact) await send(booking.requesterContact, subject, html);
+  const key = approved ? "requester_decision_pronajem_approved" : "requester_decision_pronajem_rejected";
+  await sendFromTemplate(key, booking.requesterContact, { ...vars, what }, { bookingId: booking.id });
 }
 
-// --- Rezervistovi: admin změnil termín/místo existující rezervace ---
+// --- Rezervistovi: admin změnil termín/místo existující rezervace nebo kurzu ---
 export async function sendBookingChangedEmail(contact: string, before: Booking, after: Booking) {
   const isCourse = after.category === "kurz" || before.category === "kurz";
-  const subject = isCourse ? `Změna termínu kurzu — ${fmtDate(after.date)}` : `Změna rezervace — ${fmtDate(after.date)}`;
-  const html = wrap(`
-    <p>Dobrý den,</p>
-    <p>administrátor upravil ${isCourse ? "termín vašeho kurzu" : `vaši rezervaci „${before.title}"`}.</p>
-    <p><strong>Původně:</strong> ${RESOURCE_LABELS[before.resource]}, ${fmtDate(before.date)} ${before.startTime}–${before.endTime}</p>
-    <p><strong>Nově:</strong> ${RESOURCE_LABELS[after.resource]}, ${fmtDate(after.date)} ${after.startTime}–${after.endTime}</p>
-  `);
-  await send(contact, subject, html);
+  await sendFromTemplate(
+    "booking_changed",
+    contact,
+    {
+      whatChanged: isCourse ? "termín vašeho kurzu" : `vaši rezervaci „${before.title}"`,
+      beforeLabel: RESOURCE_LABELS[before.resource],
+      beforeDate: fmtDate(before.date),
+      beforeStart: before.startTime,
+      beforeEnd: before.endTime,
+      afterLabel: RESOURCE_LABELS[after.resource],
+      afterDate: fmtDate(after.date),
+      afterStart: after.startTime,
+      afterEnd: after.endTime,
+    },
+    { bookingId: after.id }
+  );
 }
 
-// --- Rezervistovi: admin zrušil rezervaci ---
+// --- Rezervistovi: admin zrušil rezervaci nebo termín kurzu ---
 export async function sendBookingCancelledEmail(contact: string, booking: Booking) {
   const isCourse = booking.category === "kurz";
-  const subject = isCourse ? `Zrušení termínu kurzu — ${fmtDate(booking.date)}` : `Zrušení rezervace — ${fmtDate(booking.date)}`;
-  const html = wrap(`
-    <p>Dobrý den,</p>
-    <p>administrátor zrušil ${isCourse ? "termín kurzu" : `vaši rezervaci „${booking.title}"`} (${RESOURCE_LABELS[booking.resource]}, ${fmtDate(booking.date)} ${booking.startTime}–${booking.endTime}).</p>
-    <p>Pokud budete chtít nový termín, napište nám.</p>
-  `);
-  await send(contact, subject, html);
+  await sendFromTemplate(
+    "booking_cancelled",
+    contact,
+    {
+      whatCancelled: isCourse ? "termín kurzu" : `vaši rezervaci „${booking.title}"`,
+      resourceLabel: RESOURCE_LABELS[booking.resource],
+      date: fmtDate(booking.date),
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+    },
+    { bookingId: booking.id }
+  );
 }
 
-// --- Adminům: nová přihláška na kurz ---
+// --- Adminům: nová přihláška na vypsaný termín kurzu ---
 export async function sendAdminNewSignupEmail(booking: Booking, signup: CourseSignup) {
-  const subject = `Nová přihláška na kurz — ${booking.title} (${fmtDate(booking.date)})`;
-  const html = wrap(`
-    <p><strong>${signup.name}</strong> (${signup.people} ${signup.people === 1 ? "osoba" : "osoby/osob"}) se přihlásil/a na kurz <strong>${booking.title}</strong>, ${fmtDate(booking.date)} od ${booking.startTime} do ${booking.endTime}.</p>
-    ${signup.note ? `<p>Poznámka: ${signup.note}</p>` : ""}
-    <p>Kontakt: ${signup.contact}</p>
-    <p style="margin-top:16px;"><a href="${APP_URL}/admin" style="background:#111;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Zobrazit a rozhodnout</a></p>
-  `);
-  await send(ADMIN_EMAILS, subject, html);
+  await sendFromTemplate(
+    "admin_new_signup",
+    ADMIN_EMAILS,
+    {
+      name: signup.name,
+      people: String(signup.people),
+      peopleWord: signup.people === 1 ? "osoba" : "osoby/osob",
+      courseTitle: booking.title,
+      date: fmtDate(booking.date),
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      noteBlock: signup.note ? `<p>Poznámka: ${signup.note}</p>` : "",
+      contact: signup.contact,
+      adminUrl: `${APP_URL}/admin`,
+    },
+    { bookingId: booking.id, signupId: signup.id }
+  );
 }
 
 // --- Přihlášenému: potvrzení přijetí přihlášky ---
 export async function sendSignupReceivedEmail(booking: Booking, signup: CourseSignup) {
-  const subject = `Přihláška přijata — ${booking.title} (${fmtDate(booking.date)})`;
-  const html = wrap(`
-    <p>Dobrý den ${signup.name},</p>
-    <p>děkujeme za přihlášku na kurz <strong>${booking.title}</strong>, ${fmtDate(booking.date)} od ${booking.startTime} do ${booking.endTime}.</p>
-    <p>Ozveme se vám co nejdřív s potvrzením místa.</p>
-  `);
-  await send(signup.contact, subject, html);
+  await sendFromTemplate(
+    "signup_received",
+    signup.contact,
+    {
+      name: signup.name,
+      courseTitle: booking.title,
+      date: fmtDate(booking.date),
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+    },
+    { bookingId: booking.id, signupId: signup.id }
+  );
 }
 
 // --- Přihlášenému: rozhodnutí o přihlášce ---
 export async function sendSignupDecisionEmail(booking: Booking, signup: CourseSignup, approved: boolean) {
-  const subject = approved
-    ? `Vaše místo na kurzu je potvrzené — ${fmtDate(booking.date)}`
-    : `K vaší přihlášce na kurz — ${fmtDate(booking.date)}`;
-  const html = wrap(
-    approved
-      ? `<p>Dobrý den ${signup.name},</p><p>vaše místo na kurzu <strong>${booking.title}</strong> (${fmtDate(booking.date)} ${booking.startTime}–${booking.endTime}) je potvrzené. Těšíme se na vás.</p>`
-      : `<p>Dobrý den ${signup.name},</p><p>na kurz <strong>${booking.title}</strong> (${fmtDate(booking.date)} ${booking.startTime}–${booking.endTime}) vás bohužel nemůžeme zapsat — kapacita je bohužel plná. Ozveme se s dalším možným termínem.</p>`
+  const key = approved ? "signup_decision_approved" : "signup_decision_rejected";
+  await sendFromTemplate(
+    key,
+    signup.contact,
+    {
+      name: signup.name,
+      courseTitle: booking.title,
+      date: fmtDate(booking.date),
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+    },
+    { bookingId: booking.id, signupId: signup.id }
   );
-  await send(signup.contact, subject, html);
 }
