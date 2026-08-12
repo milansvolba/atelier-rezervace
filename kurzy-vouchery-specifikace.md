@@ -125,3 +125,19 @@ Později: napojení GoPay/ComGate/Stripe (rozhodnutí odložené) změní jen to
 - Uplatnění voucheru se v UI bude jmenovat **"Využít poukaz"** (ne interní název "uplatnit"). Zákazník zadá kód ručně, uvidí vypsané veřejné termíny a vybere si jeden.
 - Fáze 2 (později): každý voucher bude mít vlastní unikátní URL (např. `/kurzy/vyuzit-poukaz/{code}`), na kterou povede QR kód vytištěný na voucheru — zákazník tak přeskočí ruční zadávání kódu a rovnou vybere termín + potvrdí.
 - **Sleva za skupinu — rozhodnuto:** skupinová objednávka bude mít slevu, která roste s tím, jak velkou část kapacity termínu skupina zabere. Největší sleva je, když skupina zaplní celou kapacitu termínu sama (proto administrátor nemusí řešit dolaďování zbylých míst). Konkrétní čísla/tiery slevy (kolik % při jaké zaplněnosti) je potřeba s Milanem doladit — sledovat jako otevřený bod.
+
+
+## Slevové tiery pro skupinové objednávky (Milan, 12. 8. 2026)
+
+Pro standardní kapacitu kurzu 6 osob (potvrdit, jestli je 6 fixní kapacita pro všechny vypsané termíny, nebo se liší termín od termínu):
+
+| Počet účastníků ve skupině | Zaplnění kapacity | Sleva |
+|---|---|---|
+| 6 | 100 % | 30 % |
+| 5 | 83 % | 20 % |
+| 4 | 67 % | 15 % |
+| 1–3 | méně | beze slevy |
+
+Do `CourseOrder` přibude computed/uložené pole `discountPercent`, dopočtené při vytvoření objednávky podle tabulky výše (na základě `people` a kapacity zvoleného/cílového termínu). `totalPrice = pricePerPerson × people × (1 − discountPercent/100)`.
+
+Otevřené: pokud se kapacita 6 liší termín od termínu (např. `capacity` pole na `Booking` je proměnlivé), přepočítat tabulku na procenta zaplnění místo pevných počtů osob (5/6 → 83 %, 4/6 → 67 %), aby fungovalo i pro termíny s jinou kapacitou.
