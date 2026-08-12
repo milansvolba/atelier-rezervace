@@ -34,6 +34,7 @@ export default function KurzyPage() {
   const [signupNote, setSignupNote] = useState("");
   const [signupSent, setSignupSent] = useState<null | "ok" | "err">(null);
   const [honeypot, setHoneypot] = useState("");
+  const [tiers, setTiers] = useState<{ minFillPercent: number; discountPercent: number }[]>([]);
 
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customDate, setCustomDate] = useState("");
@@ -52,6 +53,22 @@ export default function KurzyPage() {
       })
       .catch(() => setLoading(false));
   }, [signupSent]);
+
+  useEffect(() => {
+    fetch("/api/discount-tiers")
+      .then((r) => r.json())
+      .then((data) => setTiers(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  // Vypocita procento skupinove slevy pro dany pocet lidi a kapacitu terminu.
+  function discountFor(people: number, capacity: number | null) {
+    if (!capacity || capacity <= 0) return 0;
+    const fillPercent = Math.min(100, Math.round((people / capacity) * 100));
+    const sorted = [...tiers].sort((a, b) => b.minFillPercent - a.minFillPercent);
+    const match = sorted.find((t) => fillPercent >= t.minFillPercent);
+    return match ? match.discountPercent : 0;
+  }
 
   async function submitSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -219,6 +236,18 @@ export default function KurzyPage() {
                     />
                   </label>
                 </div>
+                {c.price && c.capacity && signupPeople > 1 && (() => {
+                  const discountPercent = discountFor(signupPeople, c.capacity);
+                  const total = c.price * signupPeople;
+                  const totalAfter = Math.round(total * (1 - discountPercent / 100));
+                  return (
+                    <p className="text-xs text-gray-500">
+                      {discountPercent > 0
+                        ? `Skupinová sleva ${discountPercent} % · celkem ${totalAfter} Kč (místo ${total} Kč)`
+                        : `Celkem za skupinu: ${total} Kč`}
+                    </p>
+                  );
+                })()}
                 <label className="block text-sm">
                   Poznámka (nepovinné)
                   <input
