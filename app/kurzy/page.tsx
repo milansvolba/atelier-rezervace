@@ -134,7 +134,7 @@ export default function KurzyPage() {
   return (
     <main className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold mb-1">Kurzy Vysochej</h1>
+        <h1 className="text-xl font-semibold mb-1">Kurzy</h1>
         <p className="text-sm text-gray-500">
           Vypsané termíny sochařských kurzů. Přihlaste se na některý z nich, nebo si napište o vlastní termín pro skupinu.
         </p>
