@@ -1109,6 +1109,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     price: "",
   });
   const [signups, setSignups] = useState<CourseSignup[]>([]);
+  const [tiers, setTiers] = useState<{ id: string; minFillPercent: number; discountPercent: number; sortOrder: number }[]>([]);
 
   const date = iso(anchor);
   const isAdmin = session.role === "admin";
@@ -1121,6 +1122,42 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   async function loadSignups() {
     const res = await fetch("/api/signups");
     if (res.ok) setSignups(await res.json());
+  }
+
+  async function loadTiers() {
+    const res = await fetch("/api/discount-tiers");
+    if (res.ok) setTiers(await res.json());
+  }
+
+  useEffect(() => {
+    loadTiers();
+  }, []);
+
+  function updateTierField(id: string, field: "minFillPercent" | "discountPercent", value: number) {
+    setTiers((prev) => prev.map((t) => (t.id === id ? { ...t, [field]: value } : t)));
+  }
+
+  async function saveTier(t: { id: string; minFillPercent: number; discountPercent: number; sortOrder: number }) {
+    await fetch("/api/discount-tiers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(t),
+    });
+    loadTiers();
+  }
+
+  async function addTier() {
+    await fetch("/api/discount-tiers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ minFillPercent: 50, discountPercent: 10, sortOrder: tiers.length + 1 }),
+    });
+    loadTiers();
+  }
+
+  async function deleteTier(id: string) {
+    await fetch("/api/discount-tiers?id=" + id, { method: "DELETE" });
+    loadTiers();
   }
 
   useEffect(() => {
@@ -1393,6 +1430,49 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="font-medium mb-1">Slevy pro skupinove objednavky kurzu</p>
+          <p className="text-xs text-gray-500 mb-3">
+            Sleva se pocita z naplnenosti skupiny vzhledem ke kapacite terminu (pocet osob / kapacita).
+            Tier s nejvyssi podminkou, do ktere se skupina vejde, urcuje vyslednou slevu.
+          </p>
+          <div className="space-y-2">
+            {tiers
+              .slice()
+              .sort((a, b) => b.minFillPercent - a.minFillPercent)
+              .map((t) => (
+                <div key={t.id} className="flex items-center gap-2 text-sm flex-wrap">
+                  <span className="text-gray-500">od</span>
+                  <input
+                    type="number"
+                    className="w-16 h-8 border border-gray-300 rounded-md px-2"
+                    value={t.minFillPercent}
+                    onChange={(e) => updateTierField(t.id, "minFillPercent", Number(e.target.value))}
+                  />
+                  <span className="text-gray-500">% naplnenosti to sleva</span>
+                  <input
+                    type="number"
+                    className="w-16 h-8 border border-gray-300 rounded-md px-2"
+                    value={t.discountPercent}
+                    onChange={(e) => updateTierField(t.id, "discountPercent", Number(e.target.value))}
+                  />
+                  <span className="text-gray-500">%</span>
+                  <button onClick={() => saveTier(t)} className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs">
+                    Ulozit
+                  </button>
+                  <button onClick={() => deleteTier(t.id)} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
+                    Smazat
+                  </button>
+                </div>
+              ))}
+          </div>
+          <button onClick={addTier} className="mt-3 h-8 px-3 rounded-md border border-gray-300 text-xs">
+            + Pridat tier
+          </button>
         </div>
       )}
 
