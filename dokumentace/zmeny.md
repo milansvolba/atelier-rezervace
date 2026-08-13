@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-13 — Draft copy o skupinové slevě na stránce Kurzy (rezervace)
+
+Přidána krátká věta u "Kurz na míru pro skupinu" zmiňující, že skupiny mají výhodnější cenu — zatím jen draft formulace, označeno komentářem v kódu pro finální doladění copy (Milan). Reakce na zjištění, že skupinová sleva (viz výše) nebyla nikde v textu webu zmíněná.
+
 ## 2026-08-13 — Výběr typu kurzu: jednotlivec / skupina (web + rezervace)
 
 Na `/kurzy` se termíny kurzů nově seskupují do "témat" podle názvu. Tlačítko "Koupit" nabídne volbu Jednotlivec (filtruje na vypsané termíny, existující přihlašovací formulář) / Skupina (existující formulář poptávky vlastního termínu). Bez nového backendu — využívá existující `/api/signups` a `/api/requests`.
