@@ -35,6 +35,8 @@ export default function KurzyPage() {
   const [signupSent, setSignupSent] = useState<null | "ok" | "err">(null);
   const [honeypot, setHoneypot] = useState("");
   const [tiers, setTiers] = useState<{ minFillPercent: number; discountPercent: number }[]>([]);
+  const [buyingTopic, setBuyingTopic] = useState<string | null>(null);
+  const [topicFilter, setTopicFilter] = useState<string | null>(null);
 
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customDate, setCustomDate] = useState("");
@@ -69,6 +71,16 @@ export default function KurzyPage() {
     const match = sorted.find((t) => fillPercent >= t.minFillPercent);
     return match ? match.discountPercent : 0;
   }
+
+  // Seskupi vypsane terminy podle nazvu kurzu (tema) pro vyber "Koupit".
+  const topics = useMemo(() => {
+    const map = new Map<string, { title: string; price: number | null; count: number }>();
+    courses.forEach((c) => {
+      if (!map.has(c.title)) map.set(c.title, { title: c.title, price: c.price, count: 0 });
+      map.get(c.title)!.count++;
+    });
+    return Array.from(map.values());
+  }, [courses]);
 
   async function submitSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -157,14 +169,78 @@ export default function KurzyPage() {
         </p>
       </div>
 
-      <div className="space-y-3">
+      {topics.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="font-medium mb-3">Vyberte kurz</p>
+          <div className="space-y-2">
+            {topics.map((t) => (
+              <div key={t.title} className="flex items-center justify-between gap-3 border-t border-gray-100 pt-2 first:border-t-0 first:pt-0 flex-wrap">
+                <div>
+                  <p className="text-sm font-medium">{t.title}</p>
+                  {t.price ? <p className="text-xs text-gray-500">{t.price} Kč/os.</p> : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setBuyingTopic(buyingTopic === t.title ? null : t.title)}
+                  className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs shrink-0"
+                >
+                  {buyingTopic === t.title ? "Zavřít" : "Koupit"}
+                </button>
+              </div>
+            ))}
+          </div>
+          {buyingTopic && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-sm font-medium mb-2">{buyingTopic} — pro koho?</p>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTopicFilter(buyingTopic);
+                    requestAnimationFrame(() => {
+                      document.getElementById("course-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    });
+                  }}
+                  className="h-9 px-4 rounded-md border border-gray-300 text-sm"
+                >
+                  Pro jednotlivce — vybrat vypsaný termín
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomNote((n) => (n ? n : `Téma: ${buyingTopic}`));
+                    setShowCustomForm(true);
+                    requestAnimationFrame(() => {
+                      document.getElementById("custom-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    });
+                  }}
+                  className="h-9 px-4 rounded-md border border-gray-300 text-sm"
+                >
+                  Pro skupinu — domluvit termín
+                </button>
+              </div>
+            </div>
+          )}
+          {topicFilter && (
+            <button
+              type="button"
+              onClick={() => setTopicFilter(null)}
+              className="mt-3 text-xs text-gray-500 underline"
+            >
+              Zobrazit všechny termíny
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="space-y-3" id="course-list">
         {loading && <p className="text-sm text-gray-400">Načítám termíny…</p>}
         {!loading && courses.length === 0 && (
           <p className="text-sm text-gray-500 bg-white border border-gray-200 rounded-xl p-5">
             Momentálně nemáme vypsaný žádný termín. Napište nám níže o poptávku na vlastní termín.
           </p>
         )}
-        {courses.map((c) => (
+        {courses.filter((c) => !topicFilter || c.title === topicFilter).map((c) => (
           <div key={c.id} className="bg-white border border-gray-200 rounded-xl p-5">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
