@@ -6,6 +6,14 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-13 — Font nadpisů: Fraunces → Work Sans (web)
+
+Změněna proměnná --font-display ve styles.css z ozdobného serifu Fraunces na Work Sans (stejný font, co už web používá pro běžný text) — týká se h1–h4 i loga v hlavičce. Jednodušší, čitelnější, stále v souladu se zbytkem webu. Otestováno naživo (pozn.: web nemá cache-control hlavičky na statické soubory, po změně CSS je potřeba tvrdý refresh Cmd/Ctrl+Shift+R, jinak prohlížeč chvíli ukazuje starou verzi).
+
+## 2026-08-13 — Tlačítko Uložit u každého bloku v mini CMS (web)
+
+V admin.php přidáno tlačítko Uložit za každý obsahový blok (Homepage slidy, Kurz 1, Kurz 2, Nejbližší termíny, Pronájem, Kontakt, Lidé) — dřív bylo jen jedno na konci celé stránky. Formulář je pořád jeden celek, takže každé tlačítko uloží všechny sekce najednou, jen je teď po ruce hned u bloku, který se upravuje.
+
 ## 2026-08-13 — Obnova zapomenutého hesla do admin.php (web)
 
 Přidána cesta pro případ zapomenutého hesla: nahrání prázdného souboru `data/RESET_PASSWORD` přes FTP zobrazí na `admin.php` místo přihlášení formulář na nastavení nového hesla (bez znalosti starého). Po nastavení se soubor sám smaže. Otestováno naživo (formulář se zobrazil, marker soubor smazán bez uložení nového hesla).
