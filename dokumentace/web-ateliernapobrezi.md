@@ -55,6 +55,7 @@ Statický PHP web s jednoduchým vlastním mini CMS pro texty. **Není v gitu** 
 - Neúspěšné pokusy o přihlášení eviduje `data/admin_login_attempts.php` a po překročení limitu dočasně blokuje další pokusy (rate limiting) — dřívější chyba v této logice byla opravena.
 - Samotná složka `data/` má vlastní `.htaccess`, který blokuje přímý přístup zvenčí (nejde si stáhnout `content.json` ani `*.php` soubory uvnitř přímo z URL).
 - Claude do `admin.php` heslo nikdy nezadává — end-to-end test provádí vždy Milan sám.
+- **Zapomenuté heslo:** nahraj přes FTP do `data/` prázdný soubor s názvem `RESET_PASSWORD` a otevři `admin.php` — místo přihlášení se zobrazí formulář na nastavení nového hesla (bez nutnosti znát to staré, FTP přístup je dostatečný důkaz vlastnictví). Po nastavení hesla appka soubor sama smaže. Nové heslo zadává vždy Milan přímo do formuláře, nikdy ne přes Claude.
 
 ## Clean URLs
 
