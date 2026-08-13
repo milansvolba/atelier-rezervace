@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-13 — Obnova zapomenutého hesla do admin.php (web)
+
+Přidána cesta pro případ zapomenutého hesla: nahrání prázdného souboru `data/RESET_PASSWORD` přes FTP zobrazí na `admin.php` místo přihlášení formulář na nastavení nového hesla (bez znalosti starého). Po nastavení se soubor sám smaže. Otestováno naživo (formulář se zobrazil, marker soubor smazán bez uložení nového hesla).
+
 ## 2026-08-13 — Draft copy o skupinové slevě na stránce Kurzy (rezervace)
 
 Přidána krátká věta u "Kurz na míru pro skupinu" zmiňující, že skupiny mají výhodnější cenu — zatím jen draft formulace, označeno komentářem v kódu pro finální doladění copy (Milan). Reakce na zjištění, že skupinová sleva (viz výše) nebyla nikde v textu webu zmíněná.
