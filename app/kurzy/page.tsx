@@ -347,6 +347,9 @@ export default function KurzyPage() {
           Nevyhovuje vám žádný vypsaný termín? Klikněte na den, který by se vám hodil, a pošlete nám poptávku —
           potvrdíme ho, nebo nabídneme nejbližší volný termín.
         </p>
+          <p className="text-sm text-gray-500 mb-4">
+            Skupiny navíc mají výhodnější cenu za osobu — čím víc vás bude, tím větší sleva. {/* TODO copy: doladit finální formulaci a umístění (Milan) */}
+          </p>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 mb-4">
           {monthsToShow.map(({ year, month }) => (
             <div key={`${year}-${month}`}>
