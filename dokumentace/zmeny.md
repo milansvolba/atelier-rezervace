@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-14 — Rozcestník: sticky boční panel v levém okraji stránky (web)
+
+Milan sám navrhl kompromis: pokud by rozcestník byl dost nízký, mohl by být sticky znovu — třeba v levém sloupci. Stránka admin.php má fixní šířku obsahu 760 px a je vystředěná, takže na širších obrazovkách (od ~1200 px) je po stranách volné místo. Do něj teď (přes `position: fixed`) sedí úzký postranní panel s odkazy na všech 7 sekcí (6 stránek + Fotky) — nezabírá žádné místo v hlavním sloupci a nekonkuruje formulářovým polím. Aktuální sekce se v panelu zvýrazňuje podle scrollu (IntersectionObserver). Na užších obrazovkách (pod 1200 px) se panel automaticky skryje a zůstává původní horizontální rozcestník nahoře stránky, aby nic nepřekrývalo obsah. Ověřeno naživo (Milan přihlášený) — panel drží na místě při scrollu, zvýraznění funguje, formulář zůstává celý viditelný.
+
 ## 2026-08-14 — Rozcestník: horizontální dlaždice místo svislého seznamu, bez sticky (web)
 
 Milan na živém náhledu upozornil na dvě věci: rozcestník byl moc vysoký (svislý seznam 7 položek), a i po zkrácení by permanentně přilepený (sticky) nahoře zabíral místo, které chce vidět při editaci obsahu níž na stránce. Řešení:
