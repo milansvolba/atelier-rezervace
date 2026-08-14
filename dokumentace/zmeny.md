@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-14 — Rozcestník v mini CMS podle stránek + odkazy na fotky (web)
+
+Milan chtěl po přihlášení do admin.php rovnou vidět, co lze upravit na jednotlivých stránkách — včetně fotek, ne jen texty. Rozcestník přepracován z jednoduchého seznamu odkazů na strukturovaný výpis podle stránek (Domů, Kurzy, Pronájem, Lidé, Reference, Kontakt): u každé stránky je teď stručný popis, co pod ní jde upravit, a odkaz rovnou na sekci Fotky s počtem fotek, které se k dané stránce vážou. Sekce Fotky dostala vlastní ukotvení (#sec-fotky). Ověřeno naživo, Milan byl v té chvíli přihlášený, takže i vizuálně potvrzeno.
+
 ## 2026-08-13 — Rozšíření mini CMS: rozcestník, bannery, boxy a výčty (web)
 
 Na přání Milana rozšířeno, co jde upravovat v admin.php bez zásahu do kódu:
