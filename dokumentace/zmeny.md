@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-17 — Oprava rozbaleného menu na mobilu (web)
+
+Milan nahlásil, že se na mobilu po rozkliknutí hamburger menu zobrazí jen úzký ořezaný pruh vpravo nahoře místo menu přes celou šířku. Příčina: obal .nav-wrap měl position: relative, ale na mobilu se zmenší jen na šířku tlačítka hamburgeru (protože samotné menu je při zavření vyjmuté z toku přes position: absolute a nepřispívá k jeho šířce) — rozbalené menu (.nav-links, taky position: absolute; left:0; right:0) se pak zarovnalo jen do téhle úzké krabičky u ikony místo celé hlavičky. Oprava: odstraněno position: relative z .nav-wrap — menu se teď zarovná podle nejbližšího pozicovaného předka, kterým je header.site-header (position: sticky, přes celou šířku), takže se rozbalí správně přes celou šířku obrazovky.
+
 ## 2026-08-14 — Rozcestník: sticky boční panel v levém okraji stránky (web)
 
 Milan sám navrhl kompromis: pokud by rozcestník byl dost nízký, mohl by být sticky znovu — třeba v levém sloupci. Stránka admin.php má fixní šířku obsahu 760 px a je vystředěná, takže na širších obrazovkách (od ~1200 px) je po stranách volné místo. Do něj teď (přes `position: fixed`) sedí úzký postranní panel s odkazy na všech 7 sekcí (6 stránek + Fotky) — nezabírá žádné místo v hlavním sloupci a nekonkuruje formulářovým polím. Aktuální sekce se v panelu zvýrazňuje podle scrollu (IntersectionObserver). Na užších obrazovkách (pod 1200 px) se panel automaticky skryje a zůstává původní horizontální rozcestník nahoře stránky, aby nic nepřekrývalo obsah. Ověřeno naživo (Milan přihlášený) — panel drží na místě při scrollu, zvýraznění funguje, formulář zůstává celý viditelný.
