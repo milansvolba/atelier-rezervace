@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-17 — Doplnění profilu lektora + oprava duplicity bia mezi Kurzy a Lidé (web)
+
+Na základě CV Petra Švolby doplněn odstavec do jeho bia (pole person_petr_bio v CMS): lektorská zkušenost v Lektorském centru GASK v Kutné Hoře, mezinárodní výstavy (Londýn, Brusel, Curych), rezidence v Egon Schiele Art Centru v Českém Krumlově a sympozium Šumakárt (zmíněno i kvůli plánovaným kurzům v přírodě). Při té příležitosti se zjistilo, že stránka kurzy.php měla bio lektora natvrdo napsané v kódu (starší, kratší verze textu) místo napojení na CMS pole — takže úprava přes admin.php se na Kurzech vůbec neprojevila. Opraveno: kurzy.php teď stejně jako lide.php vypisuje person_petr_bio dynamicky (rozdělené na odstavce), takže napříště stačí upravit text na jednom místě a projeví se všude.
+
 ## 2026-08-17 — Oprava rozbaleného menu na mobilu (web)
 
 Milan nahlásil, že se na mobilu po rozkliknutí hamburger menu zobrazí jen úzký ořezaný pruh vpravo nahoře místo menu přes celou šířku. Příčina: obal .nav-wrap měl position: relative, ale na mobilu se zmenší jen na šířku tlačítka hamburgeru (protože samotné menu je při zavření vyjmuté z toku přes position: absolute a nepřispívá k jeho šířce) — rozbalené menu (.nav-links, taky position: absolute; left:0; right:0) se pak zarovnalo jen do téhle úzké krabičky u ikony místo celé hlavičky. Oprava: odstraněno position: relative z .nav-wrap — menu se teď zarovná podle nejbližšího pozicovaného předka, kterým je header.site-header (position: sticky, přes celou šířku), takže se rozbalí správně přes celou šířku obrazovky.
