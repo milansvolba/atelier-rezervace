@@ -6,6 +6,16 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-19 — Fotky u referencí (kruhový ořez) + zvýraznění jmen (web)
+
+Milan chtěl u jednotlivých referencí fotku účastníka, ideálně kruhový ořez, a mírně zvýraznit jména. Řešení:
+
+- Do inc/content.php přidány sdílené funkce `build_testimonials($c)` a `render_testimonial_card($t)` — dřív měly kurzy.php a reference.php každá svou vlastní kopii stejné logiky (stejný problém jako u bia lektora, viz záznam z 17. 8.), teď je to na jednom místě, aby se to znovu nerozjelo.
+- Karta reference: fotka (pokud je nahraná) se zobrazí jako kruh 44×44 px vedle jména (`border-radius:50%; object-fit:cover`) — stejný princip jako u foto slotů jinde na webu, žádný přesný ořez při nahrávání není potřeba.
+- Jméno zvýrazněno silněji (font-weight 600 místo 500).
+- V admin.php přibyly 4 nové foto sloty (Reference 1–4 – fotka) v sekci Fotky — dokud fotka není nahraná, karta funguje beze změny (fotka se prostě nezobrazí).
+- Ověřeno naživo na /kurzy i /reference, žádné PHP chyby.
+
 ## 2026-08-17 — Doplnění profilu lektora + oprava duplicity bia mezi Kurzy a Lidé (web)
 
 Na základě CV Petra Švolby doplněn odstavec do jeho bia (pole person_petr_bio v CMS): lektorská zkušenost v Lektorském centru GASK v Kutné Hoře, mezinárodní výstavy (Londýn, Brusel, Curych), rezidence v Egon Schiele Art Centru v Českém Krumlově a sympozium Šumakárt (zmíněno i kvůli plánovaným kurzům v přírodě). Při té příležitosti se zjistilo, že stránka kurzy.php měla bio lektora natvrdo napsané v kódu (starší, kratší verze textu) místo napojení na CMS pole — takže úprava přes admin.php se na Kurzech vůbec neprojevila. Opraveno: kurzy.php teď stejně jako lide.php vypisuje person_petr_bio dynamicky (rozdělené na odstavce), takže napříště stačí upravit text na jednom místě a projeví se všude.
