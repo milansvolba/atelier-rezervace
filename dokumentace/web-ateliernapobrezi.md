@@ -63,7 +63,7 @@ Statický PHP web s jednoduchým vlastním mini CMS pro texty. **Není v gitu** 
 
 ## Propojení s rezervačním systémem
 
-`kurzy.php` při načtení stránky volá veřejné API `GET /api/courses` na `rezervace.ateliernapobrezi.cz` (viz [rezervace-system.md](./rezervace-system.md)) a zobrazuje aktuálně vypsané, potvrzené a budoucí termíny kurzů — název, datum, čas, cenu, volnou kapacitu.
+`kurzy.php` zobrazuje aktuálně vypsané, potvrzené a budoucí termíny kurzů — název, datum, čas, cenu, volnou kapacitu — z veřejného API `GET /api/courses` na `rezervace.ateliernapobrezi.cz` (viz [rezervace-system.md](./rezervace-system.md)). Od 20. 8. 2026 web výsledek cachuje do `data/courses_cache.json` (TTL 5 minut), aby stránka nečekala na živé volání Vercelu při každém načtení: je-li cache čerstvá, čte se rovnou z ní; jinak proběhne živé volání s timeoutem 3 s a cache se přepíše; při selhání živého volání se použije poslední známá cache, nebo prázdný výsledek, pokud cache ještě neexistuje.
 
 Kurzy se na stránce seskupují podle společného názvu do "témat" (např. všechny termíny "Modelování reliéfu" patří pod jedno téma). U tématu je tlačítko **Koupit**, které nabídne volbu:
 - **Pro jednotlivce** → zobrazí filtrovaný seznam vypsaných termínů daného tématu, návštěvník se přihlásí na konkrétní termín (formulář přihlášky, viz `/api/signups` v rezervačním systému).
