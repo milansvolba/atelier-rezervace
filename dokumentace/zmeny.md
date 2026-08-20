@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-20 — Webhook: okamžitá invalidace cache kurzů při změně rezervace (obojí)
+
+Při vytvoření, úpravě nebo smazání rezervace/termínu kurzu appka rezervace nově pošle webhook na web (`notifyDataChanged()` v `lib/webhooks.ts`, volané ze `store.add`/`store.update`/`store.remove` v `lib/data.ts`). Web přijme POST na `/webhook-invalidate` (ověření sdíleného tajemství v hlavičce `X-Webhook-Secret` přes `hash_equals`) a rovnou přepočítá souborovou cache termínů kurzů (`refresh_courses_cache()` v novém `inc/courses_cache.php`, sdíleném s `kurzy.php`). Dřív se cache obnovovala až po vypršení 5min TTL, teď se projeví změna na Kurzy prakticky okamžitě. Webhook je navržený obecně (typ události + id, příjemce si vždy dotáhne čerstvá data sám) — do budoucna půjde použít i pro jiná místa webu, ne jen tuhle cache. Selhání webhooku (výpadek, timeout 2 s) nijak neovlivní uložení rezervace, jen se nestihne okamžitá invalidace a čeká se na TTL. Detaily viz `dokumentace/rezervace-system.md` (sekce Webhook) a `dokumentace/web-ateliernapobrezi.md` (PHP strana).
+
+---
+
 ## 2026-08-20 — Výběr termínu při kliku na buňku s víc rezervacemi (rezervace)
 
 Milan hlásil, že v adminu vidí booknuté termíny, které nejde odstranit. Příčina: v týdenním i denním/měsíčním pohledu kalendáře klik na buňku (místo + den) otevřel detail s tlačítkem Smazat jen když v ní byl přesně jeden potvrzený termín — pokud jich tam bylo víc najednou (zobrazené spojené v textu buňky), klik místo detailu spustil formulář na založení nové rezervace, takže se k mazání/úpravě žádného z nich nedalo dostat. Přidána nová komponenta `BookingPickerModal` — když má buňka víc potvrzených termínů, klik teď nabídne jejich seznam k výběru, a teprve po výběru konkrétního termínu se otevře existující detail se Smazat/Změnit. Ověřeno přes TypeScript build na Vercelu (commit e309156, deployment completed).
