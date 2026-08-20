@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-20 — Cache pro živé termíny na Kurzy (web)
+
+Stránka /kurzy byla pomalá, protože při každém načtení synchronně čekala na živé volání /api/courses na Vercelu (i s timeoutem 4 s). Přidána souborová cache v kurzy.php (`data/courses_cache.json`, TTL 5 minut): pokud je cache čerstvá, termíny se načtou z ní okamžitě; jinak proběhne živé volání s krátkým timeoutem a cache se přepíše; při selhání živého volání (výpadek/timeout) se použije poslední známá cache místo prázdné stránky. Timeout 2 s se ukázal jako příliš krátký — živé volání běžně nestihlo doběhnout, cache se nikdy nenaplnila — po ověření naživo nastaveno na 3 s.
+
+---
+
 ## 2026-08-19 — Fotky u referencí (kruhový ořez) + zvýraznění jmen (web)
 
 Milan chtěl u jednotlivých referencí fotku účastníka, ideálně kruhový ořez, a mírně zvýraznit jména. Řešení:
