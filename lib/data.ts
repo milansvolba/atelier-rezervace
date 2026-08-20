@@ -1,5 +1,6 @@
 import { sql, ensureSchema } from "./db";
 import { Booking, BookingCategory, ResourceId, resourcesConflict, timesOverlap } from "./types";
+import { notifyDataChanged } from "./webhooks";
 
 function rowToBooking(r: Record<string, unknown>): Booking {
   const date = r.date as string | Date;
@@ -49,6 +50,8 @@ export const store = {
          ${b.status}, ${b.source}, ${b.extraMonitor ?? false}, ${b.userId ?? null}, ${b.createdAt},
          ${b.category ?? "pronajem"}, ${b.capacity ?? null}, ${b.price ?? null})
     `;
+    // Webhook: nová rezervace může být kurz, který se má promítnout na webu (viz lib/webhooks.ts).
+    notifyDataChanged("booking.created", { bookingId: b.id, category: b.category });
     return b;
   },
 
@@ -69,7 +72,10 @@ export const store = {
       WHERE id = ${id}
     `;
     const rows = await sql`SELECT * FROM bookings WHERE id = ${id}`;
-    return rows[0] ? rowToBooking(rows[0]) : null;
+    const result = rows[0] ? rowToBooking(rows[0]) : null;
+    // Webhook: úprava (např. termín/kapacita/zrušení) může měnit veřejný výpis kurzů.
+    if (result) notifyDataChanged("booking.updated", { bookingId: id, category: result.category });
+    return result;
   },
 
   async byDate(date: string): Promise<Booking[]> {
@@ -87,6 +93,9 @@ export const store = {
   async remove(id: string): Promise<void> {
     await ensureSchema();
     await sql`DELETE FROM bookings WHERE id = ${id}`;
+    // Webhook: smazaná rezervace mohla být kurz - nevíme kategorii po smazání,
+    // takže notifikaci pošleme vždy (příjemce si stejně sahá pro čerstvá data sám).
+    notifyDataChanged("booking.removed", { bookingId: id });
   },
 };
 
