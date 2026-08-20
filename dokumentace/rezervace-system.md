@@ -108,6 +108,21 @@ Každý pokus o odeslání (úspěch i chyba) se loguje do `email_log`, přehled
 - `RESEND_API_KEY` — odesílání e-mailů.
 - `ADMIN_EMAILS` — nepovinné, čárkou oddělený seznam pro upozornění na nové žádosti/přihlášky.
 - `NEXT_PUBLIC_APP_URL` — nepovinné, výchozí `https://rezervace.ateliernapobrezi.cz`.
+- `WEBHOOK_URL` — nepovinné; pokud nastaveno, appka po každé změně rezervace notifikuje tuhle URL (viz sekce Webhook níže).
+- `WEBHOOK_SECRET` — sdílený tajný klíč pro autentizaci webhooku; stejná hodnota musí být i v `data/webhook_secret.php` na `ateliernapobrezi.cz`.
+
+## Webhook: notifikace o změně rezervací
+
+Od 20. 8. 2026 appka po každém vytvoření/úpravě/smazání rezervace (`store.add`/`update`/`remove` v `lib/data.ts`) volá `notifyDataChanged()` z `lib/webhooks.ts` — POST na `WEBHOOK_URL` s hlavičkou `X-Webhook-Secret`. Zavedeno kvůli `kurzy.php` na hlavním webu (viz web-ateliernapobrezi.md), který si termíny kurzů cachuje na 5 minut — webhook umožňuje promítnout změnu okamžitě místo čekání na vypršení TTL.
+
+Záměrně obecné a minimální:
+- Payload nese jen typ události a pár identifikátorů (ne celá data rezervace) — příjemce si při triggeru vždy sám stáhne čerstvá data z veřejného `/api/courses`, takže webhook je jen spouštěč, ne zdroj pravdy.
+- Volání je "fire-and-forget" s krátkým timeoutem (2 s) a vlastním try/catch — výpadek nebo pomalá odpověď příjemce nikdy nesmí zpomalit nebo shodit samotnou operaci s rezervací.
+- Bez nastavené `WEBHOOK_URL`/`WEBHOOK_SECRET` se volání jen tiše přeskočí — appka funguje dál beze změny chování.
+- Mechanismus není vázaný jen na kurzy.php — libovolný další příjemce (budoucí zobrazení dat jinde) se dá napojit stejným způsobem, jen si zaregistruje vlastní URL.
+
+Příjemce na `ateliernapobrezi.cz`: `webhook-invalidate.php` (ověří `X-Webhook-Secret` proti `data/webhook_secret.php` přes `hash_equals`, pak zavolá `refresh_courses_cache()` z `inc/courses_cache.php` — vynucené živé stažení `/api/courses` a přepis `data/courses_cache.json`, bez ohledu na TTL). Podrobnosti k PHP straně viz web-ateliernapobrezi.md.
+
 
 ## Tech stack
 
