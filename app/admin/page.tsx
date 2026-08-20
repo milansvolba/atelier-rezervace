@@ -445,6 +445,49 @@ function QuickAddModal({
   );
 }
 
+// Výběr konkrétní rezervace, když je v jedné buňce kalendáře (místo + den)
+// víc potvrzených termínů najednou — klik na buňku pak nabídne tenhle výběr
+// místo rovnou detailu, ať se dá dostat ke Smazat/Změnit i pro překrývající se termíny.
+function BookingPickerModal({
+  items,
+  onClose,
+  onPick,
+}: {
+  items: Booking[];
+  onClose: () => void;
+  onPick: (b: Booking) => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="font-medium">Vyberte termín</p>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-sm">
+            ✕
+          </button>
+        </div>
+        <div className="space-y-2">
+          {items.map((b) => (
+            <button
+              key={b.id}
+              onClick={() => onPick(b)}
+              className="w-full text-left text-sm border border-gray-200 rounded-md px-3 py-2 hover:bg-gray-50"
+            >
+              {b.startTime}–{b.endTime} · {b.title}
+              {b.category === "kurz" && (
+                <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Kurz</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Detail existující rezervace — náhled, úprava, nebo smazání, s volitelným
 // upozorněním rezervisty e-mailem (pokud u rezervace máme kontakt). Server hlídá,
 // že člen smí takhle sahat jen na vlastní rezervace — admin na cokoli.
@@ -1084,6 +1127,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   const [error, setError] = useState<string | null>(null);
   const [quickAdd, setQuickAdd] = useState<{ resource: ResourceId; date: string } | null>(null);
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
+    const [pickItems, setPickItems] = useState<Booking[] | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [showMembers, setShowMembers] = useState(false);
   const [showEmails, setShowEmails] = useState(false);
@@ -1804,6 +1848,10 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                                   setDetailBooking(eff.items[0]);
                                   return;
                                 }
+                if (eff.kind === "confirmed" && eff.items.length > 1) {
+                  setPickItems(eff.items);
+                  return;
+                }
                                 if (eff.kind === "blocked") {
                                   setDetailBooking(eff.by);
                                   return;
@@ -1864,6 +1912,17 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
       {detailBooking && (
         <BookingDetailModal booking={detailBooking} onClose={() => setDetailBooking(null)} onSaved={load} />
       )}
+
+          {pickItems && (
+            <BookingPickerModal
+              items={pickItems}
+              onClose={() => setPickItems(null)}
+              onPick={(b) => {
+                setPickItems(null);
+                setDetailBooking(b);
+              }}
+            />
+          )}
 
       {showMembers && <MembersPanel onClose={() => setShowMembers(false)} />}
       {showEmails && <EmailsPanel onClose={() => setShowEmails(false)} />}
