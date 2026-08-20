@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-20 — Výběr termínu při kliku na buňku s víc rezervacemi (rezervace)
+
+Milan hlásil, že v adminu vidí booknuté termíny, které nejde odstranit. Příčina: v týdenním i denním/měsíčním pohledu kalendáře klik na buňku (místo + den) otevřel detail s tlačítkem Smazat jen když v ní byl přesně jeden potvrzený termín — pokud jich tam bylo víc najednou (zobrazené spojené v textu buňky), klik místo detailu spustil formulář na založení nové rezervace, takže se k mazání/úpravě žádného z nich nedalo dostat. Přidána nová komponenta `BookingPickerModal` — když má buňka víc potvrzených termínů, klik teď nabídne jejich seznam k výběru, a teprve po výběru konkrétního termínu se otevře existující detail se Smazat/Změnit. Ověřeno přes TypeScript build na Vercelu (commit e309156, deployment completed).
+
+---
+
 ## 2026-08-20 — Cache pro živé termíny na Kurzy (web)
 
 Stránka /kurzy byla pomalá, protože při každém načtení synchronně čekala na živé volání /api/courses na Vercelu (i s timeoutem 4 s). Přidána souborová cache v kurzy.php (`data/courses_cache.json`, TTL 5 minut): pokud je cache čerstvá, termíny se načtou z ní okamžitě; jinak proběhne živé volání s krátkým timeoutem a cache se přepíše; při selhání živého volání (výpadek/timeout) se použije poslední známá cache místo prázdné stránky. Timeout 2 s se ukázal jako příliš krátký — živé volání běžně nestihlo doběhnout, cache se nikdy nenaplnila — po ověření naživo nastaveno na 3 s.
