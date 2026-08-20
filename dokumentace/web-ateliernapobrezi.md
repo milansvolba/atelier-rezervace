@@ -13,7 +13,9 @@ Statický PHP web s jednoduchým vlastním mini CMS pro texty. **Není v gitu** 
 ```
 /www
 ├── index.php              # Úvodní stránka
-├── kurzy.php               # Kurzy — živě natahuje termíny z rezervačního systému
+├── kurzy.php               # Kurzy — rozcestník, odkazuje na detailní stránky níže
+├── kurz-modelovani-hlavy.php # Detail kurzu Modelování hlavy
+├── kurz-relief.php          # Detail kurzu Modelování reliéfu
 ├── pronajem.php            # Pronájem prostoru
 ├── kontakt.php             # Kontakt
 ├── lide.php                 # Lidé (kdo ateliér vede)
@@ -59,7 +61,7 @@ Statický PHP web s jednoduchým vlastním mini CMS pro texty. **Není v gitu** 
 
 ## Clean URLs
 
-`.htaccess` v kořeni `/www` přepisuje adresy bez přípony `.php` na skutečné soubory, takže se používá např. `/kurzy` místo `/kurzy.php`. Platí pro všechny hlavní stránky.
+`.htaccess` v kořeni `/www` přepisuje adresy bez přípony `.php` na skutečné soubory, takže se používá např. `/kurzy` místo `/kurzy.php`. Platí pro všechny hlavní stránky. Platí i pro nové stránky `kurz-modelovani-hlavy` a `kurz-relief`.
 
 ## Propojení s rezervačním systémem
 
@@ -67,11 +69,9 @@ Statický PHP web s jednoduchým vlastním mini CMS pro texty. **Není v gitu** 
 
 Od 20. 8. 2026 navíc appka rezervace po každé změně rezervace/termínu (vytvoření, úprava, smazání) pošle na web webhook (`POST /webhook-invalidate`, ověřený sdíleným tajemstvím v hlavičce `X-Webhook-Secret`), který rovnou vynutí přepočet cache (`refresh_courses_cache()` v `inc/courses_cache.php`, sdíleném s `kurzy.php`) — změna se tak na Kurzy projeví prakticky okamžitě, ne až po vypršení 5min TTL. Sdílený tajný klíč je uložený v `data/webhook_secret.php` (soubor ho jen `return`-uje jako řetězec, nikdy ho nevypisuje) a jako proměnná `WEBHOOK_SECRET` ve Vercel nastavení appky rezervace. Detaily k appce rezervace a odesílání webhooku viz [rezervace-system.md](./rezervace-system.md).
 
-Kurzy se na stránce seskupují podle společného názvu do "témat" (např. všechny termíny "Modelování reliéfu" patří pod jedno téma). U tématu je tlačítko **Koupit**, které nabídne volbu:
-- **Pro jednotlivce** → zobrazí filtrovaný seznam vypsaných termínů daného tématu, návštěvník se přihlásí na konkrétní termín (formulář přihlášky, viz `/api/signups` v rezervačním systému).
-- **Pro skupinu** → přesměruje na formulář poptávky vlastního termínu (`/api/requests` v rezervačním systému) — skupina si termín domlouvá individuálně.
+**Struktura Kurzy (od 20. 8. 2026):** `kurzy.php` je rozcestník — hero, karty obou kurzů, sekce "Co vás čeká", profil lektora a FAQ. Karta každého kurzu má tlačítko **Zobrazit detail a termíny**, které vede na vlastní detailní stránku (`kurz-modelovani-hlavy.php` / `kurz-relief.php`). Detailní stránka má vlastní úvodní text (`course1_detail_intro`/`course2_detail_intro` v `content.json`), fotky (`img_src()` s placeholderem, dokud Milan nenahraje `images/course1_1.jpg` atd. přes FTP), termíny filtrované klíčovým slovem podle kurzu z `get_cached_courses()`, reference filtrované stejně z `build_testimonials()` a vlastní přesný `Course` schema.org blok. Odkaz u termínů vede přímo na `rezervace.ateliernapobrezi.cz` — žádný modál ani volba jednotlivec/skupina na webu není, to řeší formuláře přímo v rezervačním systému.
 
-Pokud aktuálně nejsou vypsané žádné termíny, zobrazí se informace "Momentálně nemáme vypsaný žádný termín" a nabídka poptávky vlastního termínu pro skupinu.
+Pokud u kurzu aktuálně nejsou vypsané žádné konkrétní termíny, detailní stránka zobrazí obecný odkaz na rezervační kalendář místo prázdného seznamu.
 
 ## Menu
 
@@ -79,7 +79,7 @@ Hlavní i patičkové menu: Domů, Kurzy, Pronájem prostoru, Kontakt. Položka 
 
 ## Stav jednotlivých stránek
 
-- **Kurzy** — hotovo: live termíny z rezervačního systému, výběr tématu (jednotlivec/skupina), skupinové slevy počítané v rezervačním systému.
+- **Kurzy** — hotovo: `kurzy.php` jako rozcestník + vlastní detailní stránka pro každý kurz (live termíny, reference, schema.org), skupinové slevy počítané v rezervačním systému. Fotky u detailních stránek čekají na Milana (zatím placeholder).
 - **Pronájem prostoru** — obohaceno, silnější CTA.
 - **Lidé** — hotovo, vlastní CMS pole v `content.json`.
 - **Reference** — scaffold hotový (stránka + pruh referencí u Kurzů), obsah čeká na skutečné reference od Milana.
