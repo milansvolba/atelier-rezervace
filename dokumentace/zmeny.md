@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-08-20 — Kurzy: rozcestník + detailní stránky pro jednotlivé kurzy (web)
+
+`kurzy.php` je teď rozcestník (hero, karty kurzů, „Co vás čeká", průvodce, FAQ) — termíny a reference u jednotlivých kurzů se přesunuly na dvě nové stránky `kurz-modelovani-hlavy.php` a `kurz-relief.php`. Každá detailní stránka má vlastní úvodní text (`course1_detail_intro`/`course2_detail_intro` v `content.json`, fallback na starý `course{n}_desc`), fotky přes `img_src()` s placeholderem (Milan doplní FTP uploadem souborů `images/course1_1.jpg`, `course1_2.jpg`, `course2_1.jpg`, `course2_2.jpg` — bez nutnosti další úpravy kódu), termíny z `get_cached_courses()` a reference z `build_testimonials()`, obojí filtrované klíčovým slovem podle kurzu (název termínu/tag reference obsahuje „hlav" resp. „reliéf"/"relief"), a vlastní přesný `Course` schema.org blok. Karty na `kurzy.php` teď místo externího odkazu na rezervaci vedou na tyhle detailní stránky („Zobrazit detail a termíny"). Starý nepřesný jednotný schema.org blok (jen pro kurz 1, se všemi referencemi) byl z `kurzy.php` odstraněn. Oprava dokumentace: dřívější popis flow „Koupit → Pro jednotlivce/Pro skupinu" (modal) v `web-ateliernapobrezi.md` neodpovídal realitě — živý kód měl vždy jen prostý odkaz „Vybrat termín" na rezervaci; opraveno tamtéž.
+
+---
+
 ## 2026-08-20 — Webhook: okamžitá invalidace cache kurzů při změně rezervace (obojí)
 
 Při vytvoření, úpravě nebo smazání rezervace/termínu kurzu appka rezervace nově pošle webhook na web (`notifyDataChanged()` v `lib/webhooks.ts`, volané ze `store.add`/`store.update`/`store.remove` v `lib/data.ts`). Web přijme POST na `/webhook-invalidate` (ověření sdíleného tajemství v hlavičce `X-Webhook-Secret` přes `hash_equals`) a rovnou přepočítá souborovou cache termínů kurzů (`refresh_courses_cache()` v novém `inc/courses_cache.php`, sdíleném s `kurzy.php`). Dřív se cache obnovovala až po vypršení 5min TTL, teď se projeví změna na Kurzy prakticky okamžitě. Webhook je navržený obecně (typ události + id, příjemce si vždy dotáhne čerstvá data sám) — do budoucna půjde použít i pro jiná místa webu, ne jen tuhle cache. Selhání webhooku (výpadek, timeout 2 s) nijak neovlivní uložení rezervace, jen se nestihne okamžitá invalidace a čeká se na TTL. Detaily viz `dokumentace/rezervace-system.md` (sekce Webhook) a `dokumentace/web-ateliernapobrezi.md` (PHP strana).
