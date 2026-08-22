@@ -3,7 +3,7 @@ import { store } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-function maskUrl(u) {
+function maskUrl(u: string | undefined) {
   if (!u) return null;
   try {
     const parsed = new URL(u);
