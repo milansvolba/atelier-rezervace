@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
-import { store } from "@/lib/data";
 import { sql, ensureSchema } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   await ensureSchema();
-  const exact = await sql`SELECT * FROM bookings ORDER BY date, start_time`;
-  const noOrder = await sql`SELECT * FROM bookings`;
-  const all = await store.all();
+  const before = await sql`SELECT id FROM bookings ORDER BY date, start_time`;
+  await sql`REINDEX INDEX bookings_date_idx`;
+  const after = await sql`SELECT id FROM bookings ORDER BY date, start_time`;
   return NextResponse.json({
-    exactCount: exact.length,
-    exactIds: exact.map((r) => r.id),
-    noOrderCount: noOrder.length,
-    noOrderIds: noOrder.map((r) => r.id),
-    storeAllCount: all.length,
-    storeAllIds: all.map((b) => b.id),
-    sampleRow: exact[0],
+    beforeCount: before.length,
+    beforeIds: before.map((r) => r.id),
+    afterCount: after.length,
+    afterIds: after.map((r) => r.id),
   });
 }
