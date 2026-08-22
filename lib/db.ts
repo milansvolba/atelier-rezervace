@@ -8,7 +8,7 @@ function getSql() {
   if (!client) {
     const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
     if (!url) throw new Error("Chybí DATABASE_URL / POSTGRES_URL — databáze není nastavená.");
-    client = neon(url);
+    client = neon(url, { fetchOptions: { cache: "no-store" } });
   }
   return client;
 }
