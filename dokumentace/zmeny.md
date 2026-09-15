@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-09-15 — Veřejná stránka: navigace v kalendáři + upozornění na kolizní termín; admin: slevy přesunuty dolů (rezervace)
+
+Na veřejné stránce šlo listovat jen "dnešek a dál" bez možnosti přepnout na jiný týden/měsíc/kvartál/rok — teď je tam stejná navigace (‹ › a "Dnes") jako v adminu. Formulář žádosti navíc upozorní (bez blokace odeslání), pokud zvolený termín koliduje s už potvrzenou rezervací — text v duchu "prostor už má zamluvený někdo jiný, ale zkusíme to nějak vymyslet, případně najdeme jiný termín". V adminu se sekce "Slevy pro skupinové objednávky kurzu" přesunula z horní části stránky až na úplný konec (za všechny pohledy kalendáře) — kalendář a přehled jsou to, co admin potřebuje vidět nejdřív a nejčastěji, nastavení slev je spíš occasional setup.
+
+---
+
 ## 2026-08-20 — Kurzy: rozcestník + detailní stránky pro jednotlivé kurzy (web)
 
 `kurzy.php` je teď rozcestník (hero, karty kurzů, „Co vás čeká", průvodce, FAQ) — termíny a reference u jednotlivých kurzů se přesunuly na dvě nové stránky `kurz-modelovani-hlavy.php` a `kurz-relief.php`. Každá detailní stránka má vlastní úvodní text (`course1_detail_intro`/`course2_detail_intro` v `content.json`, fallback na starý `course{n}_desc`), fotky přes `img_src()` s placeholderem (Milan doplní FTP uploadem souborů `images/course1_1.jpg`, `course1_2.jpg`, `course2_1.jpg`, `course2_2.jpg` — bez nutnosti další úpravy kódu), termíny z `get_cached_courses()` a reference z `build_testimonials()`, obojí filtrované klíčovým slovem podle kurzu (název termínu/tag reference obsahuje „hlav" resp. „reliéf"/"relief"), a vlastní přesný `Course` schema.org blok. Karty na `kurzy.php` teď místo externího odkazu na rezervaci vedou na tyhle detailní stránky („Zobrazit detail a termíny"). Starý nepřesný jednotný schema.org blok (jen pro kurz 1, se všemi referencemi) byl z `kurzy.php` odstraněn. Oprava dokumentace: dřívější popis flow „Koupit → Pro jednotlivce/Pro skupinu" (modal) v `web-ateliernapobrezi.md` neodpovídal realitě — živý kód měl vždy jen prostý odkaz „Vybrat termín" na rezervaci; opraveno tamtéž.
