@@ -1,8 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Booking, ResourceId, RESOURCE_LABELS } from "@/lib/types";
-import { DAY_NAMES, DAY_NAMES_MON_FIRST, MONTH_NAMES, addDays, iso, monthMatrix, nextDays } from "@/lib/calendar";
+import {
+  Booking,
+  ResourceId,
+  RESOURCE_LABELS,
+  resourcesConflict,
+  timesOverlap,
+} from "@/lib/types";
+import {
+  DAY_NAMES,
+  DAY_NAMES_MON_FIRST,
+  MONTH_NAMES,
+  addDays,
+  addMonths,
+  iso,
+  monthMatrix,
+  nextDays,
+} from "@/lib/calendar";
 
 type ViewMode = "week" | "month" | "quarter" | "year";
 type DayFlag = "free" | "on-request" | "pending" | "rental";
@@ -20,22 +35,31 @@ function statusBg(status: DayFlag) {
   }
 }
 
-// Popisek zobrazeného rozsahu — veřejná stránka nemá navigaci vzad/vpřed,
-// vždy ukazuje aktuální týden/měsíc/kvartál/rok od dneška, ale ať je jasné, co přesně to je.
-function publicRangeLabel(view: ViewMode, today: Date): string {
+// Popisek zobrazeného rozsahu — jde listovat vzad/vpřed přes anchor, takže
+// nejde vždy nutně o "dnešek", ale o aktuálně zvolený rozsah.
+function publicRangeLabel(view: ViewMode, anchor: Date): string {
   if (view === "week") {
-    const end = addDays(today, 6);
-    const sameMonth = today.getMonth() === end.getMonth();
-    const left = sameMonth ? `${today.getDate()}.` : `${today.getDate()}. ${today.getMonth() + 1}.`;
+    const end = addDays(anchor, 6);
+    const sameMonth = anchor.getMonth() === end.getMonth();
+    const left = sameMonth ? `${anchor.getDate()}.` : `${anchor.getDate()}. ${anchor.getMonth() + 1}.`;
     return `${left} – ${end.getDate()}. ${end.getMonth() + 1}. ${end.getFullYear()}`;
   }
-  if (view === "month") return `${MONTH_NAMES[today.getMonth()]} ${today.getFullYear()}`;
+  if (view === "month") return `${MONTH_NAMES[anchor.getMonth()]} ${anchor.getFullYear()}`;
   if (view === "quarter") {
-    const end = new Date(today.getFullYear(), today.getMonth() + 2, 1);
-    return `${MONTH_NAMES[today.getMonth()]} – ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
+    const end = new Date(anchor.getFullYear(), anchor.getMonth() + 2, 1);
+    return `${MONTH_NAMES[anchor.getMonth()]} – ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
   }
-  const end = new Date(today.getFullYear(), today.getMonth() + 11, 1);
-  return `${MONTH_NAMES[today.getMonth()]} ${today.getFullYear()} – ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
+  const end = new Date(anchor.getFullYear(), anchor.getMonth() + 11, 1);
+  return `${MONTH_NAMES[anchor.getMonth()]} ${anchor.getFullYear()} – ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
+}
+
+// Posun rozsahu vzad/vpřed podle zvoleného pohledu — stejná logika jako v adminu,
+// jen bez "day" varianty (veřejná stránka denní pohled nemá).
+function shiftAnchor(view: ViewMode, anchor: Date, dir: 1 | -1): Date {
+  if (view === "week") return addDays(anchor, dir * 7);
+  if (view === "month") return addMonths(anchor, dir);
+  if (view === "quarter") return addMonths(anchor, dir * 3);
+  return new Date(anchor.getFullYear() + dir, anchor.getMonth(), 1);
 }
 
 // Rychlé předvolby pro pronájem celého prostoru — časy jsou rovnou v popisku,
@@ -68,6 +92,7 @@ const PUBLIC_RESOURCE_OPTIONS: { value: ResourceId; label: string }[] = [
 export default function PublicPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [view, setView] = useState<ViewMode>("month");
+  const [anchor, setAnchor] = useState(new Date());
   const [showForm, setShowForm] = useState(false);
   const [resource, setResource] = useState<ResourceId>("atelier");
   const [date, setDate] = useState("");
@@ -136,6 +161,22 @@ export default function PublicPage() {
     }
   }, [resource]);
 
+  // Zjistí, jestli zvolený termín koliduje s existující potvrzenou rezervací —
+  // odeslání žádosti to nijak neblokuje (ateliér se to snaží vždycky nějak
+  // vyřešit), jen se žadateli zobrazí upozornění, ať ví, na čem je.
+  const conflictingBooking = useMemo(() => {
+    if (!date) return null;
+    return (
+      bookings.find(
+        (b) =>
+          b.status === "confirmed" &&
+          b.date === date &&
+          (b.resource === resource || resourcesConflict(resource, b.resource)) &&
+          timesOverlap(startTime, endTime, b.startTime, b.endTime)
+      ) || null
+    );
+  }, [bookings, date, resource, startTime, endTime]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(null);
@@ -168,12 +209,11 @@ export default function PublicPage() {
     const count = view === "month" ? 1 : view === "quarter" ? 3 : view === "year" ? 12 : 0;
     const list: { year: number; month: number }[] = [];
     for (let i = 0; i < count; i++) {
-      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const d = new Date(anchor.getFullYear(), anchor.getMonth() + i, 1);
       list.push({ year: d.getFullYear(), month: d.getMonth() });
     }
     return list;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view]);
+  }, [anchor, view]);
 
   return (
     <main className="space-y-6">
@@ -192,23 +232,49 @@ export default function PublicPage() {
             ))}
           </div>
         </div>
-        <p className="text-sm font-medium text-gray-700 mb-1">{publicRangeLabel(view, today)}</p>
+        <div className="flex items-center gap-2 mb-1">
+          <button
+            onClick={() => setAnchor((a) => shiftAnchor(view, a, -1))}
+            className="h-7 w-7 rounded-md border border-gray-300 text-sm"
+            aria-label="Předchozí"
+          >
+            ‹
+          </button>
+          <p className="text-sm font-medium text-gray-700">{publicRangeLabel(view, anchor)}</p>
+          <button
+            onClick={() => setAnchor((a) => shiftAnchor(view, a, 1))}
+            className="h-7 w-7 rounded-md border border-gray-300 text-sm"
+            aria-label="Následující"
+          >
+            ›
+          </button>
+          <button
+            onClick={() => setAnchor(new Date())}
+            className="h-7 px-2.5 rounded-md border border-gray-300 text-xs text-gray-500"
+          >
+            Dnes
+          </button>
+        </div>
         <p className="text-sm text-gray-500 mb-4">
           Modrá = zkuste to i tak napsat, obvykle se dá domluvit.
         </p>
 
         {view === "week" && (
           <div className="grid grid-cols-7 gap-2 mb-4">
-            {nextDays(7).map((d) => {
+            {nextDays(7, anchor).map((d) => {
               const status = dayStatus(d);
+              const past = iso(d) < todayISO;
               return (
                 <div key={iso(d)} className="text-center">
                   <div className="text-xs text-gray-400 mb-1">{DAY_NAMES[d.getDay()]}</div>
                   <button
                     type="button"
+                    disabled={past}
                     onClick={() => startBookingFor(d)}
-                    className={`w-full h-10 rounded-md ${statusBg(status)} flex items-center justify-center text-xs hover:ring-2 hover:ring-gray-300`}
-                    title="Klikněte pro rezervaci tohoto dne"
+                    className={`w-full h-10 rounded-md ${statusBg(status)} flex items-center justify-center text-xs ${
+                      past ? "opacity-40 cursor-default" : "hover:ring-2 hover:ring-gray-300"
+                    }`}
+                    title={past ? undefined : "Klikněte pro rezervaci tohoto dne"}
                   >
                     {d.getDate()}.
                   </button>
@@ -390,6 +456,13 @@ export default function PublicPage() {
                   onChange={(e) => setEndTime(e.target.value)}
                 />
               </label>
+            </div>
+          )}
+
+          {date && conflictingBooking && (
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">
+              {RESOURCE_LABELS[resource]} už má na tenhle den zamluvený sice někdo jiný, ale třeba to nějak
+              vymyslíme. Když ne, ozveme se vám a najdeme jiný termín.
             </div>
           )}
 
