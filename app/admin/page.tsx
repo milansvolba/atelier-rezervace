@@ -1477,49 +1477,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
         </div>
       )}
 
-      {isAdmin && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="font-medium mb-1">Slevy pro skupinove objednavky kurzu</p>
-          <p className="text-xs text-gray-500 mb-3">
-            Sleva se pocita z naplnenosti skupiny vzhledem ke kapacite terminu (pocet osob / kapacita).
-            Tier s nejvyssi podminkou, do ktere se skupina vejde, urcuje vyslednou slevu.
-          </p>
-          <div className="space-y-2">
-            {tiers
-              .slice()
-              .sort((a, b) => b.minFillPercent - a.minFillPercent)
-              .map((t) => (
-                <div key={t.id} className="flex items-center gap-2 text-sm flex-wrap">
-                  <span className="text-gray-500">od</span>
-                  <input
-                    type="number"
-                    className="w-16 h-8 border border-gray-300 rounded-md px-2"
-                    value={t.minFillPercent}
-                    onChange={(e) => updateTierField(t.id, "minFillPercent", Number(e.target.value))}
-                  />
-                  <span className="text-gray-500">% naplnenosti to sleva</span>
-                  <input
-                    type="number"
-                    className="w-16 h-8 border border-gray-300 rounded-md px-2"
-                    value={t.discountPercent}
-                    onChange={(e) => updateTierField(t.id, "discountPercent", Number(e.target.value))}
-                  />
-                  <span className="text-gray-500">%</span>
-                  <button onClick={() => saveTier(t)} className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs">
-                    Ulozit
-                  </button>
-                  <button onClick={() => deleteTier(t.id)} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
-                    Smazat
-                  </button>
-                </div>
-              ))}
-          </div>
-          <button onClick={addTier} className="mt-3 h-8 px-3 rounded-md border border-gray-300 text-xs">
-            + Pridat tier
-          </button>
-        </div>
-      )}
-
+      
       {myBookings.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="font-medium mb-3">Moje rezervace</p>
@@ -1926,6 +1884,49 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
       {showMembers && <MembersPanel onClose={() => setShowMembers(false)} />}
       {showEmails && <EmailsPanel onClose={() => setShowEmails(false)} />}
+
+          {isAdmin && (
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <p className="font-medium mb-1">Slevy pro skupinove objednavky kurzu</p>
+              <p className="text-xs text-gray-500 mb-3">
+                Sleva se pocita z naplnenosti skupiny vzhledem ke kapacite terminu (pocet osob / kapacita).
+                Tier s nejvyssi podminkou, do ktere se skupina vejde, urcuje vyslednou slevu.
+              </p>
+              <div className="space-y-2">
+                {tiers
+                  .slice()
+                  .sort((a, b) => b.minFillPercent - a.minFillPercent)
+                  .map((t) => (
+                    <div key={t.id} className="flex items-center gap-2 text-sm flex-wrap">
+                      <span className="text-gray-500">od</span>
+                      <input
+                        type="number"
+                        className="w-16 h-8 border border-gray-300 rounded-md px-2"
+                        value={t.minFillPercent}
+                        onChange={(e) => updateTierField(t.id, "minFillPercent", Number(e.target.value))}
+                      />
+                      <span className="text-gray-500">% naplnenosti to sleva</span>
+                      <input
+                        type="number"
+                        className="w-16 h-8 border border-gray-300 rounded-md px-2"
+                        value={t.discountPercent}
+                        onChange={(e) => updateTierField(t.id, "discountPercent", Number(e.target.value))}
+                      />
+                      <span className="text-gray-500">%</span>
+                      <button onClick={() => saveTier(t)} className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs">
+                        Ulozit
+                      </button>
+                      <button onClick={() => deleteTier(t.id)} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
+                        Smazat
+                      </button>
+                    </div>
+                  ))}
+              </div>
+              <button onClick={addTier} className="mt-3 h-8 px-3 rounded-md border border-gray-300 text-xs">
+                + Pridat tier
+              </button>
+            </div>
+          )}
     </main>
   );
 }
