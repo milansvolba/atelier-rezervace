@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-09-15 — Feed pro Google/Apple kalendář (rezervace)
+
+Nová veřejná (ale netušitelná) route `GET /api/calendar.ics` vrací všechny potvrzené rezervace jako iCalendar feed — v mobilu jde přidat přes Google Kalendář → Nastavení → "Z URL" (`https://rezervace.ateliernapobrezi.cz/api/calendar.ics?token=...`). Přístup hlídá sdílený token v query stringu (env `CALENDAR_FEED_TOKEN`, nastavuje se ve Vercelu), přihlášení kalendářové appky neumí. Časy se posílají s `TZID=Europe/Prague` (napevno zabudovaná pravidla CET/CEST, ať feed nezávisí na časovém pásmu serverless runtime). Google/Apple si feed obnovují po svém (řádově hodiny) — nejde to z naší strany urychlit ani "pushnout", to je limitace odběru kalendáře přes URL, ne naší appky.
+
+---
+
 ## 2026-09-15 — Veřejná stránka: navigace v kalendáři + upozornění na kolizní termín; admin: slevy přesunuty dolů (rezervace)
 
 Na veřejné stránce šlo listovat jen "dnešek a dál" bez možnosti přepnout na jiný týden/měsíc/kvartál/rok — teď je tam stejná navigace (‹ › a "Dnes") jako v adminu. Formulář žádosti navíc upozorní (bez blokace odeslání), pokud zvolený termín koliduje s už potvrzenou rezervací — text v duchu "prostor už má zamluvený někdo jiný, ale zkusíme to nějak vymyslet, případně najdeme jiný termín". V adminu se sekce "Slevy pro skupinové objednávky kurzu" přesunula z horní části stránky až na úplný konec (za všechny pohledy kalendáře) — kalendář a přehled jsou to, co admin potřebuje vidět nejdřív a nejčastěji, nastavení slev je spíš occasional setup.
