@@ -10,6 +10,22 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ## 2026-09-17 — Editovatelný tag nad nadpisem na hero slidech homepage (web)
 
+## 2026-09-17 — Cache-busting u styles.css (web) — oprava + poučení
+
+**Co se stalo:** po úpravě `.logo-img` v `styles.css` (viz záznam níže) hlásil Milan, že logo vypadá špatně i na velké obrazovce, přestože živý soubor na serveru byl už opravený a syntakticky v pořádku. Příčina: `styles.css` se ve všech stránkách linkuje jako `<link rel="stylesheet" href="styles.css">` bez verze/cache-busting parametru, a server pro něj neposílá `Cache-Control` ani `ETag` (jen `Last-Modified`) — prohlížeč tak po běžné navigaci (ne hard-refresh) klidně dál servíruje starou verzi z disk cache, i dlouho po uložení nové. Tohle není nový bug, je to vlastnost webu od začátku — dřív si toho nikdo nevšiml, protože změny CSS byly řídké nebo si je Milan neověřoval hned po uložení.
+
+**Oprava:** do `<head>` všech 9 stránek, které `styles.css` používají (`index.php`, `kurzy.php`, `kurz-modelovani-hlavy.php`, `kurz-relief.php`, `pronajem.php`, `kontakt.php`, `lide.php`, `obchod.php`, `reference.php` — `admin.php` má vlastní inline styly, netýká se ho), přidán automatický cache-busting: `<link rel="stylesheet" href="styles.css?v=<?= @filemtime(__DIR__ . '/styles.css') ?>">`. Verze se generuje z modifikačního času souboru na serveru, takže se mění automaticky při každé budoucí úpravě `styles.css` bez nutnosti si na to pamatovat — a starý CSS by se tímhle způsobem už neměl nikomu "zaseknout" v cache.
+
+**Poučení do budoucna:** po každé úpravě `styles.css` (nebo jiného staticky linkovaného souboru bez cache-busting verze) počítat s tím, že živé ověření přes vlastní fetch s `cache:'no-store'` nebo `?cb=` parametrem NEZARUČUJE, že totéž uvidí Milan ve svém běžném prohlížeči — jeho prohlížeč může mít starou verzi v cache, dokud neudělá hard refresh. Cache-busting v `<link>`/`<script>` tagu je systémová oprava tohohle problému pro `styles.css`; pokud se do budoucna přidá další staticky linkovaný soubor bez cache-busting verze (další CSS/JS), zvážit stejný vzor rovnou, ať se scénář neopakuje.
+
+---
+
+## 2026-09-17 — Zmenšení loga v hlavičce na mobilu (web)
+
+Logo (`.logo-img`, wordmark s pevnou výškou 40px) na úzkých mobilních šířkách (320–400px) zabíralo cca polovinu šířky hlavičky a vizuálně přetěžovalo layout vedle hamburger menu — technicky nepřetékalo, ale působilo nevyváženě/příliš dominantně. V `styles.css` přidány dvě media query úpravy: `.logo-img { height: 30px; }` uvnitř existujícího `@media (max-width: 760px)` bloku (sdíleného s pravidly pro hamburger menu) a nová `@media (max-width: 380px) { .logo-img { height: 26px; } }` pro nejužší telefony. Ověřeno na živém webu při 320px, 375px a 1440px šířce — na velkých obrazovkách beze změny (40px), na mobilu logo teď proporčně menší a nechává hamburgeru víc prostoru.
+
+---
+
 Malý štítek/eyebrow nad H1 na obou slidech `.hero-slider` na Domů ("Odpočinkové výtvarné kurzy", "Pronájem prostoru") byl natvrdo v `index.php` (`<span class="slide-tag">...</span>`). Přidány 2 nové klíče do `content.json` (`hero_kurzy_tag`, `hero_pronajem_tag`, výchozí hodnoty = původní texty, vizuálně beze změny), `index.php` je čte přes `e($c[...])`, a v `admin.php` přibylo pole "Tag nad nadpisem" do obou fieldsetů "Homepage — slide Kurzy/Pronájem".
 
 ---
