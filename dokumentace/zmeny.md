@@ -6,6 +6,15 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-09-17 — Auto-mazání starých rezervací + kompaktní "Nejbližší akce" v adminu (rezervace)
+
+Adminův přehled by časem narůstal do nekonečné délky. Řešení ve dvou krocích:
+
+1. **Data:** appka teď drží jen aktuální a předchozí kalendářní měsíc — `lib/data.ts` má lazy `pruneOldBookings()` (bez cronu, kontrola nejvýš jednou za 6 hodin při `store.all()`), který maže `bookings` starší než začátek předminulého měsíce. `course_signups` mají `ON DELETE CASCADE` na `booking_id`, smažou se automaticky spolu s rezervací.
+2. **UI:** sekce "Moje rezervace" (neomezený seznam všech budoucích rezervací) nahrazena kompaktním blokem "Nejbližší akce" — zobrazí jen první 3 položky, zbytek shrne řádkem "+ N dalších — najdeš je v kalendáři výše" (kalendář/denní rozpis nad tím stejně vše obsahuje).
+
+---
+
 ## 2026-09-17 — Přejmenování zdroje "Stůl 1" na "Stůl s monitorem" (rezervace)
 
 Milan chystá plánek prostoru pro lepší orientaci — do té doby přejmenován popisek zdroje `stul1` (interní ID beze změny) z "Stůl 1" na "Stůl s monitorem": `RESOURCE_LABELS` v `lib/types.ts`, `RESOURCE_OPTIONS` v `app/admin/page.tsx` a zmínka v `README.md`.
