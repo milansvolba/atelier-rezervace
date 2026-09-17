@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-09-17 — Overlay gradient hero slideru: modrá → šedá (web)
+
+Overlay přes fotky v `.hero-slider` (homepage) používal tmavě modrý (námořnický) gradient `rgba(15, 21, 38, ...)` shodný s `--color-navy`. Na žádost Milana změněno na neutrální šedou `rgba(26, 26, 26, ...)` se stejnou průhledností a rozložením (82 % / 58 % / 28 %) — text zůstává stejně čitelný, jen bez modrého nádechu.
+
+---
+
 ## 2026-09-17 — Zmenšení hero bannerů (web)
 
 Na žádost Milana zmenšeny hero bannery zhruba o 20 %: homepage `.hero-slider` `min-height` 640px → 512px (styles.css), Kurzy vnitřní `<section class="hero">` padding 90px/30px → 72px/24px (inline styl v kurzy.php). Pronájem hero banner nemá (jen běžný `.hero` header), takže se ho úprava netýká.
