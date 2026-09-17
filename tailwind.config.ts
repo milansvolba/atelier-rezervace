@@ -23,7 +23,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["var(--font-fraunces)", "Georgia", "serif"],
+        display: ["var(--font-comfortaa)", "Segoe UI", "sans-serif"],
         body: ["var(--font-work-sans)", "Segoe UI", "sans-serif"],
       },
     },
