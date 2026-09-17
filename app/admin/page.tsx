@@ -55,7 +55,7 @@ function fmtFull(d: Date) {
 
 const RESOURCE_OPTIONS: { value: ResourceId; label: string }[] = [
   { value: "okno1", label: "Okno 1" },
-  { value: "stul1", label: "Stůl 1" },
+  { value: "stul1", label: "Stůl s monitorem" },
   { value: "stul2", label: "Stůl 2" },
   { value: "bar", label: "Bar" },
   { value: "pingpong", label: "Pingpongový stůl" },
