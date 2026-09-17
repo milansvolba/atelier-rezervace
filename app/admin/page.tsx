@@ -1480,9 +1480,9 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
       
       {myBookings.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="font-medium mb-3">Moje rezervace</p>
+          <p className="font-medium mb-3">Nejbližší akce</p>
           <div className="space-y-2">
-            {myBookings.map((b) => (
+            {myBookings.slice(0, 3).map((b) => (
               <div
                 key={b.id}
                 className="flex items-center justify-between text-sm border-t border-gray-100 pt-2 first:border-t-0 first:pt-0 gap-3"
@@ -1499,6 +1499,11 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
               </div>
             ))}
           </div>
+          {myBookings.length > 3 && (
+            <p className="text-xs text-gray-400 mt-3">
+              + {myBookings.length - 3} dalších — najdeš je v kalendáři výše.
+            </p>
+          )}
         </div>
       )}
 
