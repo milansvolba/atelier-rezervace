@@ -6,6 +6,18 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-09-17 — Oprava ukládání mini CMS: nová pole se ztrácela, stará se resetovala na placeholdery (web)
+
+**Co se stalo:** Milan zkoušel v adminu vyplnit nový "Hlavní nadpis" a "Úvodní text nad referencemi" na Reference, uložil, ale nic se nepropsalo — po uložení byly obě pole prázdná i na živém webu.
+
+**Skutečná příčina (dvě různé chyby najednou):** `inc/content.php` má `content_defaults()` — pevný seznam "povolených" klíčů CMS obsahu — a `save_content()`, která při každém uložení dělá `array_merge($defaults, array_intersect_key($data, $defaults))`. To znamená: (1) `reference_heading` byl přidán do `content.json` a do formuláře v `admin.php`, ale nikdo ho nepřidal do `content_defaults()` — `array_intersect_key` ho proto při každém uložení potichu zahodil, takže se nedal uložit nikdy, bez ohledu na to, co Milan napsal. (2) Mnohem závažnější: `save_content()` stavěla nový obsah nad `$defaults` (pevně zakódované výchozí texty), ne nad aktuálním obsahem `content.json` — takže jakékoli pole, které zrovna nebylo součástí odeslaného POSTu (typicky kvůli staré/neobnovené záložce s admin.php, viz předchozí záznamy o tomhle problému), se při uložení tiše přepsalo zpátky na pevně zakódovaný placeholder text (např. "Termín bude upřesněn.") — ne že by se jen nezměnilo, ono se aktivně vrátilo na výchozí hodnotu z kódu.
+
+**Oprava:** `reference_heading` doplněn do `content_defaults()`. `save_content()` přepsána tak, aby stavěla na `load_content()` (aktuální reálný obsah `content.json`), ne na `$defaults` — chybějící pole v POSTu teď zůstanou beze změny místo resetu na placeholder. Zároveň jsou jako "povolené" klíče uznávané i ty, co už reálně existují v `content.json`, i když je někdo zapomene zapsat do `content_defaults()` — samoopravné chování pro přesně tuhle situaci. Hodnoty `reference_heading` a `testimonials_intro` ručně obnoveny na správný text.
+
+**Poučení do budoucna:** při přidání nového CMS pole je potřeba zapsat klíč na TŘECH místech, ne dvou: `content.json` (data), `admin.php` (formulářové pole) — a nově navíc `inc/content.php` → `content_defaults()` (whitelist). Vynechání třetího kroku field neuloží vůbec, tiše a bez chybové hlášky. Tahle oprava navíc snižuje (ale nemusí úplně vyloučit) riziko z dřívějších záznamů o přepisování obsahu starou/otevřenou záložkou admin.php.
+
+---
+
 ## 2026-09-17 — Zarovnání H1 na Reference zpět do standardního sloupce (web)
 
 Milan upozornil, že nadpis "Co říkají naši účastníci" po předchozí úpravě (viz záznam níže) vypadá "příliš vlevo". Příčina: hero `.container` na této stránce dostal `max-width:none`, takže na širokých obrazovkách začínal nadpis hned u okraje okna (24px), zatímco logo v hlavičce i karty referencí/banner pod ním zůstávaly ve standardním centrovaném 1120px sloupci — nadpis tak vizuálně nelícoval se zbytkem stránky. Řešení: `max-width:none` odstraněno, hero sekce Reference je zpátky ve stejném 1120px sloupci jako všechno ostatní na stránce i webu. Nadpis je krátký a stejně nedosahoval na okraje ani v "širokém" režimu, takže tímhle se nic vizuálně neztrácí — jen se získává konzistentní zarovnání s logem a obsahem níže.
