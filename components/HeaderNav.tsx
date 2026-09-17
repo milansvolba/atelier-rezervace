@@ -8,7 +8,7 @@ export default function HeaderNav() {
   const pathname = usePathname();
   if (pathname?.startsWith("/admin")) return null;
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 font-display">
       {pathname !== "/kurzy" && (
         <a href="/kurzy" className="text-sm text-gray-500 hover:text-gray-800">
           Kurzy
