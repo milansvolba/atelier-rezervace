@@ -1,6 +1,6 @@
 # Atelier na Pobřeží — rezervační systém
 
-Funkční appka podle specifikace (rezervacni-system-specifikace.md): veřejná stránka s obsazeností (týden/měsíc/kvartál/rok) a formulářem žádosti, interní rozhraní se stejným přepínačem pohledů, rychlým modálem pro zapsání rezervace, modálem pro detail/úpravu/smazání existující rezervace a schvalovací frontou, konfliktní logika mezi místy (Okno 1, Stůl 1, Stůl 2, Bar, Pingpong, Klubovna, Ateliér). Běží na rezervace.ateliernapobrezi.cz, propojeno s GitHub repozitářem — každý push do `main` appku automaticky znovu nasadí. Data se ukládají trvale do Neon Postgres.
+Funkční appka podle specifikace (rezervacni-system-specifikace.md): veřejná stránka s obsazeností (týden/měsíc/kvartál/rok) a formulářem žádosti, interní rozhraní se stejným přepínačem pohledů, rychlým modálem pro zapsání rezervace, modálem pro detail/úpravu/smazání existující rezervace a schvalovací frontou, konfliktní logika mezi místy (Okno 1, Stůl s monitorem, Stůl 2, Bar, Pingpong, Klubovna, Ateliér). Běží na rezervace.ateliernapobrezi.cz, propojeno s GitHub repozitářem — každý push do `main` appku automaticky znovu nasadí. Data se ukládají trvale do Neon Postgres.
 
 ## Přihlášení a účty
 
