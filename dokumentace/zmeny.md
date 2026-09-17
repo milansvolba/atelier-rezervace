@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-09-17 — Zarovnání H1 na Reference zpět do standardního sloupce (web)
+
+Milan upozornil, že nadpis "Co říkají naši účastníci" po předchozí úpravě (viz záznam níže) vypadá "příliš vlevo". Příčina: hero `.container` na této stránce dostal `max-width:none`, takže na širokých obrazovkách začínal nadpis hned u okraje okna (24px), zatímco logo v hlavičce i karty referencí/banner pod ním zůstávaly ve standardním centrovaném 1120px sloupci — nadpis tak vizuálně nelícoval se zbytkem stránky. Řešení: `max-width:none` odstraněno, hero sekce Reference je zpátky ve stejném 1120px sloupci jako všechno ostatní na stránce i webu. Nadpis je krátký a stejně nedosahoval na okraje ani v "širokém" režimu, takže tímhle se nic vizuálně neztrácí — jen se získává konzistentní zarovnání s logem a obsahem níže.
+
+---
+
 ## 2026-09-17 — Editovatelný text tlačítek na hero slidech homepage (web)
 
 ## 2026-09-17 — Editovatelný tag nad nadpisem na hero slidech homepage (web)
