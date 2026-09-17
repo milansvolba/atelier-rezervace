@@ -12,6 +12,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ## 2026-09-17 — Cache-busting u styles.css (web) — oprava + poučení
 
+## 2026-09-17 — Editovatelný hlavní nadpis na Reference, šířka na celou stránku (web)
+
+Nadpis "Co říkají naši účastníci" nad referencemi byl natvrdo v `reference.php` a navíc uměle rozdělený na dva řádky tvrdým `<br>` uprostřed textu. Přidán nový klíč `reference_heading` do `content.json` (výchozí hodnota = původní text, ale jako jeden přirozený řádek bez `<br>`), `reference.php` ho čte přes `e($c['reference_heading'])`, a v `admin.php` přibylo pole "Hlavní nadpis" do fieldsetu "Reference" (nad "Úvodní text nad referencemi"). Zároveň byl z obalového `.container` v hero sekci této stránky odstraněný `max-width` (inline `style="...;max-width:none;"`), takže nadpis (a zbytek hero bloku) už není omezený na standardní 1120px sloupec sdílený se zbytkem webu, ale využívá celou dostupnou šířku stránky — důležité hlavně pro delší budoucí znění nadpisu přes CMS, které by se v úzkém sloupci mohlo zalamovat nevzhledně.
+
+---
+
 **Co se stalo:** po úpravě `.logo-img` v `styles.css` (viz záznam níže) hlásil Milan, že logo vypadá špatně i na velké obrazovce, přestože živý soubor na serveru byl už opravený a syntakticky v pořádku. Příčina: `styles.css` se ve všech stránkách linkuje jako `<link rel="stylesheet" href="styles.css">` bez verze/cache-busting parametru, a server pro něj neposílá `Cache-Control` ani `ETag` (jen `Last-Modified`) — prohlížeč tak po běžné navigaci (ne hard-refresh) klidně dál servíruje starou verzi z disk cache, i dlouho po uložení nové. Tohle není nový bug, je to vlastnost webu od začátku — dřív si toho nikdo nevšiml, protože změny CSS byly řídké nebo si je Milan neověřoval hned po uložení.
 
 **Oprava:** do `<head>` všech 9 stránek, které `styles.css` používají (`index.php`, `kurzy.php`, `kurz-modelovani-hlavy.php`, `kurz-relief.php`, `pronajem.php`, `kontakt.php`, `lide.php`, `obchod.php`, `reference.php` — `admin.php` má vlastní inline styly, netýká se ho), přidán automatický cache-busting: `<link rel="stylesheet" href="styles.css?v=<?= @filemtime(__DIR__ . '/styles.css') ?>">`. Verze se generuje z modifikačního času souboru na serveru, takže se mění automaticky při každé budoucí úpravě `styles.css` bez nutnosti si na to pamatovat — a starý CSS by se tímhle způsobem už neměl nikomu "zaseknout" v cache.
