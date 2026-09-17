@@ -6,6 +6,18 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-09-17 — 48 CMS polí v admin.php se nikdy neukládalo a zobrazovalo prázdno na živém webu (web)
+
+**Co se stalo:** Milan hlásil, že cokoliv vyplní v CMS, se "nikde nepropíše" — a to napříč mnoha různými sekcemi, ne jen na jednom místě jako u předchozího bugu s Referencemi.
+
+**Skutečná příčina:** Systémová kontrola ukázala, že `admin.php` obsahuje 98 formulářových polí (`name="c[...]"`), ale `content_defaults()` v `inc/content.php` i `data/content.json` měly jen 52 klíčů. Chybělo přesně 48 polí — všechny 4 tagy/tlačítka v hero slidech (`hero_kurzy_tag`, `hero_pronajem_tag`, 4× `hero_*_btn_*`), obě karty pod hero bannerem na homepage (`home_card1/2_*`), všech 5 CTA bannerů (`banner_home/kurzy/pronajem/lide/reference_*`), 4 boxy "Co vás čeká" na Kurzech (`kurzy_box1-4_*`), kroky a cílové skupiny na Pronájmu (`pronajem_step*`, `pronajem_aud1-4_*`, `pronajem_atmosfera`, `pronajem_vyuziti`). Protože žádný z těchto klíčů nebyl v `content_defaults()` ani v `content.json`, `save_content()` je při každém uložení odjakživa tiše zahazovala (viz `array_intersect_key` mechanismus popsaný v předchozím záznamu) — bez ohledu na opravu `save_content()` z dřívějška dnes, protože ta řeší jen ochranu už existujících klíčů, ne úplně chybějící. Navíc PHP šablony (`kurzy.php`, `pronajem.php`, `index.php` atd.) čtou tyhle klíče přímo bez fallbacku (`<?= e($c['banner_kurzy_title']) ?>`), takže se na živém webu reálně zobrazovalo prázdno — např. celý CTA banner na Kurzech byl viditelně prázdný (prázdný nadpis, text i tlačítko), stejně tak zbylé 4 bannery a mnoho dalších sekcí.
+
+**Oprava:** Napsal jsem srovnávací skript (admin.php pole vs. content_defaults() vs. content.json) a doplnil všech 48 chybějících klíčů najednou do obou souborů s rozumným výchozím textem, aby weby přestaly zobrazovat prázdná místa. Ověřeno živě na všech dotčených stránkách (Domů, Kurzy, Pronájem, Lidé, Reference) — bannery, hero tagy/tlačítka, karty i boxy se teď zobrazují a půjde je přes admin.php i reálně upravit a uložit.
+
+**Poučení do budoucna:** Kdykoliv se v `admin.php` objeví nové pole, zkontrolovat rovnou při zavedení všechny tři místa (viz skill), ne až když si toho Milan všimne o týdny později. Při podezření na plošný problém s CMS ukládáním vždy nejdřív spočítat a porovnat počty klíčů v `admin.php`/`content_defaults()`/`content.json` (pár řádků JS/regexu) místo ověřování pole po poli — je to řádově rychlejší a najde to najednou všechny postižené případy, ne jen ten nahlášený.
+
+---
+
 ## 2026-09-17 — Sdílený náhled odkazu (og:image) ukazoval generický placeholder (web)
 
 **Co se stalo:** Při sdílení odkazu na web (WhatsApp) se zobrazoval statický obrázek `images/og-image.jpg` nesouvisející s aktuálním obsahem webu — nikdo si nevšiml, že se od zavedení nikdy needitoval.
