@@ -6,6 +6,14 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-09-17 — Sdílený náhled odkazu (og:image) ukazoval generický placeholder (web)
+
+**Co se stalo:** Při sdílení odkazu na web (WhatsApp) se zobrazoval statický obrázek `images/og-image.jpg` nesouvisející s aktuálním obsahem webu — nikdo si nevšiml, že se od zavedení nikdy needitoval.
+
+**Oprava:** `og:image` v `index.php` přesměrován přímo na existující `images/hero-kurzy.jpg` (fotka z hero slidu na homepage/Kurzech), s cache-busting verzí (`?v=<?= @filemtime(...) ?>`), stejně jako u `styles.css`. Text `og:title`/`og:description`/meta description zůstává beze změny (Milan to prošel, je to v pořádku) — jen si všimni, že meta description ještě zmiňuje "brzy i obchod s uměleckými potřebami", což už neplatí od skrytí Obchodu z menu — až bude na Obchod čas, zvážit i tenhle text.
+
+---
+
 ## 2026-09-17 — Oprava ukládání mini CMS: nová pole se ztrácela, stará se resetovala na placeholdery (web)
 
 **Co se stalo:** Milan zkoušel v adminu vyplnit nový "Hlavní nadpis" a "Úvodní text nad referencemi" na Reference, uložil, ale nic se nepropsalo — po uložení byly obě pole prázdná i na živém webu.
