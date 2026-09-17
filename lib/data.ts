@@ -32,9 +32,29 @@ function rowToBooking(r: Record<string, unknown>): Booking {
   };
 }
 
+// Appka drží jen aktuální a minulý kalendářní měsíc zpětně — starší rezervace
+// se automaticky zahazují, ať admin nemusí ručně mazat historii a přehled
+// v adminu nezarůstá. Bez cronu: kontrola proběhne nejvýš jednou za pár hodin
+// (na kterémkoli běžícím serverless kontejneru) při načtení dat přes store.all().
+// course_signups mají ON DELETE CASCADE na booking_id (viz lib/db.ts), takže se
+// přihlášky ke starým kurzům smažou automaticky spolu s rezervací.
+let lastPruneAt = 0;
+const PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hodin
+
+async function pruneOldBookings(): Promise<void> {
+  const now = Date.now();
+  if (now - lastPruneAt < PRUNE_INTERVAL_MS) return;
+  lastPruneAt = now;
+  const d = new Date();
+  const cutoff = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1));
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  await sql`DELETE FROM bookings WHERE date < ${cutoffStr}`;
+}
+
 export const store = {
   async all(): Promise<Booking[]> {
     await ensureSchema();
+    await pruneOldBookings();
     const rows = await sql`SELECT id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price FROM bookings ORDER BY date, start_time`;
     return rows.map(rowToBooking);
   },
@@ -117,3 +137,4 @@ export async function findConflict(
   }
   return null;
 }
+
