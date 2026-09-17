@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-09-17 — Přejmenování zdroje "Stůl 1" na "Stůl s monitorem" (rezervace)
+
+Milan chystá plánek prostoru pro lepší orientaci — do té doby přejmenován popisek zdroje `stul1` (interní ID beze změny) z "Stůl 1" na "Stůl s monitorem": `RESOURCE_LABELS` v `lib/types.ts`, `RESOURCE_OPTIONS` v `app/admin/page.tsx` a zmínka v `README.md`.
+
+---
+
 ## 2026-09-17 — Overlay gradient hero slideru: modrá → šedá (web)
 
 Overlay přes fotky v `.hero-slider` (homepage) používal tmavě modrý (námořnický) gradient `rgba(15, 21, 38, ...)` shodný s `--color-navy`. Na žádost Milana změněno na neutrální šedou `rgba(26, 26, 26, ...)` se stejnou průhledností a rozložením (82 % / 58 % / 28 %) — text zůstává stejně čitelný, jen bez modrého nádechu.
