@@ -14,7 +14,7 @@ export const RESOURCE_LABELS: Record<ResourceId, string> = {
   klubovna: "Klubovna (celá)",
   pingpong: "Pingpongový stůl",
   okno1: "Okno 1",
-  stul1: "Stůl 1",
+  stul1: "Stůl s monitorem",
   stul2: "Stůl 2",
   bar: "Bar (Stůl 3)",
 };
