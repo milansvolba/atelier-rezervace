@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-09-17 — Zmenšení hero bannerů (web)
+
+Na žádost Milana zmenšeny hero bannery zhruba o 20 %: homepage `.hero-slider` `min-height` 640px → 512px (styles.css), Kurzy vnitřní `<section class="hero">` padding 90px/30px → 72px/24px (inline styl v kurzy.php). Pronájem hero banner nemá (jen běžný `.hero` header), takže se ho úprava netýká.
+
+---
+
 ## 2026-09-15 — Feed pro Google/Apple kalendář (rezervace)
 
 Nová veřejná (ale netušitelná) route `GET /api/calendar.ics` vrací všechny potvrzené rezervace jako iCalendar feed — v mobilu jde přidat přes Google Kalendář → Nastavení → "Z URL" (`https://rezervace.ateliernapobrezi.cz/api/calendar.ics?token=...`). Přístup hlídá sdílený token v query stringu (env `CALENDAR_FEED_TOKEN`, nastavuje se ve Vercelu), přihlášení kalendářové appky neumí. Časy se posílají s `TZID=Europe/Prague` (napevno zabudovaná pravidla CET/CEST, ať feed nezávisí na časovém pásmu serverless runtime). Google/Apple si feed obnovují po svém (řádově hodiny) — nejde to z naší strany urychlit ani "pushnout", to je limitace odběru kalendáře přes URL, ne naší appky.
