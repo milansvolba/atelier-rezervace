@@ -8,6 +8,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ## 2026-09-17 — Editovatelný text tlačítek na hero slidech homepage (web)
 
+## 2026-09-17 — Editovatelný tag nad nadpisem na hero slidech homepage (web)
+
+Malý štítek/eyebrow nad H1 na obou slidech `.hero-slider` na Domů ("Odpočinkové výtvarné kurzy", "Pronájem prostoru") byl natvrdo v `index.php` (`<span class="slide-tag">...</span>`). Přidány 2 nové klíče do `content.json` (`hero_kurzy_tag`, `hero_pronajem_tag`, výchozí hodnoty = původní texty, vizuálně beze změny), `index.php` je čte přes `e($c[...])`, a v `admin.php` přibylo pole "Tag nad nadpisem" do obou fieldsetů "Homepage — slide Kurzy/Pronájem".
+
+---
+
 Oba slidy v `.hero-slider` na Domů (Kurzy, Pronájem) měly text obou tlačítek ("Vybrat termín kurzu"/"Poptat termín" a "Více informací") natvrdo v `index.php`. Přidány 4 nové klíče do `content.json` (`hero_kurzy_btn_primary`, `hero_kurzy_btn_secondary`, `hero_pronajem_btn_primary`, `hero_pronajem_btn_secondary`, výchozí hodnoty = původní texty, vizuálně beze změny), `index.php` je čte přes `e($c[...])`, a v `admin.php` přibyla pole "Text tlačítka (rezervace)" a "Text tlačítka (odkaz)" do obou fieldsetů "Homepage — slide Kurzy/Pronájem".
 
 ---
