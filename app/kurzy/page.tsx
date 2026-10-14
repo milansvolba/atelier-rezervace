@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DAY_NAMES_MON_FIRST, MONTH_NAMES, iso, monthMatrix } from "@/lib/calendar";
+import { DEFAULT_UI_TEXTS, fillText } from "@/lib/uiTexts";
 
 interface CourseCard {
   id: string;
@@ -40,6 +41,8 @@ export default function KurzyPage() {
 const [payBusy, setPayBusy] = useState(false);
 const [payError, setPayError] = useState("");
 const [payResult, setPayResult] = useState<null | "ok" | "cancel">(null);
+const [step, setStep] = useState(2);
+const [signupPhone, setSignupPhone] = useState("");
 
 // Návrat ze Stripe Checkout (success_url / cancel_url vedou na /kurzy?platba=...).
 useEffect(() => {
@@ -188,7 +191,92 @@ const res = await fetch("/api/signups", {
     }
   }
 
-  const today = new Date();
+  // Texty průvodce (výchozí znění z lib/uiTexts.ts; správa textů v adminu je později přepíše).
+const t = (key: string, vars?: Record<string, string>) => fillText(DEFAULT_UI_TEXTS[key]?.text ?? key, vars);
+
+function seatsWord(n: number) {
+return n === 1 ? "místo" : n <= 4 ? "místa" : "míst";
+}
+
+const selectedCourse = signupFor ? courses.find((c) => c.id === signupFor) ?? null : null;
+const maxSeats = selectedCourse ? Math.max(1, Math.min(6, selectedCourse.spotsLeft ?? 6)) : 6;
+
+function quoteFor(c: CourseCard, n: number) {
+if (!c.price) return null;
+const discount = discountFor(n, c.capacity);
+const total = c.price * n;
+return { discount, total, totalAfter: Math.round(total * (1 - discount / 100)) };
+}
+const quote = selectedCourse ? quoteFor(selectedCourse, signupPeople) : null;
+
+// Nabídka "přidejte další místo", pokud by se tím zvýšila sleva.
+function nudgeFor(c: CourseCard, n: number, max: number) {
+if (!c.price) return null;
+const current = discountFor(n, c.capacity);
+for (let k = n + 1; k <= max; k++) {
+const dk = discountFor(k, c.capacity);
+if (dk > current) {
+const more = k - n;
+return { label: "ještě " + more + " " + seatsWord(more), percent: dk };
+}
+}
+return null;
+}
+const nudge = selectedCourse ? nudgeFor(selectedCourse, signupPeople, maxSeats) : null;
+
+// Odeslání objednávky z posledního kroku: kurz s cenou jde na Stripe, kurz bez ceny jako běžná přihláška.
+async function submitOrder() {
+if (!selectedCourse) return;
+setPayBusy(true);
+setPayError("");
+const note = (signupPhone ? "Tel: " + signupPhone + ". " : "") + signupNote;
+const payload = JSON.stringify({
+bookingId: selectedCourse.id,
+name: signupName,
+contact: signupContact,
+people: signupPeople,
+note,
+honeypot,
+});
+try {
+if (selectedCourse.price) {
+const r = await fetch("/api/signups/checkout", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: payload,
+});
+const data = await r.json().catch(() => ({}));
+if (r.ok && data.url) {
+window.location.href = data.url;
+return;
+}
+setPayError(data.error || t("kurzy.err.pay"));
+} else {
+const r = await fetch("/api/signups", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: payload,
+});
+if (r.ok) {
+setSignupSent("ok");
+setSignupName("");
+setSignupContact("");
+setSignupPhone("");
+setSignupNote("");
+setSignupPeople(1);
+setSignupFor(null);
+setStep(2);
+} else {
+setPayError(t("kurzy.err.signup"));
+}
+}
+} catch {
+setPayError(t("kurzy.err.pay"));
+}
+setPayBusy(false);
+}
+
+const today = new Date();
   const todayISO = iso(today);
   const monthsToShow = useMemo(() => {
     const list: { year: number; month: number }[] = [];
@@ -204,12 +292,12 @@ const res = await fetch("/api/signups", {
     <main className="space-y-8">
 {payResult === "ok" && (
 <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4">
-Děkujeme za platbu! Vaše místo je potvrzené, potvrzení vám přijde e-mailem.
+{t("kurzy.pay.ok")}
 </p>
 )}
 {payResult === "cancel" && (
 <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-4">
-Platba nebyla dokončena. Místa držíme ještě asi půl hodiny, můžete to zkusit znovu.
+{t("kurzy.pay.cancel")}
 </p>
 )}
       <div>
@@ -290,106 +378,262 @@ Platba nebyla dokončena. Místa držíme ještě asi půl hodiny, můžete to z
             Momentálně nemáme vypsaný žádný termín. Napište nám níže o poptávku na vlastní termín.
           </p>
         )}
-        {courses.filter((c) => !topicFilter || c.title === topicFilter).map((c) => (
-          <div key={c.id} className="bg-white border border-gray-200 rounded-xl p-5">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <p className="font-medium">{c.title}</p>
-                <p className="text-sm text-gray-500">
-                  {fmtDate(c.date)} · {c.startTime}–{c.endTime}
-                  {c.price ? ` · ${c.price} Kč/os.` : ""}
-                </p>
-                {c.note && <p className="text-sm text-gray-500 mt-1">{c.note}</p>}
-                {c.capacity && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    {c.spotsLeft !== null && c.spotsLeft > 0
-                      ? `Volných míst: ${c.spotsLeft} z ${c.capacity}`
-                      : "Kapacita naplněna — napište nám, dáme vědět při uvolnění."}
-                  </p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSignupFor(signupFor === c.id ? null : c.id);
-                  setSignupSent(null);
-                }}
-                disabled={c.spotsLeft === 0}
-                className="h-9 px-4 rounded-md bg-gray-900 text-white text-sm disabled:opacity-40 shrink-0"
-              >
-                {signupFor === c.id ? "Zavřít" : "Přihlásit se"}
-              </button>
-            </div>
+        {signupSent === "ok" && !selectedCourse && (
+<p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4">{t("kurzy.signup.ok")}</p>
+)}
+{selectedCourse ? (
+<div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
+<div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm">
+<p className="font-medium">{selectedCourse.title}</p>
+<p className="text-gray-500">
+{fmtDate(selectedCourse.date)} · {selectedCourse.startTime}–{selectedCourse.endTime}
+</p>
+{quote && (
+<p className="mt-1">
+{signupPeople} {seatsWord(signupPeople)} ·{" "}
+{quote.discount > 0 && <span>{t("kurzy.summary.discount", { percent: String(quote.discount) })} · </span>}
+<strong>{quote.totalAfter} Kč</strong>
+{quote.discount > 0 && <span className="text-gray-400 line-through ml-2">{quote.total} Kč</span>}
+</p>
+)}
+</div>
 
-            {signupFor === c.id && (
-              <form onSubmit={submitSignup} className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                <input
-                  type="text"
-                  value={honeypot}
-                  onChange={(e) => setHoneypot(e.target.value)}
-                  tabIndex={-1}
-                  autoComplete="off"
-                  className="hidden"
-                  aria-hidden="true"
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label className="text-sm">
-                    Jméno
-                    <input
-                      required
-                      className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                      value={signupName}
-                      onChange={(e) => setSignupName(e.target.value)}
-                    />
-                  </label>
-                  <label className="text-sm">
-                    Kontakt (e-mail nebo telefon)
-                    <input
-                      required
-                      className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                      value={signupContact}
-                      onChange={(e) => setSignupContact(e.target.value)}
-                    />
-                  </label>
-                  <label className="text-sm">
-                    Počet osob
-                    <input
-                      type="number"
-                      min={1}
-                      className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                      max={Math.min(6, c.spotsLeft ?? 6)} value={signupPeople}
-                      onChange={(e) => setSignupPeople(Number(e.target.value))}
-                    />
-                  </label>
-                </div>
-                {c.price && c.capacity && signupPeople > 1 && (() => {
-                  const discountPercent = discountFor(signupPeople, c.capacity);
-                  const total = c.price * signupPeople;
-                  const totalAfter = Math.round(total * (1 - discountPercent / 100));
-                  return (
-                    <p className="text-xs text-gray-500">
-                      {discountPercent > 0
-                        ? `Skupinová sleva ${discountPercent} % · celkem ${totalAfter} Kč (místo ${total} Kč)`
-                        : `Celkem za skupinu: ${total} Kč`}
-                    </p>
-                  );
-                })()}
-                <label className="block text-sm">
-                  Poznámka (nepovinné)
-                  <input
-                    className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                    value={signupNote}
-                    onChange={(e) => setSignupNote(e.target.value)}
-                  />
-                </label>
-                <button className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm" disabled={payBusy}>{c.price ? (payBusy ? "Přesměrovávám na platbu…" : "Zaplatit a rezervovat") : "Odeslat přihlášku"}</button>
-                {signupSent === "ok" && <p className="text-sm text-green-700">Přihláška odeslána, ozveme se.</p>}
+<div>
+<p className="text-xs text-gray-400">{t("kurzy.step.label", { step: String(step) })}</p>
+<h2 className="text-lg font-semibold">
+{step === 2 ? t("kurzy.step2.title") : step === 3 ? t("kurzy.step3.title") : t("kurzy.step4.title")}
+</h2>
+</div>
+
+{step === 2 && (
+<div className="space-y-3">
+<div className="flex items-center gap-3">
+<button
+type="button"
+aria-label="Méně míst"
+disabled={signupPeople <= 1}
+onClick={() => setSignupPeople(Math.max(1, signupPeople - 1))}
+className="h-10 w-10 rounded-md border border-gray-300 text-lg disabled:opacity-40"
+>
+−
+</button>
+<span className="text-xl font-semibold w-8 text-center">{signupPeople}</span>
+<button
+type="button"
+aria-label="Více míst"
+disabled={signupPeople >= maxSeats}
+onClick={() => setSignupPeople(Math.min(maxSeats, signupPeople + 1))}
+className="h-10 w-10 rounded-md border border-gray-300 text-lg disabled:opacity-40"
+>
++
+</button>
+</div>
+{nudge && (
+<p className="text-sm text-green-700">
+{t("kurzy.step2.nudge", { more: nudge.label, percent: String(nudge.percent) })}
+</p>
+)}
+{selectedCourse.spotsLeft !== null && (
+<p className="text-xs text-gray-500">{t("kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft) })}</p>
+)}
+<div className="flex gap-2 flex-wrap pt-1">
+<button
+type="button"
+onClick={() => setSignupFor(null)}
+className="h-10 px-4 rounded-md border border-gray-300 text-sm"
+>
+{t("kurzy.nav.change")}
+</button>
+<button
+type="button"
+onClick={() => setStep(3)}
+className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm"
+>
+{t("kurzy.nav.next")}
+</button>
+</div>
+</div>
+)}
+
+{step === 3 && (
+<form
+onSubmit={(e) => {
+e.preventDefault();
+setStep(4);
+}}
+className="space-y-3"
+>
+<input
+type="text"
+value={honeypot}
+onChange={(e) => setHoneypot(e.target.value)}
+tabIndex={-1}
+autoComplete="off"
+className="hidden"
+aria-hidden="true"
+/>
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<label className="text-sm">
+{t("kurzy.field.name")}
+<input
+required
+autoComplete="name"
+className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+value={signupName}
+onChange={(e) => setSignupName(e.target.value)}
+/>
+</label>
+<label className="text-sm">
+{t("kurzy.field.email")}
+<input
+required
+type="email"
+autoComplete="email"
+className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+value={signupContact}
+onChange={(e) => setSignupContact(e.target.value)}
+/>
+</label>
+<label className="text-sm">
+{t("kurzy.field.phone")}
+<input
+type="tel"
+autoComplete="tel"
+className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+value={signupPhone}
+onChange={(e) => setSignupPhone(e.target.value)}
+/>
+</label>
+</div>
+<label className="block text-sm">
+{t("kurzy.field.note")}
+<input
+className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+value={signupNote}
+onChange={(e) => setSignupNote(e.target.value)}
+/>
+</label>
+<div className="flex gap-2 flex-wrap pt-1">
+<button
+type="button"
+onClick={() => setStep(2)}
+className="h-10 px-4 rounded-md border border-gray-300 text-sm"
+>
+{t("kurzy.nav.back")}
+</button>
+<button className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm">{t("kurzy.nav.next")}</button>
+</div>
+</form>
+)}
+
+{step === 4 && (
+<div className="space-y-4">
+<dl className="text-sm space-y-1">
+<div className="flex justify-between gap-4">
+<dt className="text-gray-500">Jméno</dt>
+<dd>{signupName}</dd>
+</div>
+<div className="flex justify-between gap-4">
+<dt className="text-gray-500">E-mail</dt>
+<dd>{signupContact}</dd>
+</div>
+{signupPhone && (
+<div className="flex justify-between gap-4">
+<dt className="text-gray-500">Telefon</dt>
+<dd>{signupPhone}</dd>
+</div>
+)}
+{signupNote && (
+<div className="flex justify-between gap-4">
+<dt className="text-gray-500">Poznámka</dt>
+<dd>{signupNote}</dd>
+</div>
+)}
+</dl>
+{quote && selectedCourse.price && (
+<div className="border-t border-gray-100 pt-3 text-sm space-y-1">
+<div className="flex justify-between">
+<span>
+{signupPeople} × {selectedCourse.price} Kč
+</span>
+<span>{quote.total} Kč</span>
+</div>
+{quote.discount > 0 && (
+<div className="flex justify-between text-green-700">
+<span>{t("kurzy.summary.discount", { percent: String(quote.discount) })}</span>
+<span>−{quote.total - quote.totalAfter} Kč</span>
+</div>
+)}
+<div className="flex justify-between font-semibold text-base pt-1">
+<span>Celkem</span>
+<span>{quote.totalAfter} Kč</span>
+</div>
+</div>
+)}
 {payError && <p className="text-sm text-red-700">{payError}</p>}
-                {signupSent === "err" && <p className="text-sm text-red-700">Něco se nepovedlo, zkuste to prosím znovu.</p>}
-              </form>
-            )}
-          </div>
-        ))}
+<div className="flex gap-2 flex-wrap items-center">
+<button
+type="button"
+onClick={() => setStep(3)}
+className="h-10 px-4 rounded-md border border-gray-300 text-sm"
+>
+{t("kurzy.nav.back")}
+</button>
+<button
+type="button"
+onClick={submitOrder}
+disabled={payBusy}
+className="h-10 px-5 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60"
+>
+{payBusy ? t("kurzy.pay.busy") : quote ? t("kurzy.pay.button", { total: String(quote.totalAfter) }) : "Odeslat přihlášku"}
+</button>
+</div>
+{quote && <p className="text-xs text-gray-500">{t("kurzy.pay.hint")}</p>}
+</div>
+)}
+</div>
+) : (
+courses
+.filter((c) => !topicFilter || c.title === topicFilter)
+.map((c) => (
+<div key={c.id} className="bg-white border border-gray-200 rounded-xl p-5">
+<div className="flex items-start justify-between gap-4 flex-wrap">
+<div>
+<p className="font-medium">{c.title}</p>
+<p className="text-sm text-gray-500">
+{fmtDate(c.date)} · {c.startTime}–{c.endTime}
+{c.price ? " · " + c.price + " Kč/os." : ""}
+</p>
+{c.note && <p className="text-sm text-gray-500 mt-1">{c.note}</p>}
+{c.capacity && (
+<p className="text-xs text-gray-400 mt-1">
+{c.spotsLeft !== null && c.spotsLeft > 0
+? "Volných míst: " + c.spotsLeft + " z " + c.capacity
+: "Kapacita naplněna — napište nám, dáme vědět při uvolnění."}
+</p>
+)}
+</div>
+<button
+type="button"
+onClick={() => {
+setSignupFor(c.id);
+setStep(2);
+setSignupPeople(1);
+setSignupSent(null);
+setPayError("");
+requestAnimationFrame(() => {
+document.getElementById("course-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+}}
+disabled={c.spotsLeft === 0}
+className="h-9 px-4 rounded-md bg-gray-900 text-white text-sm disabled:opacity-40 shrink-0"
+>
+{t("kurzy.pick")}
+</button>
+</div>
+</div>
+))
+)}
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-5" id="custom-form">
