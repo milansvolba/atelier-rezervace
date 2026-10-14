@@ -31,3 +31,12 @@
 - Admin: slevy pro skupinové objednávky přesunuty na konec stránky.
 - Feed `/api/calendar.ics` pro Google/Apple kalendář, včetně tokenu a živých dat.
 - Sitemap webu + kompletní seznam transakčních e-mailů zdokumentovány (viz `dokumentace/mapa-a-emaily.md`).
+
+## Platební infrastruktura (připraveno, využít při řešení plateb)
+
+Milan má založené a připravené:
+
+- **Stripe účet** — plánovaná platební brána pro online platby (kurzy, pronájem, měsíční platby/členství, prodej drobných věcí).
+- **Podnikatelský účet ve Fio bance** — určený jako **cílový účet pro projekt Ateliéru** (sem mají putovat výplaty ze Stripe a případné přímé platby).
+
+Zatím se nic nenasazovalo ani nenapojovalo — jen podklad pro budoucí blok "Prodejní/objednávkové cesty s platbou" výše. Při jeho zahájení vycházet z toho, že brána = Stripe a cílový účet = Fio (nenavrhovat jiné brány, pokud Milan neřekne jinak). Čísla účtů, API klíče ani přístupy se do dokumentace nezapisují.
