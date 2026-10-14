@@ -6,6 +6,18 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-14 — Analytics MVP: GA4 + Search Console + Microsoft Clarity + cookie lišta (web + rezervace)
+
+Na obou systémech (ateliernapobrezi.cz i rezervace.ateliernapobrezi.cz) zavedena základní návštěvnost/analytika: Google Analytics 4 (`G-3D28LW4JGC`), Search Console (ověřeno přes meta tag) a Microsoft Clarity (`yxhpksh1yt`), společně s GDPR cookie lištou (Přijmout/Odmítnout), která teprve po souhlasu načte GA4 a Clarity skripty (`cookie_consent` cookie, platnost 1 rok).
+
+**Web (PHP):** lištu a podmíněné načítání skriptů řeší `render_analytics_banner()` v `inc/content.php`, vykreslené na všech stránkách.
+
+**Rezervace (Next.js):** nová komponenta `components/AnalyticsConsent.tsx` (client komponenta, stejná logika/cookie/ID jako na webu, jen přepsaná do Reactu a stylovaná přes Tailwind brand paletu appky), vykreslená v `app/layout.tsx`. K tomu přidán jednoduchý GA4 event `vyber_terminu_kurzu` (kategorie `rezervace`, s názvem kurzu a datem) při kliknutí na konkrétní vypsaný termín na /kurzy — zatím jen tenhle jeden signál záměru, bez celého konverzního trychtýře (ten přijde, až se doladí prodejní/rezervační cesty).
+
+Živě ověřeno na obou systémech (lišta se zobrazí/schová podle volby, cookie přežije reload, GA4+Clarity skripty se načtou až po Přijmout, dataLayer event ověřen v konzoli). Zbývá doporučit Milanovi nainstalovat do Chromu Google Analytics Opt-out Browser Add-on, ať mu vlastní návštěvy nezkreslují statistiky.
+
+---
+
 ## 2026-10-14 — Průvodce objednávkou kurzu, živá cena, potvrzení v adminu (rezervace)
 
 **/kurzy:** přihláška je teď průvodce ve 4 krocích (termín → počet míst 1–6 → kontakt → shrnutí a platba). Cena a skupinová sleva se přepočítají hned po výběru počtu míst a zůstávají vidět v hlavičce kroků (zákazník ví, kolik zaplatí, ještě než se dostane na Stripe); k tomu nabídka "přidejte ještě N míst a získáte slevu X %". Telefon je nepovinný (u pronájmu bude povinný). Všechny texty průvodce jsou ve `lib/uiTexts.ts` (klíč, popis, výchozí znění) — připraveno pro budoucí správu textů v adminu.
