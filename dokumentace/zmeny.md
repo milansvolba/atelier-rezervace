@@ -6,6 +6,14 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-14 — Průvodce objednávkou kurzu, živá cena, potvrzení v adminu (rezervace)
+
+**/kurzy:** přihláška je teď průvodce ve 4 krocích (termín → počet míst 1–6 → kontakt → shrnutí a platba). Cena a skupinová sleva se přepočítají hned po výběru počtu míst a zůstávají vidět v hlavičce kroků (zákazník ví, kolik zaplatí, ještě než se dostane na Stripe); k tomu nabídka "přidejte ještě N míst a získáte slevu X %". Telefon je nepovinný (u pronájmu bude povinný). Všechny texty průvodce jsou ve `lib/uiTexts.ts` (klíč, popis, výchozí znění) — připraveno pro budoucí správu textů v adminu.
+
+**/admin:** po uložení termínu, schválení/zamítnutí žádosti nebo přihlášky a uložení slevy se dole zobrazí krátká potvrzovací hláška (`toast()` v `app/admin/page.tsx`).
+
+**Oprava:** první nasazení admin hlášek rozbilo build (hláška se při vkládání dostala mezi `async` a `function createBooking`); opraveno, build prošel. Poučení: při vkládání kódu přes marker `function X` hlídat předchozí klíčové slovo (`async`).
+
 ## 2026-10-14 — Online platba kurzu přes Stripe Checkout (rezervace)
 
 Na `/kurzy` se kurz s cenou platí hned: tlačítko "Zaplatit a rezervovat" zavolá `POST /api/signups/checkout`, které spočítá cenu na serveru (cena × počet míst, skupinová sleva podle počtu míst v objednávce vůči kapacitě, max 6 míst online) a přesměruje na hostovanou platební stránku Stripe (karty, Apple Pay, Google Pay). Po zaplacení webhook `POST /api/stripe/webhook` (ověřený podpis) vytvoří rovnou **potvrzenou** přihlášku a pošle e-maily. Místa se po dobu platby drží v nové tabulce `payments` (35 min). Stripe voláme přes REST (`lib/stripe.ts`), bez npm balíčku. Nové env proměnné: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Zatím jen sandbox; členství, pronájem a drobný prodej přijdou později.
