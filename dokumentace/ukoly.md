@@ -24,6 +24,7 @@
 ## Drobnosti k doladění
 
 - ICS feed (`/api/calendar.ics`): pole LOCATION obsahuje jen "Atelier na Pobřeží" bez přesné adresy — nepotvrzeno s Milanem, zvážit doplnění celé adresy (Na pobřeží 67, Kolín).
+- **NUTNÁ OPRAVA (od Milana, 14. 10. 2026):** na veřejné stránce `/kurzy` jsou vypsané dvě **firemní akce** (Předvánoční coworkshop 26. 11. 2026 a Comp-any | Kreativní předvánoční podvečer 3. 12. 2026), na které se veřejnost **nesmí** přihlašovat ani platit. Řešení: u termínu kurzu přidat příznak (např. "soukromá/firemní akce", nevypsat veřejně) a nezobrazovat ho v `GET /api/courses` ani v `POST /api/signups` a `/api/signups/checkout` nepřijmout. Ještě před ostrým spuštěním plateb.
 
 ## Hotovo (jen pro kontext, detaily viz zmeny.md)
 
