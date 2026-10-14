@@ -71,3 +71,18 @@ Zatím se nic nenasazovalo ani nenapojovalo — jen podklad pro budoucí blok "P
 5. Přechod na ostrý režim: ostré klíče, ověření účtu, napojení Fio účtu, DPH a faktury (ověřit s účetní číselné řady Stripe vs. Caflou).
 
 **Dále potřeba rozhodnout/doplnit:** storno a vrácení peněz (podmínky), dárkové vouchery na kurzy (obchodní příležitost před Vánocemi; návrh v `kurzy-vouchery-specifikace.md`).
+
+### Stav k 14. 10. 2026 (po testu platby)
+
+**Otestováno (sandbox):** platba kurzu přes Stripe i webhook fungují, zelená hláška po platbě se zobrazuje. Google Pay se v sandboxu zatím nenabízel — ověřit při přechodu na ostrý režim (Stripe → Settings → Payment methods, karta v Google peněžence).
+
+**Hotovo:** průvodce objednávkou kurzu ve 4 krocích se živou cenou a slevou (`/kurzy`, texty v `lib/uiTexts.ts`), potvrzovací hlášky v adminu (termín uložen, schválení/zamítnutí, sleva).
+
+**Další kroky (pořadí):**
+1. **Správa textů v adminu** (Milan je UX writer a chce texty ladit tónem a stylem): sekce v `/admin` nad `lib/uiTexts.ts` — seznam textů s popisem "kde se zobrazuje", pole pro úpravu, **náhled**, tlačítko vrátit výchozí; přepisy v DB (tabulka `ui_texts`), veřejné stránky je načítají. Do správy zařadit i hlášky a popisky z dalších stránek.
+2. **Audit zpětné vazby** (pravidlo: každá akce admina i zákazníka musí mít viditelné potvrzení nebo chybu): zbývá správa členů, e-mailové šablony, úprava/smazání rezervace, rychlé přidání rezervace a veřejná stránka `/`.
+3. **Nutná oprava:** skrýt firemní akce z veřejného `/kurzy` (viz Drobnosti).
+4. Pronájem prostoru (poptávka → schválení → platba → blokace). **Telefon bude u pronájmu povinný** (zavoláme, domluvíme podmínky). U kurzů je telefon nepovinný.
+5. Členství, drobný prodej/QR, ostrý režim Stripe.
+
+**Technický dluh:** Next.js 14.2.5 je podle npm zastaralý (bezpečnostní upozornění) — naplánovat aktualizaci na záplatovanou verzi (potřebuje úpravu `package.json`/lockfile, zvážit mimo web GitHubu).
