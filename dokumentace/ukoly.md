@@ -53,3 +53,20 @@ Zatím se nic nenasazovalo ani nenapojovalo — jen podklad pro budoucí blok "P
 - **Faktury:** řešit přes Stripe (jednodušší). Vznikne tím druhá číselná řada faktur vedle Caflou — Milan to nepovažuje za problém.
 - **DPH:** Milan je **plátce DPH** (hodí se např. pro firemní akce) — ceny, faktury a Stripe Tax/DPH nastavení s tím počítat.
 - **Časový plán:** testování v **říjnu**, ostrý provoz ideálně v **listopadu**.
+
+### Stripe — stav implementace (14. 10. 2026)
+
+**Hotovo (sandbox):** platba kurzu přes Stripe Checkout (`/kurzy` → "Zaplatit a rezervovat"), webhook, držení míst, auto-potvrzení, max 6 míst online, cena a sleva se počítají na serveru. Podrobnosti v `rezervace-system.md` (sekce Platby) a `zmeny.md`.
+
+**Čeká na Milana:** webhook ve Stripe (URL `https://rezervace.ateliernapobrezi.cz/api/stripe/webhook`, události `checkout.session.completed` a `checkout.session.expired`) + env `STRIPE_WEBHOOK_SECRET` ve Vercelu + Redeploy; pak otestovat kartou 4242 4242 4242 4242 (kurz musí mít v adminu cenu a kapacitu).
+
+**Testovací ceny ve Stripe (sandbox, price ID nejsou tajná):** Kurz 1 test `price_1UQN9oGY76GQEnXn9IePsYDC`, členství v klubu (měsíčně) `price_1UQNBGGY76GQEnXntdkgbUAf`, hrnek s logem `price_1UQNBlGY76GQEnXnnMgfMtHH`. Kurzy je nepoužívají (částka se počítá dynamicky); členství a drobný prodej je využijí. V ostrém režimu budou jiná ID.
+
+**Další kroky (pořadí):**
+1. Doladit a ověřit platbu kurzu (test v říjnu).
+2. **Pronájem prostoru** (Milanovo zadání): zájemce pošle poptávku na termín → termín se **dočasně zablokuje** v kalendáři → admin schválí → zájemci přijde e-mail s odkazem na online platbu → po zaplacení se objeví finální blokace se jménem zájemce. **Otevřené rozhodnutí: na jak dlouho se po schválení drží blokace, než platba vyprší** (návrh 48 hodin) a co se stane po vypršení. Dnes `pending` žádost nic neblokuje, bude potřeba dočasná blokace.
+3. Členství v klubu (recurring, Stripe Subscriptions + zákaznický portál pro zrušení).
+4. Drobný prodej (hrnek atd.) včetně QR/platebního odkazu na místě; sklad (10 ks hrnků) hlídat v našem systému, ne ve Stripe.
+5. Přechod na ostrý režim: ostré klíče, ověření účtu, napojení Fio účtu, DPH a faktury (ověřit s účetní číselné řady Stripe vs. Caflou).
+
+**Dále potřeba rozhodnout/doplnit:** storno a vrácení peněz (podmínky), dárkové vouchery na kurzy (obchodní příležitost před Vánocemi; návrh v `kurzy-vouchery-specifikace.md`).
