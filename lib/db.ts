@@ -63,7 +63,19 @@ export function ensureSchema() {
       `;
       await sql`CREATE INDEX IF NOT EXISTS course_signups_booking_idx ON course_signups (booking_id);`;
 
-      await sql`
+      // Online platby přes Stripe Checkout (viz lib/stripe.ts). id = ID Stripe Checkout Session.
+// Slouží k dočasnému držení míst během platby a k idempotenci webhooku.
+await sql`
+CREATE TABLE IF NOT EXISTS payments (
+id text PRIMARY KEY,
+booking_id text NOT NULL,
+people integer NOT NULL DEFAULT 1,
+status text NOT NULL DEFAULT 'awaiting',
+created_at timestamptz NOT NULL DEFAULT now()
+);
+`;
+
+await sql`
         CREATE TABLE IF NOT EXISTS users (
           id text PRIMARY KEY,
           name text NOT NULL,
