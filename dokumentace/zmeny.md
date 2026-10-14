@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-14 — Online platba kurzu přes Stripe Checkout (rezervace)
+
+Na `/kurzy` se kurz s cenou platí hned: tlačítko "Zaplatit a rezervovat" zavolá `POST /api/signups/checkout`, které spočítá cenu na serveru (cena × počet míst, skupinová sleva podle počtu míst v objednávce vůči kapacitě, max 6 míst online) a přesměruje na hostovanou platební stránku Stripe (karty, Apple Pay, Google Pay). Po zaplacení webhook `POST /api/stripe/webhook` (ověřený podpis) vytvoří rovnou **potvrzenou** přihlášku a pošle e-maily. Místa se po dobu platby drží v nové tabulce `payments` (35 min). Stripe voláme přes REST (`lib/stripe.ts`), bez npm balíčku. Nové env proměnné: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Zatím jen sandbox; členství, pronájem a drobný prodej přijdou později.
+
 ## 2026-09-17 — 48 CMS polí v admin.php se nikdy neukládalo a zobrazovalo prázdno na živém webu (web)
 
 **Co se stalo:** Milan hlásil, že cokoliv vyplní v CMS, se "nikde nepropíše" — a to napříč mnoha různými sekcemi, ne jen na jednom místě jako u předchozího bugu s Referencemi.
