@@ -37,6 +37,16 @@ export default function KurzyPage() {
   const [tiers, setTiers] = useState<{ minFillPercent: number; discountPercent: number }[]>([]);
   const [buyingTopic, setBuyingTopic] = useState<string | null>(null);
   const [topicFilter, setTopicFilter] = useState<string | null>(null);
+const [payBusy, setPayBusy] = useState(false);
+const [payError, setPayError] = useState("");
+const [payResult, setPayResult] = useState<null | "ok" | "cancel">(null);
+
+// Návrat ze Stripe Checkout (success_url / cancel_url vedou na /kurzy?platba=...).
+useEffect(() => {
+const p = new URLSearchParams(window.location.search).get("platba");
+if (p === "ok") setPayResult("ok");
+else if (p === "zrusena") setPayResult("cancel");
+}, []);
 
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customDate, setCustomDate] = useState("");
@@ -86,7 +96,37 @@ export default function KurzyPage() {
     e.preventDefault();
     if (!signupFor) return;
     setSignupSent(null);
-    const res = await fetch("/api/signups", {
+    // Kurz s cenou se platí hned přes Stripe Checkout (cenu i slevu počítá server).
+const course = courses.find((c) => c.id === signupFor);
+if (course?.price) {
+setPayBusy(true);
+setPayError("");
+try {
+const r = await fetch("/api/signups/checkout", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({
+bookingId: signupFor,
+name: signupName,
+contact: signupContact,
+people: signupPeople,
+note: signupNote,
+honeypot,
+}),
+});
+const data = await r.json().catch(() => ({}));
+if (r.ok && data.url) {
+window.location.href = data.url;
+return;
+}
+setPayError(data.error || "Platbu se nepodařilo zahájit, zkuste to prosím znovu.");
+} catch {
+setPayError("Platbu se nepodařilo zahájit, zkuste to prosím znovu.");
+}
+setPayBusy(false);
+return;
+}
+const res = await fetch("/api/signups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -162,6 +202,16 @@ export default function KurzyPage() {
 
   return (
     <main className="space-y-8">
+{payResult === "ok" && (
+<p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4">
+Děkujeme za platbu! Vaše místo je potvrzené, potvrzení vám přijde e-mailem.
+</p>
+)}
+{payResult === "cancel" && (
+<p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-4">
+Platba nebyla dokončena. Místa držíme ještě asi půl hodiny, můžete to zkusit znovu.
+</p>
+)}
       <div>
         <h1 className="text-xl font-semibold mb-1">Kurzy</h1>
         <p className="text-sm text-gray-500">
@@ -307,7 +357,7 @@ export default function KurzyPage() {
                       type="number"
                       min={1}
                       className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                      value={signupPeople}
+                      max={Math.min(6, c.spotsLeft ?? 6)} value={signupPeople}
                       onChange={(e) => setSignupPeople(Number(e.target.value))}
                     />
                   </label>
@@ -332,8 +382,9 @@ export default function KurzyPage() {
                     onChange={(e) => setSignupNote(e.target.value)}
                   />
                 </label>
-                <button className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm">Odeslat přihlášku</button>
+                <button className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm" disabled={payBusy}>{c.price ? (payBusy ? "Přesměrovávám na platbu…" : "Zaplatit a rezervovat") : "Odeslat přihlášku"}</button>
                 {signupSent === "ok" && <p className="text-sm text-green-700">Přihláška odeslána, ozveme se.</p>}
+{payError && <p className="text-sm text-red-700">{payError}</p>}
                 {signupSent === "err" && <p className="text-sm text-red-700">Něco se nepovedlo, zkuste to prosím znovu.</p>}
               </form>
             )}
