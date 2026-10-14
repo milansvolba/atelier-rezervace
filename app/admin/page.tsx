@@ -1270,7 +1270,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     return map;
   }, [bookings, date]);
 
-  async const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     function onToast(e: Event) {
@@ -1285,7 +1285,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     };
   }, []);
 
-  function createBooking(e: React.FormEvent) {
+  async function createBooking(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const res = await fetch("/api/bookings", {
