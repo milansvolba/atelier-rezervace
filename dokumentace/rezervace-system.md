@@ -145,6 +145,18 @@ V repu existuje starší návrhový dokument `kurzy-vouchery-specifikace.md` pop
 
 Spec dokument také počítal s tím, že i **`kurzy.php` na hlavním webu** by měl číst `GET /api/discount-tiers` a zobrazovat aktuální slevu v textu nabídky — to zatím implementované není (odhad slevy se zatím zobrazuje jen ve formuláři v rezervačním systému, ne na `kurzy.php`).
 
+## Platby (Stripe Checkout, od 14. 10. 2026)
+
+Platba kurzu na `/kurzy` (jen sandbox, ostrý provoz zatím ne). Stripe voláme přes REST API (`fetch`) v `lib/stripe.ts`, záměrně bez npm balíčku "stripe" (editace jde jen přes web GitHubu, bez aktualizace lockfile).
+
+Tok: `/kurzy` → "Zaplatit a rezervovat" → `POST /api/signups/checkout` (server spočítá cenu přes `computePrice` z `lib/discounts.ts`: cena × počet míst, skupinová sleva podle počtu míst v objednávce vůči kapacitě; max 6 míst online, víc jde přes poptávku; kontrola kapacity = potvrzení + držená místa) → hostovaná stránka Stripe (karty, Apple Pay, Google Pay, měna CZK) → po zaplacení `POST /api/stripe/webhook` (ověření podpisu HMAC, idempotentní) vytvoří **potvrzenou** přihlášku v `course_signups` a pošle admin e-mail + e-mail "místo potvrzeno" zákazníkovi. Přihláška vzniká až po zaplacení, takže se nezobrazuje ve frontě ke schválení.
+
+- **Tabulka `payments`** (`id` = ID Stripe session, `booking_id`, `people`, `status` awaiting/paid/expired, `created_at`): drží místa během platby (35 min) a zajišťuje idempotenci webhooku.
+- **Soubory:** `lib/stripe.ts` (createCheckoutSession, verifyStripeSignature, paymentStore), `app/api/signups/checkout/route.ts`, `app/api/stripe/webhook/route.ts`; UI v `app/kurzy/page.tsx` (návratové hlášky `?platba=ok|zrusena`).
+- **Env proměnné (Vercel):** `STRIPE_SECRET_KEY` (sk_test_… / později sk_live_…), `STRIPE_WEBHOOK_SECRET` (whsec_… z webhooku ve Stripe). Webhook ve Stripe: `https://rezervace.ateliernapobrezi.cz/api/stripe/webhook`, události `checkout.session.completed` a `checkout.session.expired`.
+- **Známá omezení:** pokud zápis přihlášky po zaplacení selže, platba je jen ve Stripe (webhook se kvůli idempotenci znovu nezpracuje) — dohledat v dashboardu a přidat ručně. Po zrušené platbě drží místa zbytek 35minutového okna.
+- **Zatím neřešeno:** pronájem (poptávka → schválení → platba → finální blokace), členství (recurring), drobný prodej / QR, vrácení peněz, faktury. Viz `ukoly.md`.
+
 ## Co zbývá doladit
 
 - Samoobslužná registrace zájemců o členství (zatím se noví členové zakládají jen ručně adminem).
