@@ -134,6 +134,11 @@ function cellClasses(kind: Effective["kind"]) {
   }
 }
 
+// Krátké potvrzení akce pro admina (zobrazí ho AdminDashboard dole na obrazovce).
+function toast(message: string) {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("admin-toast", { detail: message }));
+}
+
 export default function AdminPage() {
   const [session, setSession] = useState<SessionUser | null | undefined>(undefined);
 
@@ -1182,11 +1187,12 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   }
 
   async function saveTier(t: { id: string; minFillPercent: number; discountPercent: number; sortOrder: number }) {
-    await fetch("/api/discount-tiers", {
+    const res = await fetch("/api/discount-tiers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(t),
     });
+    if (res.ok) toast("Sleva uložena.");
     loadTiers();
   }
 
@@ -1264,7 +1270,22 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     return map;
   }, [bookings, date]);
 
-  async function createBooking(e: React.FormEvent) {
+  async const [toastMsg, setToastMsg] = useState<string | null>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    function onToast(e: Event) {
+      setToastMsg((e as CustomEvent<string>).detail);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setToastMsg(null), 4000);
+    }
+    window.addEventListener("admin-toast", onToast);
+    return () => {
+      window.removeEventListener("admin-toast", onToast);
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
+  function createBooking(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const res = await fetch("/api/bookings", {
@@ -1275,6 +1296,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     if (res.ok) {
       setForm((f) => ({ ...f, title: "", requesterContact: "" }));
       setMatchedMemberId(null);
+      toast("Termín uložen: " + form.title + " (" + date + ")");
       load();
     } else {
       const data = await res.json();
@@ -1290,6 +1312,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
       body: JSON.stringify({ action }),
     });
     if (res.ok) {
+      toast(action === "approve" ? "Přihláška schválena." : "Přihláška zamítnuta.");
       loadSignups();
     } else {
       const data = await res.json();
@@ -1310,6 +1333,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
         delete next[id];
         return next;
       });
+      toast(action === "approve" ? "Žádost schválena." : "Žádost zamítnuta.");
       load();
     } else {
       const data = await res.json();
@@ -1932,6 +1956,11 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
               </button>
             </div>
           )}
-    </main>
+    {toastMsg && (
+        <div role="status" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm rounded-md px-4 py-2 shadow-lg">
+          {toastMsg}
+        </div>
+      )}
+      </main>
   );
 }
