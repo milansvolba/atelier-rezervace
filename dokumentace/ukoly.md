@@ -86,3 +86,15 @@ Zatím se nic nenasazovalo ani nenapojovalo — jen podklad pro budoucí blok "P
 5. Členství, drobný prodej/QR, ostrý režim Stripe.
 
 **Technický dluh:** Next.js 14.2.5 je podle npm zastaralý (bezpečnostní upozornění) — naplánovat aktualizaci na záplatovanou verzi (potřebuje úpravu `package.json`/lockfile, zvážit mimo web GitHubu).
+
+## Prodejní cesty — rozhodnutí od Milana (16. 10. 2026)
+
+**Obecně:** platby a faktury řeší **Stripe** (faktury vytváří a ukládá Stripe). **Caflou se pro Ateliér nepoužije**; vznikne druhá číselná řada faktur vedle Milanových ostatních (Milan: "prý nevadí" — ověřit s účetní). Milan je plátce DPH. Web a ceny: CZK.
+
+1. **Kurz, vypsaný termín (1–6 míst)** — hotovo v sandboxu. **Chybí storno a vrácení peněz:** zavést pravidla (zákazník nemůže stornovat v den účasti a dostat vše zpět; odstupňování podle počtu dní předem — konkrétní pravidla doplní Milan) a v adminu umět **vrátit peníze** (Stripe refund, i částečný).
+2. **Kurz na míru / skupina nad 6** — schválení adminem zůstává. Ve Stripe **přednastavit produkt** pro tyto případy a doladit **automatický schvalovací e-mail** (s odkazem na platbu).
+3. **Voucher / poukázka** — prodává se **obecná poukázka, ne na konkrétní kurz**. Držitel si pak sám vybere kurz a zarezervuje termín. (Starší návrh: `kurzy-vouchery-specifikace.md`; změna: žádný vázaný kurz.)
+4. **Pronájem prostoru** — tok: poptávka → termín se dočasně zablokuje → admin schválí → e-mail s odkazem na platbu → po zaplacení finální blokace se jménem zájemce. **Telefon povinný.** Blokace se drží **2 pracovní dny** (Milan: "od schválení, tj. den objednávky + 2 pracovní dny" — upřesnit, zda se počítá od schválení, nebo od objednávky). **Celý ateliér = fixní cena** (v základu vybavení, úklid, omezené množství kávy/čaje) → **produkt ve Stripe**. **Levnější varianty:** ateliér bez vybavení, jen pingpong; u pingpongu varianta **s přístupem do ledničky a bez**. Ceny doplní Milan.
+5. **Členství v klubu** — **250 Kč měsíčně vč. DPH**, opakovaná platba (Stripe Subscriptions). **Bez samoobslužné registrace** — jen prověření členové (zakládá admin). Členové si mohou **rezervovat ateliér na pingpong nebo jednotlivé stoly**; smysl: hlídat obsazenost, aby nikdo nelezl do klubovny, když tam je kurz.
+6. **Drobný prodej** — **online shop zůstává skrytý**, žádné poštovné ani logistika. Potřeba: **pseudo-shop na naší doméně, zobrazený jen lokálně** (přehled prodávaných věcí v ateliéru). **QR kódy** u vystavených věcí i na obrazovce/tabletu s přehledem; platba kartou přes Stripe. **DPH: klasická česká sazba.** Sklad hlídat u nás (ne ve Stripe). Otevřené: jak technicky omezit zobrazení "jen lokálně" (nelinkovaná adresa, PIN, kiosk na tabletu).
+7. **Firemní akce** — **na fakturu** (firmy si je dávají do nákladů), faktura ze Stripe; veřejně se nevypisují ani neplatí online.
