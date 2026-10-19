@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-19 — Děkovací stránka po zaplacení členství (rezervace)
+Po platbě se člen vrací na `/clenstvi?platba=ok` (poděkování, co dál, tlačítko do rezervací; funguje i bez přihlášení), po zrušení platby na `/clenstvi?platba=zrusena` (hláška, že se nic nestrhlo). Úvod před platbou i poděkování jsou v jednom souboru `app/clenstvi/page.tsx`. Platba i zrušení členství otestovány ve Stripe sandboxu.
+
 ## 2026-10-19 — Členství zdarma a datum konce zrušeného členství (rezervace)
 Účet člena má přepínač „Zdarma“ (guestlist): sloupec `membership_free` v `users`; takový člen nedostane v uvítacím e-mailu odkaz na platbu, v Účtech je „člen zdarma“, odkaz „Členství“ se mu nezobrazuje (`/api/auth/me` vrací `membershipFree`) a `/api/membership/manage` ho přesměruje s hláškou. Přepínat jde při přidání účtu i později (`PATCH /api/users/:id`, jen admin). Webhook nově zpracovává `customer.subscription.updated` a ukládá `membership_ends_at` (zrušené předplatné doběhne ke konci zaplaceného období); v Účtech pak „členství zaplaceno, končí D. M. RRRR“. Účtování předplatného zůstává ke dni přihlášení člena (bez poměrných faktur). Role „Partner“ (mezistupeň mezi adminem a členem) odložena.
 
