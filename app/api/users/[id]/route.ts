@@ -17,3 +17,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   await users.remove(params.id);
   return NextResponse.json({ ok: true });
 }
+
+// PATCH /api/users/:id { free } — přepnout členství zdarma / placené (jen admin)
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const target = await users.byId(params.id);
+  if (!target) return NextResponse.json({ error: "účet nenalezen" }, { status: 404 });
+  const { free } = await req.json();
+  if (typeof free !== "boolean") return NextResponse.json({ error: "chybí hodnota free" }, { status: 400 });
+  await users.setFree(params.id, free);
+  return NextResponse.json({ ok: true });
+}
