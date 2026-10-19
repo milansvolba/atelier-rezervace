@@ -92,3 +92,23 @@ export async function verifyMagicLinkToken(token: string): Promise<string | null
     return null;
   }
 }
+
+
+// --- Token platebního odkazu na členství (v uvítacím e-mailu; platí 30 dní, jde jen k založení předplatného) ---
+export async function createPayToken(userId: string): Promise<string> {
+  return await new SignJWT({ userId, purpose: "pay" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("30d")
+    .sign(secretKey());
+}
+
+export async function verifyPayToken(token: string): Promise<string | null> {
+  try {
+    const { payload } = await jwtVerify(token, secretKey());
+    if (payload.purpose !== "pay" || typeof payload.userId !== "string") return null;
+    return payload.userId;
+  } catch {
+    return null;
+  }
+}
