@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { users } from "@/lib/users";
-import { requireAdmin, createMagicLinkToken } from "@/lib/auth";
+import { requireAdmin, createMagicLinkToken, createPayToken } from "@/lib/auth";
 import { sendWelcomeEmail } from "@/lib/email";
 
 // GET /api/users — seznam účtů (jen admin)
@@ -23,7 +23,12 @@ export async function POST(req: NextRequest) {
   const token = await createMagicLinkToken(user.email);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rezervace.ateliernapobrezi.cz";
   const link = `${appUrl}/api/auth/verify?token=${encodeURIComponent(token)}`;
-  await sendWelcomeEmail(user, link);
+  // Člen dostane v uvítacím e-mailu i odkaz na platbu měsíčního předplatného (Stripe).
+  const payLink =
+    user.role === "member"
+      ? `${appUrl}/api/membership/manage?token=${encodeURIComponent(await createPayToken(user.id))}`
+      : undefined;
+  await sendWelcomeEmail(user, link, payLink);
 
   return NextResponse.json(user, { status: 201 });
 }
