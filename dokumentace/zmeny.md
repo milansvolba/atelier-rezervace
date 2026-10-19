@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-19 — Storno přihlášky na kurz + vratka přes Stripe (rezervace)
+V detailu termínu kurzu (admin) je seznam potvrzených účastníků s tlačítkem „Stornovat“. Nabídne navrženou vratku podle pravidla (7+ dní do kurzu 100 %, 3–6 dní 50 %, 0–2 dny 0 %), částku lze upravit; vratka jde přes Stripe Refunds API (`POST /api/signups/:id/cancel`, GET dává náhled), přihláška dostane stav `cancelled` (místa se uvolní) a nepovinně odejde e-mail `sendSignupCancelledEmail` (zatím pevný text, ne šablona). Tabulka `payments` má nové sloupce payment_intent, amount_czk, signup_id, refunded_czk (naplňuje webhook; starší platby bez nich vratku přes appku nedostanou – vrátit ručně ve Stripe).
+
 ## 2026-10-19 — Logo zarovnané s levým okrajem obsahu; slevy v pravém sloupci adminu (rezervace)
 Nový `components/AppShell.tsx` obaluje stránku a na `/admin` od lg rozšíří celý obal (hlavička i obsah) na `max-w-7xl`, takže logo i menu lícují s okraji obsahu; `<main>` v adminu už nepoužívá „breakout“. Na mobilu zůstává standardní úzký obal s okrajem px-4 (logo vlevo, stejný okraj jako obsah). Slevové stupně přesunuty do pravého sloupce, breakpoint dvou sloupců je lg, v detailu akce je přepínač „Firemní akce“.
 
