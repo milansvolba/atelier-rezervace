@@ -67,6 +67,11 @@ export async function POST(req: NextRequest) {
           createdAt: new Date().toISOString(),
         };
         await signupStore.add(signup);
+        try {
+          await paymentStore.attach(sessionId, { paymentIntent: typeof obj.payment_intent === "string" ? obj.payment_intent : undefined, amountCzk: amount, signupId: signup.id });
+        } catch (e) {
+          console.error("[stripe] Nepodařilo se spojit platbu " + sessionId + " s přihláškou:", e);
+        }
         await Promise.all([sendAdminNewSignupEmail(booking, signup), sendSignupDecisionEmail(booking, signup, true)]);
       } else {
         console.error("[stripe] Zaplacená session " + sessionId + ": kurz " + bookingId + " už neexistuje.");
