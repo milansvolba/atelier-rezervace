@@ -8,7 +8,7 @@ export default function MembershipPage({ searchParams }: { searchParams: { token
   const payHref = token ? "/api/membership/manage?token=" + encodeURIComponent(token) : null;
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <main className="flex justify-center px-4 py-6">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 w-full max-w-md space-y-5">
         <h1 className="text-xl font-semibold">Členství v klubu</h1>
         {payHref ? (
