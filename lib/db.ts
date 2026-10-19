@@ -88,6 +88,28 @@ await sql`
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS amount_czk integer`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS signup_id text`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS refunded_czk integer NOT NULL DEFAULT 0`;
+      // Dárkové poukazy na kurzy (kód, platnost 1 rok, stav active/redeemed)
+      await sql`
+        CREATE TABLE IF NOT EXISTS vouchers (
+          id text PRIMARY KEY,
+          code text NOT NULL UNIQUE,
+          topic text NOT NULL,
+          course_title text NOT NULL,
+          booking_id text,
+          people integer NOT NULL DEFAULT 1,
+          casting boolean NOT NULL DEFAULT false,
+          amount_czk integer NOT NULL,
+          buyer_name text NOT NULL,
+          buyer_email text NOT NULL,
+          recipient_name text,
+          message text,
+          status text NOT NULL DEFAULT 'active',
+          stripe_session text,
+          created_at timestamptz NOT NULL DEFAULT now(),
+          expires_at timestamptz NOT NULL,
+          redeemed_at timestamptz
+        );
+      `;
       // Příznaky termínů kurzů (zatím jen: firemní akce, která se neukazuje veřejně na /kurzy).
       await sql`
         CREATE TABLE IF NOT EXISTS course_flags (
