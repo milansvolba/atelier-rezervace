@@ -27,6 +27,7 @@ interface SessionUser {
   name: string;
   email: string;
   role: Role;
+  membershipFree?: boolean;
 }
 
 interface AppUser {
@@ -35,6 +36,8 @@ interface AppUser {
   email: string;
   role: Role;
   membershipStatus?: string;
+  membershipFree?: boolean;
+  membershipEndsAt?: string | null;
 }
 
 const MEMBERSHIP_LABEL: Record<string, string> = {
@@ -43,6 +46,16 @@ const MEMBERSHIP_LABEL: Record<string, string> = {
   past_due: "platba selhala",
   canceled: "členství zrušeno",
 };
+
+function memberLabel(u: AppUser): string {
+  if (u.membershipFree) return "člen zdarma";
+  const base = MEMBERSHIP_LABEL[u.membershipStatus || "none"] || u.membershipStatus || "";
+  if (u.membershipStatus === "active" && u.membershipEndsAt) {
+    const d = new Date(u.membershipEndsAt);
+    return base + ", končí " + d.getDate() + ". " + (d.getMonth() + 1) + ". " + d.getFullYear();
+  }
+  return base;
+}
 
 const DAY_START = 6;
 const DAY_END = 20;
@@ -816,10 +829,11 @@ function BookingDetailModal({
 // Správa účtů (jen admin) — ruční přidání/odebrání jmenných účtů.
 function MembersPanel({ onClose }: { onClose: () => void }) {
   const [list, setList] = useState<AppUser[]>([]);
-  const [form, setForm] = useState<{ name: string; email: string; role: Role }>({
+  const [form, setForm] = useState<{ name: string; email: string; role: Role; free: boolean }>({
     name: "",
     email: "",
     role: "member",
+    free: false,
   });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -844,11 +858,26 @@ function MembersPanel({ onClose }: { onClose: () => void }) {
     });
     setSaving(false);
     if (res.ok) {
-      setForm({ name: "", email: "", role: "member" });
+      setForm({ name: "", email: "", role: "member", free: false });
       load();
     } else {
       const data = await res.json();
       setError(data.error || "Nepodařilo se přidat.");
+    }
+  }
+
+  async function toggleFree(u: AppUser) {
+    setError(null);
+    const res = await fetch(`/api/users/${u.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ free: !u.membershipFree }),
+    });
+    if (res.ok) {
+      toast(u.membershipFree ? "Členství zdarma zrušeno." : "Členství zdarma nastaveno.");
+      load();
+    } else {
+      setError("Nepodařilo se změnit členství zdarma.");
     }
   }
 
@@ -883,12 +912,19 @@ function MembersPanel({ onClose }: { onClose: () => void }) {
             >
               <span>
                 {u.name} · {u.email} · <span className="text-gray-400">{u.role === "admin" ? "admin" : "člen"}</span>{u.role === "member" && (
-                  <span className="text-gray-400"> · {MEMBERSHIP_LABEL[u.membershipStatus || "none"] || u.membershipStatus}</span>
+                  <span className="text-gray-400"> · {memberLabel(u)}</span>
                 )}
               </span>
-              <button onClick={() => removeUser(u.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">
-                Odebrat
-              </button>
+              <div className="flex items-center gap-3 shrink-0">
+                {u.role === "member" && (
+                  <button onClick={() => toggleFree(u)} className="text-xs text-gray-500 hover:text-gray-800">
+                    {u.membershipFree ? "Zrušit zdarma" : "Nastavit zdarma"}
+                  </button>
+                )}
+                <button onClick={() => removeUser(u.id)} className="text-xs text-red-500 hover:text-red-700">
+                  Odebrat
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -924,6 +960,12 @@ function MembersPanel({ onClose }: { onClose: () => void }) {
             <option value="admin">Admin</option>
           </select>
         </label>
+        {form.role === "member" && (
+          <label className="text-xs flex items-center gap-1 h-9 mt-5">
+            <input type="checkbox" checked={form.free} onChange={(e) => setForm((f) => ({ ...f, free: e.target.checked }))} />
+            Zdarma (bez platby)
+          </label>
+        )}
         <button disabled={saving} className="h-9 px-3 rounded-md bg-gray-900 text-white text-sm disabled:opacity-50">
           {saving ? "Přidávám…" : "Přidat"}
         </button>
@@ -1326,6 +1368,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     const msgs: Record<string, string> = {
       ok: "Díky! Členství je zaplacené. Potvrzení a fakturu ti pošle Stripe e-mailem.",
       zruseno: "Platba členství byla zrušena. Zkusit ji znovu můžeš přes odkaz Členství nahoře.",
+      zdarma: "Máš členství zdarma, platit nemusíš.",
       aktivni: "Členství už máš aktivní. Správu najdeš pod odkazem Členství nahoře.",
       chyba: "Členství se nepodařilo otevřít. Zkus to prosím znovu.",
     };
@@ -1419,7 +1462,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
               E-maily
             </button>
           )}
-          {!isAdmin && (
+          {!isAdmin && !session.membershipFree && (
             <a href="/api/membership/manage" className="text-sm text-gray-500 hover:text-gray-800">
               Členství
             </a>
