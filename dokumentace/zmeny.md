@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-19 — Množstevní slevy podle počtu lidí + volitelný betonový odlitek (rezervace)
+Nový `lib/pricing.ts`: sleva 2 os. 5 %, 3–4 os. 10 %, 5–6 os. 15 % (pevně v kódu; stará tabulka discount_tiers a její panel v adminu už se na cenu nepoužívají). Odlitek (hlava 3 900 Kč, reliéf 3 100 Kč za osobu, podle názvu kurzu) je checkbox v kroku 2 průvodce, počítá se pro všechny účastníky bez slevy a jde do Stripe Checkoutu jako druhá položka (`extraItems` v createCheckoutSession, stejná sazba DPH); částku počítá server. Informace o odlitku se zapíše do poznámky přihlášky.
+
 ## 2026-10-19 — Storno přihlášky na kurz + vratka přes Stripe (rezervace)
 V detailu termínu kurzu (admin) je seznam potvrzených účastníků s tlačítkem „Stornovat“. Nabídne navrženou vratku podle pravidla (7+ dní do kurzu 100 %, 3–6 dní 50 %, 0–2 dny 0 %), částku lze upravit; vratka jde přes Stripe Refunds API (`POST /api/signups/:id/cancel`, GET dává náhled), přihláška dostane stav `cancelled` (místa se uvolní) a nepovinně odejde e-mail `sendSignupCancelledEmail` (zatím pevný text, ne šablona). Tabulka `payments` má nové sloupce payment_intent, amount_czk, signup_id, refunded_czk (naplňuje webhook; starší platby bez nich vratku přes appku nedostanou – vrátit ručně ve Stripe).
 
