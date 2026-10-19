@@ -99,8 +99,46 @@ export const paymentStore = {
     return rows.length > 0;
   },
 
+  // Po vytvoření přihlášky uloží k platbě payment_intent, částku a ID přihlášky (pro pozdější storno/vratku).
+  async attach(sessionId: string, d: { paymentIntent?: string; amountCzk: number; signupId: string }): Promise<void> {
+    await ensureSchema();
+    await sql`UPDATE payments SET payment_intent = ${d.paymentIntent ?? null}, amount_czk = ${Math.round(d.amountCzk)}, signup_id = ${d.signupId} WHERE id = ${sessionId}`;
+  },
+
+  async bySignup(signupId: string): Promise<{ id: string; paymentIntent: string | null; amountCzk: number; refundedCzk: number } | null> {
+    await ensureSchema();
+    const rows = await sql`SELECT id, payment_intent, amount_czk, refunded_czk FROM payments WHERE signup_id = ${signupId} AND status = 'paid' LIMIT 1`;
+    if (!rows[0]) return null;
+    return {
+      id: rows[0].id as string,
+      paymentIntent: (rows[0].payment_intent as string) ?? null,
+      amountCzk: Number(rows[0].amount_czk ?? 0),
+      refundedCzk: Number(rows[0].refunded_czk ?? 0),
+    };
+  },
+
+  async addRefunded(sessionId: string, czk: number): Promise<void> {
+    await ensureSchema();
+    await sql`UPDATE payments SET refunded_czk = refunded_czk + ${Math.round(czk)} WHERE id = ${sessionId}`;
+  },
+
   async markExpired(sessionId: string): Promise<void> {
     await ensureSchema();
     await sql`UPDATE payments SET status = 'expired' WHERE id = ${sessionId} AND status = 'awaiting'`;
   },
 };
+
+
+// Vrácení části nebo celé platby přes Stripe Refunds API (částka v Kč).
+export async function createRefund(paymentIntent: string, amountCzk: number): Promise<{ id: string }> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("Chybí STRIPE_SECRET_KEY");
+  const res = await fetch(STRIPE_API + "/refunds", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + key, "Content-Type": "application/x-www-form-urlencoded" },
+    body: form({ payment_intent: paymentIntent, amount: Math.round(amountCzk * 100) }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error("Stripe: " + (data?.error?.message ?? res.status));
+  return { id: data.id as string };
+}
