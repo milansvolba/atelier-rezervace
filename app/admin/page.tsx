@@ -251,6 +251,9 @@ function QuickAddModal({
   resource,
   date,
   members,
+  isAdmin,
+  memberName,
+  memberEmail,
   onClose,
   onSaved,
   onOpenDay,
@@ -258,6 +261,9 @@ function QuickAddModal({
   resource: ResourceId;
   date: string;
   members: AppUser[];
+  isAdmin: boolean;
+  memberName: string;
+  memberEmail: string;
   onClose: () => void;
   onSaved: () => void;
   onOpenDay: () => void;
@@ -266,12 +272,14 @@ function QuickAddModal({
     resource,
     startTime: "09:00",
     endTime: "11:00",
-    title: "",
+    title: isAdmin ? "" : memberName,
     requesterContact: "",
     category: "pronajem" as "pronajem" | "kurz",
     capacity: "",
     price: "",
   });
+  // Člen (ne admin) nevyplňuje jméno ani kontakt: jméno bere z účtu, e-mail jen na požádání.
+  const [wantEmail, setWantEmail] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [matchedMemberId, setMatchedMemberId] = useState<string | null>(null);
@@ -294,7 +302,12 @@ function QuickAddModal({
     const res = await fetch("/api/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, date, memberUserId: matchedMemberId }),
+      body: JSON.stringify({
+        ...form,
+        requesterContact: isAdmin ? form.requesterContact : wantEmail ? memberEmail : "",
+        date,
+        memberUserId: matchedMemberId,
+      }),
     });
     setSaving(false);
     if (res.ok) {
@@ -336,6 +349,8 @@ function QuickAddModal({
           </select>
         </label>
 
+        {isAdmin && (
+          <>
         <label className="block text-sm">
           Kategorie
           <select
@@ -365,6 +380,8 @@ function QuickAddModal({
             ))}
           </datalist>
         </label>
+          </>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm">
@@ -433,6 +450,7 @@ function QuickAddModal({
           </div>
         )}
 
+        {isAdmin ? (
         <label className="block text-sm">
           Kontakt (pro upozornění, nepovinné)
           <input
@@ -442,6 +460,12 @@ function QuickAddModal({
             placeholder="e-mail nebo telefon"
           />
         </label>
+        ) : (
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={wantEmail} onChange={(e) => setWantEmail(e.target.checked)} />
+            Chci potvrzení e-mailem
+          </label>
+        )}
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -1913,6 +1937,9 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
       {quickAdd && (
         <QuickAddModal
+          isAdmin={isAdmin}
+          memberName={session.name}
+          memberEmail={session.email}
           resource={quickAdd.resource}
           date={quickAdd.date}
           members={members}
