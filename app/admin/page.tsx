@@ -565,6 +565,31 @@ function BookingDetailModal({
   const [notify, setNotify] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Firemní akce: neukazuje se na veřejných /kurzy a nejde se na ni veřejně přihlásit ani platit.
+  const [corporate, setCorporate] = useState(false);
+  useEffect(() => {
+    if (booking.category !== "kurz") return;
+    fetch(`/api/bookings/${booking.id}/corporate`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) setCorporate(!!d.corporate);
+      })
+      .catch(() => {});
+  }, [booking.id, booking.category]);
+  async function changeCorporate(value: boolean) {
+    setCorporate(value);
+    const res = await fetch(`/api/bookings/${booking.id}/corporate`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ corporate: value }),
+    });
+    if (res.ok) {
+      toast(value ? "Akce je skrytá na veřejných Kurzech." : "Akce je zase veřejná na Kurzech.");
+    } else {
+      setCorporate(!value);
+      setError("Nepodařilo se změnit příznak firemní akce.");
+    }
+  }
   const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
   const hasContact = !!(booking.requesterContact || form.requesterContact);
 
@@ -689,6 +714,12 @@ function BookingDetailModal({
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               />
             </label>
+            {form.category === "kurz" && (
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={corporate} onChange={(e) => changeCorporate(e.target.checked)} />
+                Firemní akce (skrýt na veřejných Kurzech)
+              </label>
+            )}
             {form.category === "kurz" && (
               <div className="grid grid-cols-2 gap-3">
                 <label className="text-sm">
