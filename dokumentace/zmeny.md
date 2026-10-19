@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-19 — Firemní akce skryté na veřejných Kurzech (rezervace)
+Termín kurzu jde v adminu označit jako **firemní akci** (detail rezervace, Změnit, zaškrtávátko „Firemní akce (skrýt na veřejných Kurzech)“). Příznak je v tabulce `course_flags` (`lib/courseFlags.ts`, API `GET/PUT /api/bookings/:id/corporate`, jen admin). Taková akce se nevrací z `GET /api/courses` (tedy ani na veřejné stránce `/kurzy` a na webu) a `POST /api/signups` i `POST /api/signups/checkout` ji odmítnou (403). Kolize s ostatními rezervacemi se řeší jako dosud: termín na prostoru „celý ateliér“ blokuje ostatní místa při zápisu člena/admina i při schválení žádosti (`findConflict`); veřejná žádost o pronájem se v konfliktním čase může odeslat, ale nejde schválit.
+
 ## 2026-10-19 — Děkovací stránka po zaplacení členství (rezervace)
 Po platbě se člen vrací na `/clenstvi?platba=ok` (poděkování, co dál, tlačítko do rezervací; funguje i bez přihlášení), po zrušení platby na `/clenstvi?platba=zrusena` (hláška, že se nic nestrhlo). Úvod před platbou i poděkování jsou v jednom souboru `app/clenstvi/page.tsx`. Platba i zrušení členství otestovány ve Stripe sandboxu.
 
