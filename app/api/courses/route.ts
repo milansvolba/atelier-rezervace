@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
+import { courseFlags } from "@/lib/courseFlags";
 
 // Data se mění za běhu (nové kurzy, přihlášky) — nechceme, aby to Next.js
 // zkoušel staticky prerenderovat při buildu.
@@ -12,7 +13,11 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const all = await store.all();
   const today = new Date().toISOString().slice(0, 10);
-  const courses = all.filter((b) => b.category === "kurz" && b.status === "confirmed" && b.date >= today);
+  // Firemní akce (příznak v adminu) se na veřejné stránce neukazují.
+  const hidden = await courseFlags.corporateIds();
+  const courses = all.filter(
+    (b) => b.category === "kurz" && b.status === "confirmed" && b.date >= today && !hidden.has(b.id)
+  );
 
   const withCapacity = await Promise.all(
     courses.map(async (c) => {
