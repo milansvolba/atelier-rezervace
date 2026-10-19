@@ -34,7 +34,15 @@ interface AppUser {
   name: string;
   email: string;
   role: Role;
+  membershipStatus?: string;
 }
+
+const MEMBERSHIP_LABEL: Record<string, string> = {
+  none: "čeká na platbu",
+  active: "členství zaplaceno",
+  past_due: "platba selhala",
+  canceled: "členství zrušeno",
+};
 
 const DAY_START = 6;
 const DAY_END = 20;
@@ -850,7 +858,9 @@ function MembersPanel({ onClose }: { onClose: () => void }) {
               className="flex items-center justify-between text-sm border-t border-gray-100 pt-2 first:border-t-0 first:pt-0"
             >
               <span>
-                {u.name} · {u.email} · <span className="text-gray-400">{u.role === "admin" ? "admin" : "člen"}</span>
+                {u.name} · {u.email} · <span className="text-gray-400">{u.role === "admin" ? "admin" : "člen"}</span>{u.role === "member" && (
+                  <span className="text-gray-400"> · {MEMBERSHIP_LABEL[u.membershipStatus || "none"] || u.membershipStatus}</span>
+                )}
               </span>
               <button onClick={() => removeUser(u.id)} className="text-xs text-red-500 hover:text-red-700 shrink-0">
                 Odebrat
@@ -1285,6 +1295,20 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     };
   }, []);
 
+  // Zpráva po návratu ze Stripe (platba / správa členství).
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("clenstvi");
+    if (!p) return;
+    const msgs: Record<string, string> = {
+      ok: "Díky! Členství je zaplacené. Potvrzení a fakturu ti pošle Stripe e-mailem.",
+      zruseno: "Platba členství byla zrušena. Zkusit ji znovu můžeš přes odkaz Členství nahoře.",
+      aktivni: "Členství už máš aktivní. Správu najdeš pod odkazem Členství nahoře.",
+      chyba: "Členství se nepodařilo otevřít. Zkus to prosím znovu.",
+    };
+    if (msgs[p]) toast(msgs[p]);
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+
   async function createBooking(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -1370,6 +1394,11 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
             <button onClick={() => setShowEmails(true)} className="text-sm text-gray-500 hover:text-gray-800">
               E-maily
             </button>
+          )}
+          {!isAdmin && (
+            <a href="/api/membership/manage" className="text-sm text-gray-500 hover:text-gray-800">
+              Členství
+            </a>
           )}
           <button onClick={onLogout} className="text-sm text-gray-500 hover:text-gray-800">
             Odhlásit
