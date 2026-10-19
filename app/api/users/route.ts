@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   // Člen dostane v uvítacím e-mailu i odkaz na platbu měsíčního předplatného (Stripe).
   const payLink =
     user.role === "member"
-      ? `${appUrl}/api/membership/manage?token=${encodeURIComponent(await createPayToken(user.id))}`
+      ? `${appUrl}/clenstvi?token=${encodeURIComponent(await createPayToken(user.id))}`
       : undefined;
   await sendWelcomeEmail(user, link, payLink);
 
