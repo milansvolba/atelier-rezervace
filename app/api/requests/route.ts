@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { store } from "@/lib/data";
+import { store, findConflict } from "@/lib/data";
 import { Booking } from "@/lib/types";
 import { sendAdminNewRequestEmail, sendRequesterReceivedEmail } from "@/lib/email";
 
@@ -10,6 +10,11 @@ export async function POST(req: NextRequest) {
   const { resource, date, startTime, endTime, title, requesterName, requesterContact, note, category } = body;
   if (!resource || !date || !startTime || !endTime || !requesterName || !requesterContact) {
     return NextResponse.json({ error: "chybí povinné údaje" }, { status: 400 });
+  }
+  // Obsazený termín (včetně akcí na celý ateliér) nejde ani požádat. Název akce se nikam nevrací.
+  const conflict = await findConflict(resource, date, startTime, endTime);
+  if (conflict) {
+    return NextResponse.json({ error: "Tento termín je už obsazený. Vyber prosím jiný čas." }, { status: 409 });
   }
   const booking: Booking = {
     id: crypto.randomUUID(),
