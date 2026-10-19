@@ -148,6 +148,13 @@ export const voucherStore = {
     throw new Error("Nepodařilo se vygenerovat unikátní kód poukazu");
   },
 
+  // Atomické uplatnění: uspěje jen jednou (UPDATE ... WHERE status = 'active'), dvě souběžná uplatnění tak nepropadnou obě.
+  async claim(id: string): Promise<boolean> {
+    await ensureSchema();
+    const rows = await sql`UPDATE vouchers SET status = 'redeemed', redeemed_at = now() WHERE id = ${id} AND status = 'active' RETURNING id`;
+    return rows.length > 0;
+  },
+
   // Označení uplatněného / vrácení do stavu active (admin).
   async setStatus(id: string, status: VoucherStatus): Promise<Voucher | null> {
     await ensureSchema();

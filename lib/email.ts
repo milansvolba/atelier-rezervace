@@ -310,7 +310,7 @@ function voucherSummaryHtml(v: Voucher, booking?: Booking) {
 export async function sendVoucherEmail(v: Voucher, booking?: Booking) {
   const redeem = booking
     ? `<p>Obdarovaný už má na uvedený termín <strong>potvrzené místo</strong>, nemusí nic dalšího řešit. Při příchodu stačí zmínit kód poukazu.</p>`
-    : `<p>Termín zatím není zvolený. Obdarovaný si ho domluví odpovědí na tento e-mail (uveďte kód poukazu) a my nabídneme nejbližší vypsané termíny. Aktuální nabídku najdete na <a href="${APP_URL}/kurzy">${APP_URL}/kurzy</a>.</p>`;
+    : `<p>Termín zatím není zvolený. Obdarovaný si ho vybere sám na <a href="${APP_URL}/kurzy">${APP_URL}/kurzy</a>: u vybraného termínu zvolí „Mám dárkový poukaz“ a zadá kód <strong>${esc(v.code)}</strong>. Místo se mu hned potvrdí.</p>`;
   const msg = v.message ? `<p>Vzkaz od kupujícího:<br><em>${esc(v.message)}</em></p>` : "";
   const html = wrap(
     `<p>Dobrý den, ${esc(v.buyerName)},</p>` +
@@ -340,4 +340,24 @@ export async function sendAdminNewVoucherEmail(
       `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
   );
   await send(ADMIN_EMAILS, "Nový dárkový poukaz " + v.code, html, { type: "voucher_admin", bookingId: opts.booking?.id });
+}
+
+// Uplatnění poukazu v aplikaci: potvrzení obdarovanému + upozornění adminům.
+export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, signup: CourseSignup, overbooked: boolean) {
+  const html = wrap(
+    `<p>Dobrý den, ${esc(signup.name)},</p>` +
+      `<p>poukaz <strong>${esc(v.code)}</strong> je uplatněný a vaše místo na kurzu je <strong>potvrzené</strong>.</p>` +
+      `<p>Kurz: <strong>${esc(booking.title)}</strong><br>Termín: ${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}<br>Počet osob: ${signup.people}${v.casting ? ", včetně betonového odlitku" : ""}</p>` +
+      `<p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`
+  );
+  const adminHtml = wrap(
+    `<p>Byl uplatněn dárkový poukaz <strong>${esc(v.code)}</strong> na termín ${fmtDate(booking.date)} (${esc(booking.title)}).</p>` +
+      `<p>Přihlášen: ${esc(signup.name)}, ${esc(signup.contact)}, ${signup.people} os.${v.casting ? ", vč. odlitku" : ""}</p>` +
+      (overbooked ? `<p><strong>Pozor:</strong> termín mezitím přesáhl kapacitu, zkontrolujte ji.</p>` : "") +
+      `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
+  );
+  await Promise.all([
+    send(signup.contact, "Poukaz uplatněn, vaše místo je potvrzené", html, { type: "voucher_redeemed", bookingId: booking.id, signupId: signup.id }),
+    send(ADMIN_EMAILS, "Uplatněn poukaz " + v.code, adminHtml, { type: "voucher_redeemed_admin", bookingId: booking.id, signupId: signup.id }),
+  ]);
 }
