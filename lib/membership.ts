@@ -38,6 +38,8 @@ export async function createMembershipCheckout(user: AppUser): Promise<string> {
     "metadata[userId]": user.id,
     "subscription_data[metadata][userId]": user.id,
   };
+  // DPH: sazba (21 % vč. DPH) z proměnné STRIPE_TAX_RATE_ID, ať se na faktuře rozepíše.
+  if (process.env.STRIPE_TAX_RATE_ID) params["line_items[0][tax_rates][0]"] = process.env.STRIPE_TAX_RATE_ID;
   if (user.stripeCustomerId) params.customer = user.stripeCustomerId;
   else params.customer_email = user.email;
   const session = await stripePost("/checkout/sessions", params);
