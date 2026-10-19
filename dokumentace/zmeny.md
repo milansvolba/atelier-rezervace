@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-19 — Členství zdarma a datum konce zrušeného členství (rezervace)
+Účet člena má přepínač „Zdarma“ (guestlist): sloupec `membership_free` v `users`; takový člen nedostane v uvítacím e-mailu odkaz na platbu, v Účtech je „člen zdarma“, odkaz „Členství“ se mu nezobrazuje (`/api/auth/me` vrací `membershipFree`) a `/api/membership/manage` ho přesměruje s hláškou. Přepínat jde při přidání účtu i později (`PATCH /api/users/:id`, jen admin). Webhook nově zpracovává `customer.subscription.updated` a ukládá `membership_ends_at` (zrušené předplatné doběhne ke konci zaplaceného období); v Účtech pak „členství zaplaceno, končí D. M. RRRR“. Účtování předplatného zůstává ke dni přihlášení člena (bez poměrných faktur). Role „Partner“ (mezistupeň mezi adminem a členem) odložena.
+
 ## 2026-10-19 — Zjednodušená rezervace pro členy, DPH ve Stripe (rezervace)
 Člen (ne admin) ve formuláři „Nová rezervace“ nevyplňuje Kategorii ani Kdo/co: jméno se bere z účtu, kategorie je vždy pronájem. Pole Kontakt nahradilo zaškrtávátko „Chci potvrzení e-mailem“ (při zaškrtnutí se do kontaktu uloží e-mail z účtu; ten se používá pro upozornění na změnu/zrušení — samostatný potvrzovací e-mail při vytvoření zatím neexistuje). `POST /api/bookings` pro člena vynucuje jméno z účtu, kategorii pronájem a ignoruje cenu/kapacitu. Dále: sazba DPH ve Stripe přes env `STRIPE_TAX_RATE_ID` (členství i platby za kurzy), nová stránka `/clenstvi` (úvod před platbou členství; uvítací e-mail odkazuje sem).
 
