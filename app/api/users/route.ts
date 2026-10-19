@@ -12,20 +12,20 @@ export async function GET(req: NextRequest) {
 // POST /api/users { name, email, role } — ručně založit nového admina/člena (jen admin)
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const { name, email, role } = await req.json();
+  const { name, email, role, free } = await req.json();
   if (!name || !email || (role !== "admin" && role !== "member")) {
     return NextResponse.json({ error: "chybí jméno, e-mail nebo neplatná role" }, { status: 400 });
   }
   const existing = await users.byEmail(email);
   if (existing) return NextResponse.json({ error: "tento e-mail už účet má" }, { status: 409 });
-  const user = await users.add({ name, email, role });
+  const user = await users.add({ name, email, role, free: role === "member" && !!free });
 
   const token = await createMagicLinkToken(user.email);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rezervace.ateliernapobrezi.cz";
   const link = `${appUrl}/api/auth/verify?token=${encodeURIComponent(token)}`;
   // Člen dostane v uvítacím e-mailu i odkaz na platbu měsíčního předplatného (Stripe).
   const payLink =
-    user.role === "member"
+    user.role === "member" && !user.membershipFree
       ? `${appUrl}/clenstvi?token=${encodeURIComponent(await createPayToken(user.id))}`
       : undefined;
   await sendWelcomeEmail(user, link, payLink);
