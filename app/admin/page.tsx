@@ -1466,7 +1466,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-6 xl:w-[min(1280px,calc(100vw-3rem))] xl:relative xl:left-1/2 xl:-translate-x-1/2">
       <div className="flex items-center justify-between">
         <div className="flex gap-1 bg-gray-100 rounded-md p-1 text-xs">
           {(["day", "week", "month", "quarter", "year"] as ViewMode[]).map((v) => (
@@ -1547,6 +1547,9 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
       {error && <div className="bg-white border border-red-200 text-red-600 rounded-xl p-3 text-sm">{error}</div>}
 
+      {/* Široká obrazovka: kalendář vlevo, co čeká na schválení a nejbližší akce vpravo. Na menších jeden sloupec jako dřív. */}
+      <div className={`grid grid-cols-1 gap-6 items-start ${(isAdmin && (pending.length > 0 || pendingSignups.length > 0)) || myBookings.length > 0 ? "xl:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
+      <div className={`xl:order-2 space-y-6 ${(isAdmin && (pending.length > 0 || pendingSignups.length > 0)) || myBookings.length > 0 ? "" : "hidden"}`}>
       {isAdmin && pending.length > 0 && (
         <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
@@ -1652,12 +1655,14 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           </div>
           {myBookings.length > 3 && (
             <p className="text-xs text-gray-400 mt-3">
-              + {myBookings.length - 3} dalších — najdeš je v kalendáři výše.
+              + {myBookings.length - 3} dalších — najdeš je v kalendáři.
             </p>
           )}
         </div>
       )}
 
+      </div>
+      <div className="xl:order-1 space-y-6 min-w-0">
       {view === "day" && (
         <>
           <div className="bg-white border border-gray-200 rounded-xl p-5">
@@ -2007,6 +2012,9 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm bg-[#F0997B] inline-block" /> blokováno jiným místem
         </span>
+      </div>
+
+      </div>
       </div>
 
       {quickAdd && (
