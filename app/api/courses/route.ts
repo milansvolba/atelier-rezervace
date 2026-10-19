@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
+import { castingPriceFor } from "@/lib/pricing";
 
 // Data se mění za běhu (nové kurzy, přihlášky) — nechceme, aby to Next.js
 // zkoušel staticky prerenderovat při buildu.
@@ -31,6 +32,7 @@ export async function GET() {
         note: c.note,
         capacity: c.capacity ?? null,
         price: c.price ?? null,
+        castingPrice: castingPriceFor(c.title),
         spotsLeft: c.capacity ? Math.max(0, c.capacity - taken) : null,
       };
     })
