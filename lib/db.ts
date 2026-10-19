@@ -110,6 +110,8 @@ await sql`
           redeemed_at timestamptz
         );
       `;
+      // Jeden poukaz na jednu platbu — idempotence webhooku (NULL stripe_session se neomezuje).
+      await sql`CREATE UNIQUE INDEX IF NOT EXISTS vouchers_stripe_session_idx ON vouchers (stripe_session)`;
       // Příznaky termínů kurzů (zatím jen: firemní akce, která se neukazuje veřejně na /kurzy).
       await sql`
         CREATE TABLE IF NOT EXISTS course_flags (

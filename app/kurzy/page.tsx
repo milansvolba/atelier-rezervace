@@ -46,6 +46,12 @@ export default function KurzyPage() {
   const [step, setStep] = useState(2);
   const [signupPhone, setSignupPhone] = useState("");
   const [withCasting, setWithCasting] = useState(false);
+  // Uplatnění dárkového poukazu (kód se ověří na serveru, poukaz určuje počet osob a odlitek).
+  const [voucherOpen, setVoucherOpen] = useState(false);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherInfo, setVoucherInfo] = useState<null | { code: string; people: number; casting: boolean }>(null);
+  const [voucherErr, setVoucherErr] = useState("");
+  const [voucherDone, setVoucherDone] = useState(false);
 
   // Návrat ze Stripe Checkout (success_url / cancel_url vedou na /kurzy?platba=...).
   useEffect(() => {
@@ -208,7 +214,7 @@ export default function KurzyPage() {
     const casting = withCasting && c.castingPrice ? c.castingPrice * n : 0;
     return { discount, total, totalAfter, casting, grand: totalAfter + casting };
   }
-  const quote = selectedCourse ? quoteFor(selectedCourse, signupPeople) : null;
+  const quote = selectedCourse && !voucherInfo ? quoteFor(selectedCourse, signupPeople) : null;
 
   // Nabídka "přidejte další místo", pokud by se tím zvýšila sleva.
   function nudgeFor(c: CourseCard, n: number, max: number) {
@@ -224,6 +230,72 @@ export default function KurzyPage() {
     return null;
   }
   const nudge = selectedCourse ? nudgeFor(selectedCourse, signupPeople, maxSeats) : null;
+
+  function resetVoucher() {
+    setVoucherOpen(false);
+    setVoucherCode("");
+    setVoucherInfo(null);
+    setVoucherErr("");
+  }
+
+  async function checkVoucher() {
+    if (!selectedCourse) return;
+    setPayBusy(true);
+    setVoucherErr("");
+    try {
+      const r = await fetch("/api/vouchers/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: voucherCode, bookingId: selectedCourse.id, dryRun: true }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.people) {
+        setVoucherInfo({ code: voucherCode, people: data.people, casting: !!data.casting });
+        setSignupPeople(data.people);
+        setWithCasting(!!data.casting);
+      } else {
+        setVoucherErr(data.error || t("kurzy.voucher.err"));
+      }
+    } catch {
+      setVoucherErr(t("kurzy.voucher.err"));
+    }
+    setPayBusy(false);
+  }
+
+  async function redeemVoucher() {
+    if (!selectedCourse || !voucherInfo) return;
+    setPayBusy(true);
+    setPayError("");
+    try {
+      const r = await fetch("/api/vouchers/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: voucherInfo.code,
+          bookingId: selectedCourse.id,
+          name: signupName,
+          contact: signupContact,
+          note: (signupPhone ? "Tel: " + signupPhone + ". " : "") + signupNote,
+          honeypot,
+        }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok) {
+        setVoucherDone(true);
+        setSignupFor(null);
+        resetVoucher();
+        setStep(2);
+        setSignupPeople(1);
+        setWithCasting(false);
+        setPayBusy(false);
+        return;
+      }
+      setPayError(data.error || t("kurzy.voucher.err"));
+    } catch {
+      setPayError(t("kurzy.voucher.err"));
+    }
+    setPayBusy(false);
+  }
 
   // Odeslání objednávky z posledního kroku: kurz s cenou jde na Stripe, kurz bez ceny jako běžná přihláška.
   async function submitOrder() {
@@ -383,6 +455,9 @@ export default function KurzyPage() {
         {signupSent === "ok" && !selectedCourse && (
           <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4">{t("kurzy.signup.ok")}</p>
         )}
+        {voucherDone && !selectedCourse && (
+          <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4">{t("kurzy.voucher.ok")}</p>
+        )}
         {selectedCourse ? (
           <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
             <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm">
@@ -409,7 +484,13 @@ export default function KurzyPage() {
 
             {step === 2 && (
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
+                {voucherInfo && (
+                  <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-md p-3">
+                    {t("kurzy.voucher.applied", { code: voucherInfo.code.toUpperCase(), people: String(voucherInfo.people), seats: seatsWord(voucherInfo.people) })}
+                    {voucherInfo.casting ? " " + t("kurzy.voucher.casting") : ""}
+                  </p>
+                )}
+                {!voucherInfo && <div className="flex items-center gap-3">
                   <button
                     type="button"
                     aria-label="Méně míst"
@@ -429,13 +510,13 @@ export default function KurzyPage() {
                   >
                     +
                   </button>
-                </div>
-                {nudge && (
+                </div>}
+                {nudge && !voucherInfo && (
                   <p className="text-sm text-green-700">
                     {t("kurzy.step2.nudge", { more: nudge.label, percent: String(nudge.percent) })}
                   </p>
                 )}
-                {selectedCourse.castingPrice ? (
+                {selectedCourse.castingPrice && !voucherInfo ? (
                   <label className="flex items-start gap-2 text-sm rounded-md border border-gray-200 p-3">
                     <input type="checkbox" className="mt-1" checked={withCasting} onChange={(e) => setWithCasting(e.target.checked)} />
                     <span>
@@ -445,13 +526,46 @@ export default function KurzyPage() {
                     </span>
                   </label>
                 ) : null}
-                {selectedCourse.spotsLeft !== null && (
+                {!voucherInfo && (
+                  <div className="rounded-md border border-gray-200 p-3 space-y-2">
+                    {!voucherOpen ? (
+                      <button type="button" onClick={() => setVoucherOpen(true)} className="text-sm underline">
+                        {t("kurzy.voucher.have")}
+                      </button>
+                    ) : (
+                      <>
+                        <label className="block text-sm">
+                          {t("kurzy.voucher.label")}
+                          <input
+                            className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2 uppercase"
+                            placeholder="ATL-XXXX-XXXX"
+                            value={voucherCode}
+                            onChange={(e) => setVoucherCode(e.target.value)}
+                          />
+                        </label>
+                        {voucherErr && <p className="text-sm text-red-700">{voucherErr}</p>}
+                        <button
+                          type="button"
+                          disabled={payBusy || !voucherCode.trim()}
+                          onClick={checkVoucher}
+                          className="h-9 px-4 rounded-md border border-gray-300 text-sm disabled:opacity-50"
+                        >
+                          {t("kurzy.voucher.use")}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+                {selectedCourse.spotsLeft !== null && !voucherInfo && (
                   <p className="text-xs text-gray-500">{t("kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft) })}</p>
                 )}
                 <div className="flex gap-2 flex-wrap pt-1">
                   <button
                     type="button"
-                    onClick={() => setSignupFor(null)}
+                    onClick={() => {
+                      setSignupFor(null);
+                      resetVoucher();
+                    }}
                     className="h-10 px-4 rounded-md border border-gray-300 text-sm"
                   >
                     {t("kurzy.nav.change")}
@@ -599,11 +713,11 @@ export default function KurzyPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={submitOrder}
+                    onClick={voucherInfo ? redeemVoucher : submitOrder}
                     disabled={payBusy}
                     className="h-10 px-5 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60"
                   >
-                    {payBusy ? t("kurzy.pay.busy") : quote ? t("kurzy.pay.button", { total: String(quote.grand) }) : "Odeslat přihlášku"}
+                    {voucherInfo ? (payBusy ? t("kurzy.voucher.busy") : t("kurzy.voucher.button")) : payBusy ? t("kurzy.pay.busy") : quote ? t("kurzy.pay.button", { total: String(quote.grand) }) : "Odeslat přihlášku"}
                   </button>
                 </div>
                 {quote && <p className="text-xs text-gray-500">{t("kurzy.pay.hint")}</p>}
@@ -644,6 +758,8 @@ export default function KurzyPage() {
                         });
                       }
                       setSignupFor(c.id);
+                      resetVoucher();
+                      setVoucherDone(false);
                       setStep(2);
                       setSignupPeople(1);
                       setWithCasting(false);
