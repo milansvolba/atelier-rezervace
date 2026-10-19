@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-19 — Dvousloupcový admin, nové barvy kalendáře, obsazený termín nejde požádat (rezervace)
+Admin rezervací (`app/admin/page.tsx`) je na široké obrazovce (xl, od 1280 px) ve dvou sloupcích: kalendář vlevo, vpravo žádosti ke schválení, přihlášky a Nejbližší akce; stránka se na xl roztáhne přes úzký kontejner (do 1280 px). Na menších obrazovkách a mobilu zůstává jeden sloupec. Barvy kalendáře: volno = jemně zelená, obsazeno/zablokováno jiným místem = šedá (nejde rezervovat), čeká na schválení = žlutá. `POST /api/requests` (veřejná žádost) odmítne obsazený termín hláškou „Tento termín je už obsazený“ (409, bez názvu akce). Veřejnosti (nepřihlášeným) API vrací jen obsazenost bez názvů a kontaktů (`publicSafe`).
+
 ## 2026-10-19 — Firemní akce skryté na veřejných Kurzech (rezervace)
 Termín kurzu jde v adminu označit jako **firemní akci** (detail rezervace, Změnit, zaškrtávátko „Firemní akce (skrýt na veřejných Kurzech)“). Příznak je v tabulce `course_flags` (`lib/courseFlags.ts`, API `GET/PUT /api/bookings/:id/corporate`, jen admin). Taková akce se nevrací z `GET /api/courses` (tedy ani na veřejné stránce `/kurzy` a na webu) a `POST /api/signups` i `POST /api/signups/checkout` ji odmítnou (403). Kolize s ostatními rezervacemi se řeší jako dosud: termín na prostoru „celý ateliér“ blokuje ostatní místa při zápisu člena/admina i při schválení žádosti (`findConflict`); veřejná žádost o pronájem se v konfliktním čase může odeslat, ale nejde schválit.
 
