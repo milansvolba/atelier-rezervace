@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { Booking, CourseSignup, RESOURCE_LABELS } from "./types";
 import { getTemplate, renderTemplate } from "./emailTemplates";
 import { logEmail } from "./emailLog";
+import type { Voucher } from "./vouchers";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Atelier na Pobřeží <rezervace@ateliernapobrezi.cz>";
@@ -286,4 +287,57 @@ export async function sendSignupDecisionEmail(booking: Booking, signup: CourseSi
     },
     { bookingId: booking.id, signupId: signup.id }
   );
+}
+
+// --- Dárkové poukazy na kurzy ---
+// Texty zadává kupující (jméno, vzkaz), proto se do HTML escapují.
+function esc(t: string) {
+  return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function voucherSummaryHtml(v: Voucher, booking?: Booking) {
+  const people = v.people + " " + (v.people === 1 ? "osoba" : v.people <= 4 ? "osoby" : "osob");
+  return (
+    `<p>Kurz: <strong>${esc(v.courseTitle)}</strong><br>` +
+    `Počet osob: ${people}${v.casting ? ", včetně betonového odlitku" : ""}<br>` +
+    (v.recipientName ? `Pro: ${esc(v.recipientName)}<br>` : "") +
+    (booking ? `Termín: ${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}<br>` : "") +
+    `Platí do: ${fmtDate(v.expiresAt.slice(0, 10))}</p>`
+  );
+}
+
+// Kupujícímu po zaplacení: kód poukazu a jak ho uplatnit.
+export async function sendVoucherEmail(v: Voucher, booking?: Booking) {
+  const redeem = booking
+    ? `<p>Obdarovaný už má na uvedený termín <strong>potvrzené místo</strong>, nemusí nic dalšího řešit. Při příchodu stačí zmínit kód poukazu.</p>`
+    : `<p>Termín zatím není zvolený. Obdarovaný si ho domluví odpovědí na tento e-mail (uveďte kód poukazu) a my nabídneme nejbližší vypsané termíny. Aktuální nabídku najdete na <a href="${APP_URL}/kurzy">${APP_URL}/kurzy</a>.</p>`;
+  const msg = v.message ? `<p>Vzkaz od kupujícího:<br><em>${esc(v.message)}</em></p>` : "";
+  const html = wrap(
+    `<p>Dobrý den, ${esc(v.buyerName)},</p>` +
+      `<p>děkujeme za objednávku, platba proběhla v pořádku. Váš dárkový poukaz:</p>` +
+      `<p style="font-size:22px;letter-spacing:2px;"><strong>${esc(v.code)}</strong></p>` +
+      voucherSummaryHtml(v, booking) +
+      msg +
+      redeem
+  );
+  await send(v.buyerEmail, "Váš dárkový poukaz " + v.code, html, { type: "voucher_buyer", bookingId: booking?.id });
+}
+
+// Adminům: nový zaplacený poukaz (a upozornění, když něco vyžaduje ruční zásah).
+export async function sendAdminNewVoucherEmail(
+  v: Voucher,
+  opts: { booking?: Booking; overbooked?: boolean; signupFailed?: boolean } = {}
+) {
+  const warn =
+    (opts.overbooked ? `<p><strong>Pozor:</strong> termín už neměl dost volných míst, přihláška přesto vznikla. Zkontrolujte kapacitu.</p>` : "") +
+    (opts.signupFailed ? `<p><strong>Pozor:</strong> poukaz vznikl, ale přihlášku na zvolený termín se nepodařilo vytvořit. Doplňte ji ručně v adminu.</p>` : "");
+  const html = wrap(
+    `<p>Byl zaplacen nový dárkový poukaz <strong>${esc(v.code)}</strong> (${v.amountCzk} Kč).</p>` +
+      voucherSummaryHtml(v, opts.booking) +
+      `<p>Kupující: ${esc(v.buyerName)}, ${esc(v.buyerEmail)}</p>` +
+      (v.message ? `<p>Vzkaz: ${esc(v.message)}</p>` : "") +
+      warn +
+      `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
+  );
+  await send(ADMIN_EMAILS, "Nový dárkový poukaz " + v.code, html, { type: "voucher_admin", bookingId: opts.booking?.id });
 }

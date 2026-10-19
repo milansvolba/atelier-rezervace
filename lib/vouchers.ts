@@ -90,6 +90,12 @@ export function isExpired(v: Pick<Voucher, "expiresAt">, now = new Date()): bool
   return new Date(v.expiresAt).getTime() < now.getTime();
 }
 
+export class DuplicateVoucherSessionError extends Error {
+  constructor() {
+    super("Poukaz pro tuhle Stripe session už existuje");
+  }
+}
+
 export const voucherStore = {
   async all(): Promise<Voucher[]> {
     await ensureSchema();
@@ -133,6 +139,8 @@ export const voucherStore = {
         return rowToVoucher(rows[0]);
       } catch (e) {
         const msg = String(e);
+        // Stejná Stripe session už poukaz má (souběžné doručení webhooku) — volající to bere jako "už zpracováno".
+        if (msg.includes("vouchers_stripe_session_idx")) throw new DuplicateVoucherSessionError();
         if (attempt < 4 && (msg.includes("vouchers_code_key") || msg.toLowerCase().includes("duplicate key"))) continue;
         throw e;
       }
@@ -157,6 +165,7 @@ export interface VoucherPaidResult {
   booking?: Booking; // pevný termín, pokud ho poukaz má a stále existuje
   signup?: CourseSignup; // vytvořená potvrzená přihláška (jen u pevného termínu)
   overbooked?: boolean; // termín už neměl dost volných míst — přihláška přesto vznikla, admin ať to řeší
+  signupFailed?: boolean; // poukaz vznikl, ale přihlášku na pevný termín se nepodařilo vytvořit — admin ať ji doplní ručně
 }
 
 function addMonths(d: Date, months: number): Date {
@@ -169,6 +178,8 @@ function addMonths(d: Date, months: number): Date {
 // Metadata (nastavuje POST /api/vouchers/checkout): kind=voucher, topic, people, casting ("1"/"0"),
 // bookingId (volitelně), buyerName, buyerEmail, recipientName, message.
 // Vrací null, pokud se session už zpracovala (Stripe může událost doručit opakovaně) nebo je neplatná.
+// Idempotenci zajišťuje unikátní index vouchers_stripe_session_idx: když zápis poukazu selže, Stripe událost
+// zopakuje a druhý pokus poukaz vytvoří. Záznam v payments (markPaid) se proto dělá bez ohledu na to, jestli už existuje.
 export async function handleVoucherPaid(sessionId: string, obj: Record<string, unknown>): Promise<VoucherPaidResult | null> {
   const meta = (obj.metadata ?? {}) as Record<string, string>;
   const course = voucherCourse(meta.topic ?? "");
@@ -178,11 +189,8 @@ export async function handleVoucherPaid(sessionId: string, obj: Record<string, u
   }
   const people = Math.max(1, Math.floor(Number(meta.people) || 1));
 
-  // Idempotence: true jen poprvé pro danou session.
-  const first = await paymentStore.markPaid(sessionId, PAYMENT_REF, people);
-  if (!first) return null;
-  const existing = await voucherStore.byStripeSession(sessionId);
-  if (existing) return null;
+  if (await voucherStore.byStripeSession(sessionId)) return null;
+  await paymentStore.markPaid(sessionId, PAYMENT_REF, people);
 
   const details = (obj.customer_details ?? {}) as { email?: string };
   const buyerEmail = (meta.buyerEmail || details.email || "").trim();
@@ -196,20 +204,26 @@ export async function handleVoucherPaid(sessionId: string, obj: Record<string, u
     if (b && !(await courseFlags.isCorporate(b.id))) booking = b;
   }
 
-  const voucher = await voucherStore.add({
-    topic: course.key,
-    courseTitle: course.title,
-    bookingId: booking?.id,
-    people,
-    casting: meta.casting === "1" || Number(meta.casting) > 0,
-    amountCzk,
-    buyerName,
-    buyerEmail,
-    recipientName: meta.recipientName?.trim() || undefined,
-    message: meta.message?.trim() || undefined,
-    stripeSession: sessionId,
-    expiresAt: addMonths(new Date(), VOUCHER_VALID_MONTHS).toISOString(),
-  });
+  let voucher: Voucher;
+  try {
+    voucher = await voucherStore.add({
+      topic: course.key,
+      courseTitle: course.title,
+      bookingId: booking?.id,
+      people,
+      casting: meta.casting === "1" || Number(meta.casting) > 0,
+      amountCzk,
+      buyerName,
+      buyerEmail,
+      recipientName: meta.recipientName?.trim() || undefined,
+      message: meta.message?.trim() || undefined,
+      stripeSession: sessionId,
+      expiresAt: addMonths(new Date(), VOUCHER_VALID_MONTHS).toISOString(),
+    });
+  } catch (e) {
+    if (e instanceof DuplicateVoucherSessionError) return null;
+    throw e;
+  }
 
   // K platbě přiložíme payment_intent a částku (kvůli případné vratce ve Stripe).
   try {
@@ -242,6 +256,11 @@ export async function handleVoucherPaid(sessionId: string, obj: Record<string, u
     status: "confirmed",
     createdAt: new Date().toISOString(),
   };
-  await signupStore.add(signup);
+  try {
+    await signupStore.add(signup);
+  } catch (e) {
+    console.error("[voucher] Poukaz " + voucher.code + " vznikl, ale přihlášku na termín " + booking.id + " se nepodařilo vytvořit:", e);
+    return { voucher, booking, signupFailed: true };
+  }
   return { voucher, booking, signup, overbooked };
 }

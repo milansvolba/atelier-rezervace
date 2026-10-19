@@ -4,7 +4,8 @@ import { signupStore } from "@/lib/signups";
 import { CourseSignup } from "@/lib/types";
 import { verifyStripeSignature, paymentStore } from "@/lib/stripe";
 import { handleMembershipEvent } from "@/lib/membership";
-import { sendAdminNewSignupEmail, sendSignupDecisionEmail } from "@/lib/email";
+import { handleVoucherPaid } from "@/lib/vouchers";
+import { sendAdminNewSignupEmail, sendSignupDecisionEmail, sendVoucherEmail, sendAdminNewVoucherEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,20 @@ export async function POST(req: NextRequest) {
   // Členství (předplatné): checkout.session.completed v režimu subscription, invoice.paid / payment_failed,
   // customer.subscription.deleted — řeší lib/membership.ts, zbytek jde dál do plateb za kurzy.
   if (await handleMembershipEvent(event)) return NextResponse.json({ received: true });
+
+  // Dárkový poukaz (metadata kind=voucher z /api/vouchers/checkout): po zaplacení vznikne poukaz s kódem
+  // (u pevného termínu i potvrzená přihláška). MUSÍ být před větví plateb za kurzy níže, ta by ho jinak
+  // vzala jako běžnou přihlášku. Při skutečné chybě (výjimka) vrátí webhook 500 a Stripe událost zopakuje.
+  if (event.type === "checkout.session.completed" && obj.payment_status === "paid" && meta.kind === "voucher") {
+    const result = await handleVoucherPaid(sessionId, obj);
+    if (result) {
+      await Promise.all([
+        sendVoucherEmail(result.voucher, result.booking),
+        sendAdminNewVoucherEmail(result.voucher, { booking: result.booking, overbooked: result.overbooked, signupFailed: result.signupFailed }),
+      ]);
+    }
+    return NextResponse.json({ received: true });
+  }
 
   // Platební stránka vypršela bez zaplacení — uvolní se držená místa.
   if (event.type === "checkout.session.expired") {
