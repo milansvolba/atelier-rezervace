@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-19 — Logo zarovnané s levým okrajem obsahu; slevy v pravém sloupci adminu (rezervace)
+Nový `components/AppShell.tsx` obaluje stránku a na `/admin` od lg rozšíří celý obal (hlavička i obsah) na `max-w-7xl`, takže logo i menu lícují s okraji obsahu; `<main>` v adminu už nepoužívá „breakout“. Na mobilu zůstává standardní úzký obal s okrajem px-4 (logo vlevo, stejný okraj jako obsah). Slevové stupně přesunuty do pravého sloupce, breakpoint dvou sloupců je lg, v detailu akce je přepínač „Firemní akce“.
+
 ## 2026-10-19 — Dvousloupcový admin, nové barvy kalendáře, obsazený termín nejde požádat (rezervace)
 Admin rezervací (`app/admin/page.tsx`) je na široké obrazovce (xl, od 1280 px) ve dvou sloupcích: kalendář vlevo, vpravo žádosti ke schválení, přihlášky a Nejbližší akce; stránka se na xl roztáhne přes úzký kontejner (do 1280 px). Na menších obrazovkách a mobilu zůstává jeden sloupec. Barvy kalendáře: volno = jemně zelená, obsazeno/zablokováno jiným místem = šedá (nejde rezervovat), čeká na schválení = žlutá. `POST /api/requests` (veřejná žádost) odmítne obsazený termín hláškou „Tento termín je už obsazený“ (409, bez názvu akce). Veřejnosti (nepřihlášeným) API vrací jen obsazenost bez názvů a kontaktů (`publicSafe`).
 
