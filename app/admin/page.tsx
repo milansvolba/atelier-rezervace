@@ -541,6 +541,122 @@ function BookingPickerModal({
 // Detail existující rezervace — náhled, úprava, nebo smazání, s volitelným
 // upozorněním rezervisty e-mailem (pokud u rezervace máme kontakt). Server hlídá,
 // že člen smí takhle sahat jen na vlastní rezervace — admin na cokoli.
+// Účastníci kurzu s možností storna (a vratky přes Stripe) — jen v detailu termínu kurzu pro admina.
+function CourseParticipants({ bookingId }: { bookingId: string }) {
+  const [list, setList] = useState<CourseSignup[]>([]);
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [info, setInfo] = useState<{ paid: boolean; amountCzk: number; refundedCzk: number; refundable: number; percent: number; suggested: number } | null>(null);
+  const [refund, setRefund] = useState("0");
+  const [notify, setNotify] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function load() {
+    const res = await fetch("/api/signups");
+    if (res.ok) {
+      const all = (await res.json()) as CourseSignup[];
+      setList(all.filter((s) => s.bookingId === bookingId && s.status === "confirmed"));
+    }
+  }
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingId]);
+
+  async function openCancel(s: CourseSignup) {
+    setCancelId(s.id);
+    setInfo(null);
+    setMsg(null);
+    const res = await fetch(`/api/signups/${s.id}/cancel`);
+    if (res.ok) {
+      const d = await res.json();
+      setInfo(d);
+      setRefund(String(d.suggested));
+      setNotify(s.contact.includes("@"));
+    } else {
+      setMsg("Nepodařilo se načíst údaje o platbě.");
+    }
+  }
+
+  async function confirmCancel() {
+    if (!cancelId) return;
+    setBusy(true);
+    setMsg(null);
+    const res = await fetch(`/api/signups/${cancelId}/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refundCzk: Number(refund) || 0, notify }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (res.ok) {
+      setMsg(data.refunded > 0 ? `Přihláška stornována, vráceno ${data.refunded} Kč.` : "Přihláška stornována, místa uvolněna.");
+      setCancelId(null);
+      load();
+    } else {
+      setMsg(data.error || "Storno se nepodařilo.");
+    }
+  }
+
+  if (list.length === 0 && !msg) return null;
+  return (
+    <div className="pt-2 border-t border-gray-200 mt-2">
+      <p className="text-gray-500 mb-1">Účastníci (potvrzení)</p>
+      {list.map((s) => (
+        <div key={s.id} className="py-1">
+          <div className="flex items-center justify-between gap-2">
+            <span>
+              {s.name} · {s.people} os. · <span className="text-gray-500">{s.contact}</span>
+            </span>
+            {cancelId !== s.id && (
+              <button onClick={() => openCancel(s)} className="h-7 px-2 rounded-md border border-red-300 text-red-700 text-xs shrink-0">
+                Stornovat
+              </button>
+            )}
+          </div>
+          {cancelId === s.id && (
+            <div className="mt-2 rounded-md bg-gray-50 border border-gray-200 p-3 space-y-2">
+              {!info ? (
+                <p className="text-gray-500">Načítám…</p>
+              ) : (
+                <>
+                  {info.paid ? (
+                    <>
+                      <p>
+                        Zaplaceno online: <strong>{info.amountCzk} Kč</strong>
+                        {info.refundedCzk > 0 ? ` (již vráceno ${info.refundedCzk} Kč)` : ""}. Navržená vratka podle pravidla ({info.percent} %): {info.suggested} Kč.
+                      </p>
+                      <label className="block text-sm">
+                        Vrátit (Kč, 0 = bez vratky, max {info.refundable})
+                        <input type="number" min={0} max={info.refundable} value={refund} onChange={(e) => setRefund(e.target.value)} className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2" />
+                      </label>
+                    </>
+                  ) : (
+                    <p>Přihláška nemá online platbu — vratka se neodesílá, jen se uvolní místa.</p>
+                  )}
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} disabled={!s.contact.includes("@")} />
+                    Poslat účastníkovi e-mail o stornu
+                  </label>
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setCancelId(null)} className="h-9 px-3 rounded-md border border-gray-300 text-sm">
+                      Zpět
+                    </button>
+                    <button onClick={confirmCancel} disabled={busy} className="h-9 px-3 rounded-md bg-red-600 text-white text-sm disabled:opacity-50">
+                      {busy ? "Ruším…" : "Potvrdit storno"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+      {msg && <p className="mt-1 text-sm text-gray-700">{msg}</p>}
+    </div>
+  );
+}
+
 function BookingDetailModal({
   booking,
   onClose,
@@ -669,6 +785,7 @@ function BookingDetailModal({
                   Firemní akce (skrýt na veřejných Kurzech, bez veřejné přihlášky)
                 </label>
               )}
+              {booking.category === "kurz" && <CourseParticipants bookingId={booking.id} />}
             </div>
             <div className="flex items-center justify-between pt-2">
               <button
