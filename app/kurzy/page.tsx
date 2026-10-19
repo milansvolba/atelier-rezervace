@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DAY_NAMES_MON_FIRST, MONTH_NAMES, iso, monthMatrix } from "@/lib/calendar";
 import { DEFAULT_UI_TEXTS, fillText } from "@/lib/uiTexts";
+import { groupDiscountPercent } from "@/lib/pricing";
 
 interface CourseCard {
   id: string;
@@ -14,6 +15,7 @@ interface CourseCard {
   capacity: number | null;
   price: number | null;
   spotsLeft: number | null;
+  castingPrice: number | null;
 }
 
 function fmtDate(dateISO: string) {
@@ -43,6 +45,7 @@ export default function KurzyPage() {
   const [payResult, setPayResult] = useState<null | "ok" | "cancel">(null);
   const [step, setStep] = useState(2);
   const [signupPhone, setSignupPhone] = useState("");
+  const [withCasting, setWithCasting] = useState(false);
 
   // Návrat ze Stripe Checkout (success_url / cancel_url vedou na /kurzy?platba=...).
   useEffect(() => {
@@ -77,12 +80,8 @@ export default function KurzyPage() {
   }, []);
 
   // Vypocita procento skupinove slevy pro dany pocet lidi a kapacitu terminu.
-  function discountFor(people: number, capacity: number | null) {
-    if (!capacity || capacity <= 0) return 0;
-    const fillPercent = Math.min(100, Math.round((people / capacity) * 100));
-    const sorted = [...tiers].sort((a, b) => b.minFillPercent - a.minFillPercent);
-    const match = sorted.find((t) => fillPercent >= t.minFillPercent);
-    return match ? match.discountPercent : 0;
+  function discountFor(people: number, _capacity: number | null) {
+    return groupDiscountPercent(people);
   }
 
   // Seskupi vypsane terminy podle nazvu kurzu (tema) pro vyber "Koupit".
@@ -205,7 +204,9 @@ export default function KurzyPage() {
     if (!c.price) return null;
     const discount = discountFor(n, c.capacity);
     const total = c.price * n;
-    return { discount, total, totalAfter: Math.round(total * (1 - discount / 100)) };
+    const totalAfter = Math.round(total * (1 - discount / 100));
+    const casting = withCasting && c.castingPrice ? c.castingPrice * n : 0;
+    return { discount, total, totalAfter, casting, grand: totalAfter + casting };
   }
   const quote = selectedCourse ? quoteFor(selectedCourse, signupPeople) : null;
 
@@ -237,6 +238,7 @@ export default function KurzyPage() {
       people: signupPeople,
       note,
       honeypot,
+      casting: withCasting,
     });
     try {
       if (selectedCourse.price) {
@@ -392,8 +394,8 @@ export default function KurzyPage() {
                 <p className="mt-1">
                   {signupPeople} {seatsWord(signupPeople)} ·{" "}
                   {quote.discount > 0 && <span>{t("kurzy.summary.discount", { percent: String(quote.discount) })} · </span>}
-                  <strong>{quote.totalAfter} Kč</strong>
-                  {quote.discount > 0 && <span className="text-gray-400 line-through ml-2">{quote.total} Kč</span>}
+                  <strong>{quote.grand} Kč</strong>
+                  {quote.discount > 0 && <span className="text-gray-400 line-through ml-2">{quote.total + quote.casting} Kč</span>}
                 </p>
               )}
             </div>
@@ -433,6 +435,16 @@ export default function KurzyPage() {
                     {t("kurzy.step2.nudge", { more: nudge.label, percent: String(nudge.percent) })}
                   </p>
                 )}
+                {selectedCourse.castingPrice ? (
+                  <label className="flex items-start gap-2 text-sm rounded-md border border-gray-200 p-3">
+                    <input type="checkbox" className="mt-1" checked={withCasting} onChange={(e) => setWithCasting(e.target.checked)} />
+                    <span>
+                      Přidat odlitek do betonu pro každého účastníka (+{selectedCourse.castingPrice} Kč/os.)
+                      <br />
+                      <span className="text-xs text-gray-500">Vaše dílo vám odléváme do speciálního betonu. Termín předání domluvíme na kurzu.</span>
+                    </span>
+                  </label>
+                ) : null}
                 {selectedCourse.spotsLeft !== null && (
                   <p className="text-xs text-gray-500">{t("kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft) })}</p>
                 )}
@@ -564,9 +576,15 @@ export default function KurzyPage() {
                         <span>−{quote.total - quote.totalAfter} Kč</span>
                       </div>
                     )}
+                    {quote.casting > 0 && (
+                      <div className="flex justify-between">
+                        <span>{signupPeople} × betonový odlitek</span>
+                        <span>{quote.casting} Kč</span>
+                      </div>
+                    )}
                     <div className="flex justify-between font-semibold text-base pt-1">
                       <span>Celkem</span>
-                      <span>{quote.totalAfter} Kč</span>
+                      <span>{quote.grand} Kč</span>
                     </div>
                   </div>
                 )}
@@ -585,7 +603,7 @@ export default function KurzyPage() {
                     disabled={payBusy}
                     className="h-10 px-5 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60"
                   >
-                    {payBusy ? t("kurzy.pay.busy") : quote ? t("kurzy.pay.button", { total: String(quote.totalAfter) }) : "Odeslat přihlášku"}
+                    {payBusy ? t("kurzy.pay.busy") : quote ? t("kurzy.pay.button", { total: String(quote.grand) }) : "Odeslat přihlášku"}
                   </button>
                 </div>
                 {quote && <p className="text-xs text-gray-500">{t("kurzy.pay.hint")}</p>}
@@ -628,6 +646,7 @@ export default function KurzyPage() {
                       setSignupFor(c.id);
                       setStep(2);
                       setSignupPeople(1);
+                      setWithCasting(false);
                       setSignupSent(null);
                       setPayError("");
                       requestAnimationFrame(() => {
