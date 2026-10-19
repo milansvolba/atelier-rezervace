@@ -1554,8 +1554,8 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
       {error && <div className="bg-white border border-red-200 text-red-600 rounded-xl p-3 text-sm">{error}</div>}
 
       {/* Široká obrazovka: kalendář vlevo, co čeká na schválení a nejbližší akce vpravo. Na menších jeden sloupec jako dřív. */}
-      <div className={`grid grid-cols-1 gap-6 items-start ${(isAdmin && (pending.length > 0 || pendingSignups.length > 0)) || myBookings.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
-      <div className={`lg:order-2 space-y-6 ${(isAdmin && (pending.length > 0 || pendingSignups.length > 0)) || myBookings.length > 0 ? "" : "hidden"}`}>
+      <div className={`grid grid-cols-1 gap-6 items-start ${isAdmin || myBookings.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
+      <div className={`lg:order-2 space-y-6 ${isAdmin || myBookings.length > 0 ? "" : "hidden"}`}>
       {isAdmin && pending.length > 0 && (
         <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
@@ -1664,6 +1664,50 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
               + {myBookings.length - 3} dalších — najdeš je v kalendáři.
             </p>
           )}
+        </div>
+      )}
+
+
+      {isAdmin && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="font-medium mb-1">Slevy pro skupinove objednavky kurzu</p>
+          <p className="text-xs text-gray-500 mb-3">
+            Sleva se pocita z naplnenosti skupiny vzhledem ke kapacite terminu (pocet osob / kapacita).
+            Tier s nejvyssi podminkou, do ktere se skupina vejde, urcuje vyslednou slevu.
+          </p>
+          <div className="space-y-2">
+            {tiers
+              .slice()
+              .sort((a, b) => b.minFillPercent - a.minFillPercent)
+              .map((t) => (
+                <div key={t.id} className="flex items-center gap-2 text-sm flex-wrap">
+                  <span className="text-gray-500">od</span>
+                  <input
+                    type="number"
+                    className="w-16 h-8 border border-gray-300 rounded-md px-2"
+                    value={t.minFillPercent}
+                    onChange={(e) => updateTierField(t.id, "minFillPercent", Number(e.target.value))}
+                  />
+                  <span className="text-gray-500">% naplnenosti to sleva</span>
+                  <input
+                    type="number"
+                    className="w-16 h-8 border border-gray-300 rounded-md px-2"
+                    value={t.discountPercent}
+                    onChange={(e) => updateTierField(t.id, "discountPercent", Number(e.target.value))}
+                  />
+                  <span className="text-gray-500">%</span>
+                  <button onClick={() => saveTier(t)} className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs">
+                    Ulozit
+                  </button>
+                  <button onClick={() => deleteTier(t.id)} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
+                    Smazat
+                  </button>
+                </div>
+              ))}
+          </div>
+          <button onClick={addTier} className="mt-3 h-8 px-3 rounded-md border border-gray-300 text-xs">
+            + Pridat tier
+          </button>
         </div>
       )}
 
@@ -2058,48 +2102,6 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
       {showMembers && <MembersPanel onClose={() => setShowMembers(false)} />}
       {showEmails && <EmailsPanel onClose={() => setShowEmails(false)} />}
 
-          {isAdmin && (
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <p className="font-medium mb-1">Slevy pro skupinove objednavky kurzu</p>
-              <p className="text-xs text-gray-500 mb-3">
-                Sleva se pocita z naplnenosti skupiny vzhledem ke kapacite terminu (pocet osob / kapacita).
-                Tier s nejvyssi podminkou, do ktere se skupina vejde, urcuje vyslednou slevu.
-              </p>
-              <div className="space-y-2">
-                {tiers
-                  .slice()
-                  .sort((a, b) => b.minFillPercent - a.minFillPercent)
-                  .map((t) => (
-                    <div key={t.id} className="flex items-center gap-2 text-sm flex-wrap">
-                      <span className="text-gray-500">od</span>
-                      <input
-                        type="number"
-                        className="w-16 h-8 border border-gray-300 rounded-md px-2"
-                        value={t.minFillPercent}
-                        onChange={(e) => updateTierField(t.id, "minFillPercent", Number(e.target.value))}
-                      />
-                      <span className="text-gray-500">% naplnenosti to sleva</span>
-                      <input
-                        type="number"
-                        className="w-16 h-8 border border-gray-300 rounded-md px-2"
-                        value={t.discountPercent}
-                        onChange={(e) => updateTierField(t.id, "discountPercent", Number(e.target.value))}
-                      />
-                      <span className="text-gray-500">%</span>
-                      <button onClick={() => saveTier(t)} className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs">
-                        Ulozit
-                      </button>
-                      <button onClick={() => deleteTier(t.id)} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
-                        Smazat
-                      </button>
-                    </div>
-                  ))}
-              </div>
-              <button onClick={addTier} className="mt-3 h-8 px-3 rounded-md border border-gray-300 text-xs">
-                + Pridat tier
-              </button>
-            </div>
-          )}
     {toastMsg && (
         <div role="status" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm rounded-md px-4 py-2 shadow-lg">
           {toastMsg}
