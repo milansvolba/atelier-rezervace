@@ -14,6 +14,8 @@ export interface AppUser {
   membershipStatus: MembershipStatus;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
+  membershipFree: boolean; // členství zdarma (guestlist): bez platby, bez odkazu na platbu
+  membershipEndsAt: string | null; // zrušené předplatné doběhne k tomuto datu
 }
 
 function rowToUser(r: Record<string, unknown>): AppUser {
@@ -27,6 +29,12 @@ function rowToUser(r: Record<string, unknown>): AppUser {
     membershipStatus: ((r.membership_status as string) || "none") as MembershipStatus,
     stripeCustomerId: (r.stripe_customer_id as string | null) ?? null,
     stripeSubscriptionId: (r.stripe_subscription_id as string | null) ?? null,
+    membershipFree: !!r.membership_free,
+    membershipEndsAt: r.membership_ends_at
+      ? typeof r.membership_ends_at === "string"
+        ? (r.membership_ends_at as string)
+        : (r.membership_ends_at as Date).toISOString()
+      : null,
   };
 }
 
@@ -55,11 +63,12 @@ export const users = {
     return rows[0] ? rowToUser(rows[0]) : null;
   },
 
-  async add(u: { name: string; email: string; role: Role }): Promise<AppUser> {
+  async add(u: { name: string; email: string; role: Role; free?: boolean }): Promise<AppUser> {
     await ensureSchema();
     const id = crypto.randomUUID();
     const email = u.email.toLowerCase().trim();
-    await sql`INSERT INTO users (id, name, email, role) VALUES (${id}, ${u.name}, ${email}, ${u.role})`;
+    const free = !!u.free;
+    await sql`INSERT INTO users (id, name, email, role, membership_free) VALUES (${id}, ${u.name}, ${email}, ${u.role}, ${free})`;
     return {
       id,
       name: u.name,
@@ -69,7 +78,20 @@ export const users = {
       membershipStatus: "none",
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      membershipFree: free,
+      membershipEndsAt: null,
     };
+  },
+
+  async setFree(id: string, free: boolean): Promise<void> {
+    await ensureSchema();
+    await sql`UPDATE users SET membership_free = ${free} WHERE id = ${id}`;
+  },
+
+  // Datum, kdy zrušené (ale ještě zaplacené) předplatné skončí; null = nezrušeno.
+  async setMembershipEnd(id: string, endsAt: string | null): Promise<void> {
+    await ensureSchema();
+    await sql`UPDATE users SET membership_ends_at = ${endsAt}::timestamptz WHERE id = ${id}`;
   },
 
   // Nastaví stav členství; Stripe identifikátory se přepíšou jen když jsou zadané.
