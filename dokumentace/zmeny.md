@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-19 — Členství v klubu: platba předplatného přes Stripe (rezervace)
+Člen dostane v uvítacím e-mailu odkaz na platbu měsíčního předplatného (Stripe Checkout, režim subscription; cena z env `STRIPE_MEMBERSHIP_PRICE_ID`). Odkaz `/api/membership/manage?token=…` platí 30 dní. Po přihlášení má člen nahoře odkaz „Členství“ (platba, nebo zákaznický portál Stripe: karta, faktury, zrušení). Webhook (`lib/membership.ts`) nastavuje stav členství (`none/active/past_due/canceled`, sloupce `membership_status`, `stripe_customer_id`, `stripe_subscription_id` v tabulce `users`) z událostí `checkout.session.completed` (subscription), `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`. Stav je vidět v adminu v panelu Účty. Faktury s číslem vystavuje Stripe.
+
 ## 2026-10-14 — Analytics MVP: GA4 + Search Console + Microsoft Clarity + cookie lišta (web + rezervace)
 
 Na obou systémech (ateliernapobrezi.cz i rezervace.ateliernapobrezi.cz) zavedena základní návštěvnost/analytika: Google Analytics 4 (`G-3D28LW4JGC`), Search Console (ověřeno přes meta tag) a Microsoft Clarity (`yxhpksh1yt`), společně s GDPR cookie lištou (Přijmout/Odmítnout), která teprve po souhlasu načte GA4 a Clarity skripty (`cookie_consent` cookie, platnost 1 rok).
