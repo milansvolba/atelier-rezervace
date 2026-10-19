@@ -84,6 +84,10 @@ await sql`
           created_at timestamptz NOT NULL DEFAULT now()
         );
       `;
+      // Členství (platba předplatného přes Stripe): stav a Stripe identifikátory u účtu.
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_status text NOT NULL DEFAULT 'none'`;
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id text`;
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id text`;
       // Počáteční admini podle specifikace — jde jen o seed, ON CONFLICT nic nepřepíše,
       // pokud si e-mail nebo roli později v adminu upravíte.
       await sql`
