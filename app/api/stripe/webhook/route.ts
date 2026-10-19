@@ -3,6 +3,7 @@ import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { CourseSignup } from "@/lib/types";
 import { verifyStripeSignature, paymentStore } from "@/lib/stripe";
+import { handleMembershipEvent } from "@/lib/membership";
 import { sendAdminNewSignupEmail, sendSignupDecisionEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,10 @@ export async function POST(req: NextRequest) {
   const obj = event.data.object;
   const sessionId = String(obj.id ?? "");
   const meta = (obj.metadata ?? {}) as Record<string, string>;
+
+  // Členství (předplatné): checkout.session.completed v režimu subscription, invoice.paid / payment_failed,
+  // customer.subscription.deleted — řeší lib/membership.ts, zbytek jde dál do plateb za kurzy.
+  if (await handleMembershipEvent(event)) return NextResponse.json({ received: true });
 
   // Platební stránka vypršela bez zaplacení — uvolní se držená místa.
   if (event.type === "checkout.session.expired") {
