@@ -84,6 +84,13 @@ await sql`
           created_at timestamptz NOT NULL DEFAULT now()
         );
       `;
+      // Příznaky termínů kurzů (zatím jen: firemní akce, která se neukazuje veřejně na /kurzy).
+      await sql`
+        CREATE TABLE IF NOT EXISTS course_flags (
+          booking_id text PRIMARY KEY,
+          corporate boolean NOT NULL DEFAULT false
+        )
+      `;
       // Členství (platba předplatného přes Stripe): stav a Stripe identifikátory u účtu.
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_status text NOT NULL DEFAULT 'none'`;
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id text`;
