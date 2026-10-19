@@ -41,6 +41,8 @@ export async function createCheckoutSession(input: CheckoutInput): Promise<{ id:
     "line_items[0][price_data][unit_amount]": Math.round(input.amountCzk * 100),
     "line_items[0][price_data][product_data][name]": input.productName,
   };
+  // DPH: sazba (21 % vč. DPH) z proměnné STRIPE_TAX_RATE_ID, ať se na dokladu rozepíše.
+  if (process.env.STRIPE_TAX_RATE_ID) params["line_items[0][tax_rates][0]"] = process.env.STRIPE_TAX_RATE_ID;
   for (const [k, v] of Object.entries(input.metadata)) params["metadata[" + k + "]"] = v;
   const res = await fetch(STRIPE_API + "/checkout/sessions", {
     method: "POST",
