@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-19 — Zjednodušená rezervace pro členy, DPH ve Stripe (rezervace)
+Člen (ne admin) ve formuláři „Nová rezervace“ nevyplňuje Kategorii ani Kdo/co: jméno se bere z účtu, kategorie je vždy pronájem. Pole Kontakt nahradilo zaškrtávátko „Chci potvrzení e-mailem“ (při zaškrtnutí se do kontaktu uloží e-mail z účtu; ten se používá pro upozornění na změnu/zrušení — samostatný potvrzovací e-mail při vytvoření zatím neexistuje). `POST /api/bookings` pro člena vynucuje jméno z účtu, kategorii pronájem a ignoruje cenu/kapacitu. Dále: sazba DPH ve Stripe přes env `STRIPE_TAX_RATE_ID` (členství i platby za kurzy), nová stránka `/clenstvi` (úvod před platbou členství; uvítací e-mail odkazuje sem).
+
 ## 2026-10-19 — Členství v klubu: platba předplatného přes Stripe (rezervace)
 Člen dostane v uvítacím e-mailu odkaz na platbu měsíčního předplatného (Stripe Checkout, režim subscription; cena z env `STRIPE_MEMBERSHIP_PRICE_ID`). Odkaz `/api/membership/manage?token=…` platí 30 dní. Po přihlášení má člen nahoře odkaz „Členství“ (platba, nebo zákaznický portál Stripe: karta, faktury, zrušení). Webhook (`lib/membership.ts`) nastavuje stav členství (`none/active/past_due/canceled`, sloupce `membership_status`, `stripe_customer_id`, `stripe_subscription_id` v tabulce `users`) z událostí `checkout.session.completed` (subscription), `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`. Stav je vidět v adminu v panelu Účty. Faktury s číslem vystavuje Stripe.
 
