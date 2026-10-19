@@ -89,14 +89,25 @@ export async function sendMagicLinkEmail(user: { name: string; email: string }, 
 }
 
 // --- Uvítací e-mail pro nově založený účet (rovnou s přihlašovacím odkazem) ---
-export async function sendWelcomeEmail(user: { name: string; email: string; role: "admin" | "member" }, link: string) {
+export async function sendWelcomeEmail(
+  user: { name: string; email: string; role: "admin" | "member" },
+  link: string,
+  payLink?: string
+) {
   const subject = "Vítejte v Atelieru na Pobřeží! 🎉";
+  const payBlock = payLink
+    ? `
+    <p style="margin-top:22px;"><strong>Členství v klubu</strong><br>Členství funguje jako měsíční předplatné. Platbu kartou založíš na zabezpečené stránce Stripe, fakturu dostaneš e-mailem. Předplatné můžeš kdykoli zrušit po přihlášení do rezervací.</p>
+    <p style="margin-top:10px;"><a href="${payLink}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaplatit členství</a></p>
+    <p style="color:#888;font-size:13px;margin-top:10px;">Tenhle odkaz na platbu platí 30 dní.</p>`
+    : "";
   const html = wrap(`
     <p>Ahoj ${user.name}!</p>
     <p>Právě jsi dostal/a přístup do rezervačního systému Atelieru na Pobřeží 🎨.</p>
     <p style="margin-top:16px;">Teď si můžeš rezervovat místo:</p>
     <p style="margin-top:10px;"><a href="${link}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaber si flek</a></p>
     <p style="color:#888;font-size:13px;margin-top:16px;">Tenhle odkaz platí 15 minut. Až vyprší, stačí na přihlašovací stránce znovu zadat svůj e-mail a pošleme nový.</p>
+    ${payBlock}
   `);
   await send(user.email, subject, html, { type: "welcome" });
 }
