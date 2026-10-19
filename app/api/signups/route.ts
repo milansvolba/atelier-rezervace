@@ -1,3 +1,4 @@
+import { courseFlags } from "@/lib/courseFlags";
 import { NextRequest, NextResponse } from "next/server";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
@@ -19,6 +20,10 @@ export async function POST(req: NextRequest) {
   const all = await store.all();
   const booking = all.find((b) => b.id === bookingId && b.category === "kurz");
   if (!booking) return NextResponse.json({ error: "kurz nenalezen" }, { status: 404 });
+  // Firemní akce: veřejná přihláška není možná (řeší se domluvou/fakturou).
+  if (await courseFlags.isCorporate(bookingId)) {
+    return NextResponse.json({ error: "Na tuto akci se nelze veřejně přihlásit." }, { status: 403 });
+  }
 
   const signup: CourseSignup = {
     id: crypto.randomUUID(),
