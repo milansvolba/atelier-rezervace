@@ -1403,14 +1403,30 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     if (res.ok) setSignups(await res.json());
   }
 
+  const [vouchers, setVouchers] = useState<{ id: string; code: string; courseTitle: string; people: number; casting: boolean; amountCzk: number; buyerName: string; buyerEmail: string; recipientName?: string; bookingId?: string; status: "active" | "redeemed"; expiresAt: string }[]>([]);
+
+  async function loadVouchers() {
+    const res = await fetch("/api/vouchers");
+    if (res.ok) setVouchers(await res.json());
+  }
+
+  async function setVoucherStatus(id: string, status: "active" | "redeemed") {
+    await fetch("/api/vouchers/" + id, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    loadVouchers();
+  }
+
   async function loadTiers() {
     const res = await fetch("/api/discount-tiers");
     if (res.ok) setTiers(await res.json());
   }
 
   useEffect(() => {
-    loadTiers();
-  }, []);
+    if (isAdmin) loadVouchers();
+  }, [isAdmin]);
 
   function updateTierField(id: string, field: "minFillPercent" | "discountPercent", value: number) {
     setTiers((prev) => prev.map((t) => (t.id === id ? { ...t, [field]: value } : t)));
@@ -1787,44 +1803,31 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
       {isAdmin && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="font-medium mb-1">Slevy pro skupinove objednavky kurzu</p>
+          <p className="font-medium mb-1">Dárkové poukazy</p>
           <p className="text-xs text-gray-500 mb-3">
-            Sleva se pocita z naplnenosti skupiny vzhledem ke kapacite terminu (pocet osob / kapacita).
-            Tier s nejvyssi podminkou, do ktere se skupina vejde, urcuje vyslednou slevu.
+            Zaplacené poukazy z /poukazy. Obdarovaný si poukaz uplatní sám na stránce kurzů (kód); tady ho můžeš označit jako uplatněný ručně.
           </p>
+          {vouchers.length === 0 && <p className="text-sm text-gray-400">Zatím žádné poukazy.</p>}
           <div className="space-y-2">
-            {tiers
-              .slice()
-              .sort((a, b) => b.minFillPercent - a.minFillPercent)
-              .map((t) => (
-                <div key={t.id} className="flex items-center gap-2 text-sm flex-wrap">
-                  <span className="text-gray-500">od</span>
-                  <input
-                    type="number"
-                    className="w-16 h-8 border border-gray-300 rounded-md px-2"
-                    value={t.minFillPercent}
-                    onChange={(e) => updateTierField(t.id, "minFillPercent", Number(e.target.value))}
-                  />
-                  <span className="text-gray-500">% naplnenosti to sleva</span>
-                  <input
-                    type="number"
-                    className="w-16 h-8 border border-gray-300 rounded-md px-2"
-                    value={t.discountPercent}
-                    onChange={(e) => updateTierField(t.id, "discountPercent", Number(e.target.value))}
-                  />
-                  <span className="text-gray-500">%</span>
-                  <button onClick={() => saveTier(t)} className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs">
-                    Ulozit
-                  </button>
-                  <button onClick={() => deleteTier(t.id)} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
-                    Smazat
-                  </button>
+            {vouchers.map((v) => (
+              <div key={v.id} className="border border-gray-100 rounded-md p-3 text-sm flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <p className="font-medium">
+                    {v.code} <span className={v.status === "active" ? "text-green-700" : "text-gray-400"}>· {v.status === "active" ? (new Date(v.expiresAt) < new Date() ? "propadlý" : "aktivní") : "uplatněný"}</span>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {v.courseTitle} · {v.people} os.{v.casting ? " · odlitek" : ""} · {v.amountCzk} Kč · platí do {new Date(v.expiresAt).toLocaleDateString("cs-CZ")}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Kupující: {v.buyerName}, {v.buyerEmail}{v.recipientName ? " · pro: " + v.recipientName : ""}{v.bookingId ? " · pevný termín" : ""}
+                  </p>
                 </div>
-              ))}
+                <button onClick={() => setVoucherStatus(v.id, v.status === "active" ? "redeemed" : "active")} className="h-8 px-3 rounded-md border border-gray-300 text-xs shrink-0">
+                  {v.status === "active" ? "Označit jako uplatněný" : "Vrátit mezi aktivní"}
+                </button>
+              </div>
+            ))}
           </div>
-          <button onClick={addTier} className="mt-3 h-8 px-3 rounded-md border border-gray-300 text-xs">
-            + Pridat tier
-          </button>
         </div>
       )}
 

@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-19 — Dárkové poukazy na kurzy (rezervace) — na větvi `claude/vouchers-store`, zatím nenasazeno
+Nákup: stránka `/poukazy` (kurz hlava/reliéf, 1–6 osob se stejnou skupinovou slevou jako u kurzů, volitelný odlitek, volitelný pevný termín, jméno/e-mail kupujícího, jméno obdarovaného, vzkaz; `?kurz=hlava|relief` předvybere kurz). Cena je vždy z ceníku poukazů (`VOUCHER_COURSES`), počítá ji server v `POST /api/vouchers/checkout`. Po zaplacení webhook (`meta.kind === "voucher"`, `lib/vouchers.ts` `handleVoucherPaid`) vytvoří poukaz (kód ATL-XXXX-XXXX, platnost 12 měsíců), pošle kupujícímu e-mail s kódem a adminům upozornění; idempotence přes unikátní index `vouchers_stripe_session_idx`. Poukaz s pevným termínem rovnou vytvoří potvrzenou přihlášku.
+Uplatnění: na `/kurzy` v kroku 2 odkaz „Mám dárkový poukaz“ → kód → `POST /api/vouchers/redeem` (poukaz se atomicky označí jako uplatněný, vznikne potvrzená přihláška na celý počet osob poukazu, kontrola kapacity, kurzu a platnosti; e-mail obdarovanému i adminům). Poukaz s pevným termínem se znovu uplatnit nedá. Texty jsou v `lib/uiTexts.ts` (skupina „Dárkový poukaz“).
+Admin: místo panelu Slevové stupně je přehled poukazů s tlačítkem „Označit jako uplatněný“ / „Vrátit mezi aktivní“ (`GET /api/vouchers`, `PATCH /api/vouchers/:id`). API `discount-tiers` zůstává, jen se nezobrazuje.
+Netestováno end-to-end (Stripe sandbox + DB na preview nasazení); typecheck prochází. PDF poukaz zatím není.
+
 ## 2026-10-19 — Množstevní slevy podle počtu lidí + volitelný betonový odlitek (rezervace)
 Nový `lib/pricing.ts`: sleva 2 os. 5 %, 3–4 os. 10 %, 5–6 os. 15 % (pevně v kódu; stará tabulka discount_tiers a její panel v adminu už se na cenu nepoužívají). Odlitek (hlava 3 900 Kč, reliéf 3 100 Kč za osobu, podle názvu kurzu) je checkbox v kroku 2 průvodce, počítá se pro všechny účastníky bez slevy a jde do Stripe Checkoutu jako druhá položka (`extraItems` v createCheckoutSession, stejná sazba DPH); částku počítá server. Informace o odlitku se zapíše do poznámky přihlášky.
 

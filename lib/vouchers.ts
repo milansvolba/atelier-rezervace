@@ -34,7 +34,8 @@ export interface Voucher {
 }
 
 // Platnost poukazu od zaplacení.
-export const VOUCHER_VALID_MONTHS = 12;
+export { VOUCHER_VALID_MONTHS } from "./voucherConfig";
+import { VOUCHER_VALID_MONTHS } from "./voucherConfig";
 
 // Zástupné booking_id pro tabulku payments (poukaz nemá termín, sloupec je NOT NULL).
 const PAYMENT_REF = "voucher";
