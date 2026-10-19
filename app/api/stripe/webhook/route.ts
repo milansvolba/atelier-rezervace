@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         const details = (obj.customer_details ?? {}) as { email?: string };
         const amount = Number(obj.amount_total ?? 0) / 100;
         let contact = meta.contact || "";
-        let note = "Zaplaceno online (" + amount + " Kč)." + (meta.note ? " " + meta.note : "");
+        let note = "Zaplaceno online (" + amount + " Kč" + (Number(meta.casting) > 0 ? ", vč. " + meta.casting + "× betonový odlitek" : "") + ")." + (meta.note ? " " + meta.note : "");
         // Když zákazník zadal telefon, e-mail na potvrzení vezmeme z platební stránky.
         if (!contact.includes("@") && details.email) {
           note = "Kontakt zadaný v přihlášce: " + contact + ". " + note;
