@@ -130,3 +130,9 @@ Vytvořit produkty (kurzy na míru, pronájem celého ateliéru, varianty proná
 - **Odstoupení do 14 dnů:** Milan postaví pro tuhle otázku vlastního právního agenta a dá vědět výsledek. Do té doby se v podmínkách nic nezakládá na domněnce (viz úkol Obchodní podmínky).
 - **Ceny kurzů nejsou potřeba ve Stripe katalogu:** cena každého vypsaného termínu se zadává v adminu (pole cena) a platba kurzu si částku (včetně slevy) počítá dynamicky. Do Stripe katalogu patří jen produkty s pevnou cenou: kurz na míru, pronájem (celý ateliér a varianty), členství, poukázka, drobné zboží.
 - **Seznam produktů s cenami s DPH sestaví Milan.**
+
+### Členství — stav k 19. 10. 2026
+- Hotovo (kód): platba předplatného přes Stripe, odkaz v uvítacím e-mailu, stav v adminu (Účty), odkaz „Členství“ pro přihlášeného člena (portál Stripe: karta, faktury, zrušení).
+- Ke Stripe nastavit (Milan): ve Vercelu `STRIPE_MEMBERSHIP_PRICE_ID` (cena 249 Kč/měs. vč. DPH, recurring), do webhooku přidat události `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`; zapnout zákaznický portál (Settings → Billing → Customer portal); nastavit číslování faktur a údaje o firmě (Settings → Billing → Invoices).
+- Při přechodu na ostrý provoz: vyměnit `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_MEMBERSHIP_PRICE_ID`; ve Stripe live znovu založit produkt s cenou, webhook a portál.
+- Nápad (Milan, 19. 10. 2026): dashboard v adminu rezervací na širokých obrazovkách ve dvou sloupcích, na mobilu jeden sloupec.
