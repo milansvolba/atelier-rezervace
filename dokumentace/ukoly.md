@@ -136,3 +136,8 @@ Vytvořit produkty (kurzy na míru, pronájem celého ateliéru, varianty proná
 - Ke Stripe nastavit (Milan): ve Vercelu `STRIPE_MEMBERSHIP_PRICE_ID` (cena 249 Kč/měs. vč. DPH, recurring), do webhooku přidat události `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`; zapnout zákaznický portál (Settings → Billing → Customer portal); nastavit číslování faktur a údaje o firmě (Settings → Billing → Invoices).
 - Při přechodu na ostrý provoz: vyměnit `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_MEMBERSHIP_PRICE_ID`; ve Stripe live znovu založit produkt s cenou, webhook a portál.
 - Nápad (Milan, 19. 10. 2026): dashboard v adminu rezervací na širokých obrazovkách ve dvou sloupcích, na mobilu jeden sloupec.
+
+### Stav k 19. 10. 2026 (večer)
+- Členství: HOTOVO a otestováno v sandboxu (platba, zrušení, stav v Účtech, členství zdarma, děkovací stránka). Zbývá: zkontrolovat první fakturu ve Stripe (číslo, DPH 21 %, IČO/DIČ), aktivace Stripe účtu (probíhá, ověření totožnosti), při go-live vyměnit env `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_MEMBERSHIP_PRICE_ID`, `STRIPE_TAX_RATE_ID` (ostré sazba `txr_1USCoLGz8lhwKqiBQghyaobW`).
+- Rozhodnuto: účtování členství ke dni přihlášení (bez poměrných faktur); role „Partner“ odložena; výplaty ze Stripe měsíčně.
+- Další na řadě (návrh): dvousloupcový dashboard v adminu na širokých obrazovkách; potvrzovací e-mail při vytvoření rezervace členem; správa textů v adminu; skrytí dvou firemních akcí z /kurzy; storno a refundy.
