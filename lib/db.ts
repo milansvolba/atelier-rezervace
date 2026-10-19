@@ -88,6 +88,8 @@ await sql`
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_status text NOT NULL DEFAULT 'none'`;
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id text`;
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id text`;
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_free boolean NOT NULL DEFAULT false`;
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_ends_at timestamptz`;
       // Počáteční admini podle specifikace — jde jen o seed, ON CONFLICT nic nepřepíše,
       // pokud si e-mail nebo roli později v adminu upravíte.
       await sql`
