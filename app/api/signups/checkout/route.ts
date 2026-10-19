@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
-import { discountStore, computePrice } from "@/lib/discounts";
+import { computeOrder, castingPriceFor } from "@/lib/pricing";
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ function seatsWord(n: number) {
 // (course_signups) vznikne až po zaplacení ve webhooku /api/stripe/webhook.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { bookingId, name, contact, people, note, honeypot } = body;
+  const { bookingId, name, contact, people, note, honeypot, casting } = body;
 
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
@@ -57,14 +57,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const tiers = await discountStore.all();
-  const price = computePrice(booking.price, seats, booking.capacity ?? null, tiers);
+  // Množstevní sleva podle počtu lidí + volitelný betonový odlitek pro každého účastníka (lib/pricing.ts).
+  const castingPrice = castingPriceFor(booking.title);
+  const withCasting = !!casting && castingPrice !== null;
+  const price = computeOrder(booking.price, seats, withCasting, castingPrice ?? 0);
   const contactStr = String(contact).trim();
   const email = contactStr.includes("@") ? contactStr : undefined;
 
   try {
     const session = await createCheckoutSession({
-      amountCzk: price.totalAfterDiscount,
+      amountCzk: price.courseAfter,
+      extraItems: withCasting ? [{ name: "Betonový odlitek — " + booking.title, amountCzk: castingPrice as number, quantity: seats }] : undefined,
       productName: booking.title + " — " + fmtDate(booking.date) + ", " + seats + " " + seatsWord(seats),
       customerEmail: email,
       metadata: {
@@ -72,6 +75,7 @@ export async function POST(req: NextRequest) {
         name: String(name).slice(0, 200),
         contact: contactStr.slice(0, 200),
         people: String(seats),
+        casting: withCasting ? String(seats) : "0",
         note: String(note ?? "").slice(0, 300),
       },
       successUrl: APP_URL + "/kurzy?platba=ok",
