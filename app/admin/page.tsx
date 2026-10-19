@@ -463,7 +463,7 @@ function QuickAddModal({
         ) : (
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={wantEmail} onChange={(e) => setWantEmail(e.target.checked)} />
-            Chci potvrzení e-mailem
+            Chci e-mailem potvrzení o změně nebo zrušení
           </label>
         )}
 
