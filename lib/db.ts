@@ -84,6 +84,10 @@ await sql`
           created_at timestamptz NOT NULL DEFAULT now()
         );
       `;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_intent text`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS amount_czk integer`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS signup_id text`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS refunded_czk integer NOT NULL DEFAULT 0`;
       // Příznaky termínů kurzů (zatím jen: firemní akce, která se neukazuje veřejně na /kurzy).
       await sql`
         CREATE TABLE IF NOT EXISTS course_flags (
