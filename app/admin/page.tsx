@@ -1472,7 +1472,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
 
   return (
-    <main className="space-y-6 lg:w-[min(1280px,calc(100vw-3rem))] lg:relative lg:left-1/2 lg:-translate-x-1/2">
+    <main className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex gap-1 bg-gray-100 rounded-md p-1 text-xs">
           {(["day", "week", "month", "quarter", "year"] as ViewMode[]).map((v) => (
