@@ -20,6 +20,7 @@ export interface CheckoutInput {
   amountCzk: number;
   productName: string;
   customerEmail?: string;
+  extraItems?: { name: string; amountCzk: number; quantity: number }[]; // další položky (např. odlitek)
   metadata: Record<string, string>;
   successUrl: string;
   cancelUrl: string;
@@ -43,6 +44,14 @@ export async function createCheckoutSession(input: CheckoutInput): Promise<{ id:
   };
   // DPH: sazba (21 % vč. DPH) z proměnné STRIPE_TAX_RATE_ID, ať se na dokladu rozepíše.
   if (process.env.STRIPE_TAX_RATE_ID) params["line_items[0][tax_rates][0]"] = process.env.STRIPE_TAX_RATE_ID;
+  (input.extraItems ?? []).forEach((it, idx) => {
+    const n = idx + 1;
+    params["line_items[" + n + "][quantity]"] = it.quantity;
+    params["line_items[" + n + "][price_data][currency]"] = "czk";
+    params["line_items[" + n + "][price_data][unit_amount]"] = Math.round(it.amountCzk * 100);
+    params["line_items[" + n + "][price_data][product_data][name]"] = it.name;
+    if (process.env.STRIPE_TAX_RATE_ID) params["line_items[" + n + "][tax_rates][0]"] = process.env.STRIPE_TAX_RATE_ID;
+  });
   for (const [k, v] of Object.entries(input.metadata)) params["metadata[" + k + "]"] = v;
   const res = await fetch(STRIPE_API + "/checkout/sessions", {
     method: "POST",
