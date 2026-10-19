@@ -92,10 +92,28 @@ export async function handleMembershipEvent(event: {
     return true;
   }
 
+  // Zrušené předplatné (portál Stripe) doběhne až ke konci zaplaceného období: uložíme datum konce.
+  if (event.type === "customer.subscription.updated") {
+    const customerId = str(o.customer);
+    const user = customerId ? await users.byStripeCustomer(customerId) : null;
+    if (user) {
+      const items = o.items as { data?: Array<{ current_period_end?: number }> } | undefined;
+      const periodEnd =
+        typeof o.current_period_end === "number" ? o.current_period_end : items?.data?.[0]?.current_period_end;
+      const cancelAt = typeof o.cancel_at === "number" ? o.cancel_at : undefined;
+      const endTs = o.cancel_at_period_end ? cancelAt ?? periodEnd : cancelAt;
+      await users.setMembershipEnd(user.id, endTs ? new Date(endTs * 1000).toISOString() : null);
+    }
+    return true;
+  }
+
   if (event.type === "customer.subscription.deleted") {
     const customerId = str(o.customer);
     const user = customerId ? await users.byStripeCustomer(customerId) : null;
-    if (user) await users.setMembership(user.id, { status: "canceled" });
+    if (user) {
+      await users.setMembership(user.id, { status: "canceled" });
+      await users.setMembershipEnd(user.id, null);
+    }
     return true;
   }
 
