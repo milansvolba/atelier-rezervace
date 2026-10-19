@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
   const user = await users.byId(userId);
   if (!user) return NextResponse.redirect(base + "/admin?clenstvi=chyba", 303);
 
+  // Členství zdarma (guestlist): platit nemusí.
+  if (user.membershipFree) return NextResponse.redirect(base + "/admin?clenstvi=zdarma", 303);
+
   const hasSubscription =
     !!user.stripeCustomerId && (user.membershipStatus === "active" || user.membershipStatus === "past_due");
 
