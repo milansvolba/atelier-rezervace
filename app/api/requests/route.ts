@@ -7,7 +7,10 @@ import { sendAdminNewRequestEmail, sendRequesterReceivedEmail } from "@/lib/emai
 // Nevytváří potvrzenou rezervaci, jen "pending" záznam čekající na schválení adminem.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { resource, date, startTime, endTime, title, requesterName, requesterContact, note, category } = body;
+  const { resource, date, startTime, endTime, title, requesterName, requesterContact, note, category, honeypot } = body;
+
+  if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
+
   if (!resource || !date || !startTime || !endTime || !requesterName || !requesterContact) {
     return NextResponse.json({ error: "chybí povinné údaje" }, { status: 400 });
   }
