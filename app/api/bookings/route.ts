@@ -56,16 +56,17 @@ export async function POST(req: NextRequest) {
     date,
     startTime,
     endTime,
-    title,
+    // Člen nezadává jméno, kategorii ani cenu/kapacitu: jméno je z jeho účtu, kategorie pronájem.
+    title: session.role === "admin" ? title : session.name,
     requesterContact: contact,
     extraMonitor: !!extraMonitor,
     status: "confirmed",
     source: session.role === "admin" ? "admin" : "member",
     userId: ownerId,
     createdAt: new Date().toISOString(),
-    category: category === "kurz" ? "kurz" : "pronajem",
-    capacity: capacity ? Number(capacity) : undefined,
-    price: price ? Number(price) : undefined,
+    category: session.role === "admin" && category === "kurz" ? "kurz" : "pronajem",
+    capacity: session.role === "admin" && capacity ? Number(capacity) : undefined,
+    price: session.role === "admin" && price ? Number(price) : undefined,
   };
   await store.add(booking);
   return NextResponse.json(booking, { status: 201 });
