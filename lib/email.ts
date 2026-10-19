@@ -261,6 +261,17 @@ export async function sendSignupReceivedEmail(booking: Booking, signup: CourseSi
 }
 
 // --- Přihlášenému: rozhodnutí o přihlášce ---
+// Storno přihlášky na kurz zadané adminem (s případnou vratkou).
+export async function sendSignupCancelledEmail(booking: Booking, signup: CourseSignup, refundCzk: number) {
+  const refundLine = refundCzk > 0
+    ? `<p>Vrátíme vám <strong>${refundCzk} Kč</strong> na kartu, kterou jste platili. Penize obvykle dorazí do 5–10 pracovních dnů.</p>`
+    : "";
+  const html = wrap(
+    `<p>Dobrý den, ${signup.name},</p><p>vaše přihláška na kurz <strong>${booking.title}</strong> (${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}) byla stornována.</p>${refundLine}<p>V případě dotazů nám napšete odpovědí na tento e-mail.</p>`
+  );
+  await send(signup.contact, "Storno přihlášky na kurz", html, { type: "signup_cancelled", bookingId: booking.id, signupId: signup.id });
+}
+
 export async function sendSignupDecisionEmail(booking: Booking, signup: CourseSignup, approved: boolean) {
   const key = approved ? "signup_decision_approved" : "signup_decision_rejected";
   await sendFromTemplate(
