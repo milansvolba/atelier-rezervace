@@ -69,7 +69,7 @@ export interface Booking {
 }
 
 // Přihláška účastníka na vypsaný termín kurzu (Booking s category="kurz").
-export type SignupStatus = "pending" | "confirmed" | "rejected";
+export type SignupStatus = "pending" | "confirmed" | "rejected" | "cancelled";
 
 export interface CourseSignup {
   id: string;
