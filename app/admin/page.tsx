@@ -145,13 +145,13 @@ function effectiveStatus(resource: ResourceId, dateISO: string, bookings: Bookin
 function cellClasses(kind: Effective["kind"]) {
   switch (kind) {
     case "confirmed":
-      return "bg-[#5DCAA5] text-[#04342C]";
+      return "bg-gray-300 text-gray-700";
     case "blocked":
-      return "bg-[#F0997B] text-[#4A1B0C]";
+      return "bg-gray-200 text-gray-500";
     case "pending":
       return "bg-[#FAC775] text-[#412402]";
     default:
-      return "bg-gray-100 text-gray-400";
+      return "bg-green-50 text-green-700";
   }
 }
 
@@ -1672,12 +1672,12 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                 confirmedByResourceToday[r].length > 0 ? (
                   <div key={r} className="flex items-center gap-3">
                     <div className="w-24 shrink-0 text-sm font-medium">{RESOURCE_LABELS[r]}</div>
-                    <div className="relative flex-1 h-7 bg-gray-100 rounded-md">
+                    <div className="relative flex-1 h-7 bg-green-50 rounded-md">
                       {confirmedByResourceToday[r].map((b) => (
                         <button
                           key={b.id}
                           onClick={() => setDetailBooking(b)}
-                          className="absolute top-0 bottom-0 bg-[#F0997B] rounded-md text-[11px] text-[#4A1B0C] flex items-center px-1.5 overflow-hidden whitespace-nowrap hover:opacity-80"
+                          className="absolute top-0 bottom-0 bg-gray-200 rounded-md text-[11px] text-gray-500 flex items-center px-1.5 overflow-hidden whitespace-nowrap hover:opacity-80"
                           style={{ left: `${pct(b.startTime)}%`, width: `${pct(b.endTime) - pct(b.startTime)}%` }}
                           title={`${b.title} ${b.startTime}–${b.endTime} — klik pro detail`}
                         >
@@ -1691,12 +1691,12 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
               {PHYSICAL_RESOURCES.map((r) => (
                 <div key={r} className="flex items-center gap-3">
                   <div className="w-24 shrink-0 text-sm">{RESOURCE_LABELS[r]}</div>
-                  <div className="relative flex-1 h-7 bg-gray-100 rounded-md">
+                  <div className="relative flex-1 h-7 bg-green-50 rounded-md">
                     {confirmedByResourceToday[r].map((b) => (
                       <button
                         key={b.id}
                         onClick={() => setDetailBooking(b)}
-                        className="absolute top-0 bottom-0 bg-[#5DCAA5] rounded-md text-[11px] text-[#04342C] flex items-center px-1.5 overflow-hidden whitespace-nowrap hover:opacity-80"
+                        className="absolute top-0 bottom-0 bg-gray-300 rounded-md text-[11px] text-gray-700 flex items-center px-1.5 overflow-hidden whitespace-nowrap hover:opacity-80"
                         style={{ left: `${pct(b.startTime)}%`, width: `${pct(b.endTime) - pct(b.startTime)}%` }}
                         title={`${b.title} ${b.startTime}–${b.endTime} — klik pro detail`}
                       >
@@ -2001,16 +2001,16 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
       <div className="flex items-center gap-4 text-xs text-gray-500">
         <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-gray-100 inline-block" /> volno
+          <span className="w-2.5 h-2.5 rounded-sm bg-green-100 inline-block" /> volno
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#5DCAA5] inline-block" /> rezervováno
+          <span className="w-2.5 h-2.5 rounded-sm bg-gray-300 inline-block" /> rezervováno
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm bg-[#FAC775] inline-block" /> čeká na schválení
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#F0997B] inline-block" /> blokováno jiným místem
+          <span className="w-2.5 h-2.5 rounded-sm bg-gray-200 inline-block" /> blokováno jiným místem
         </span>
       </div>
 
