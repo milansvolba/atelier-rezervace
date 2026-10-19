@@ -98,3 +98,29 @@ Zatím se nic nenasazovalo ani nenapojovalo — jen podklad pro budoucí blok "P
 5. **Členství v klubu** — **250 Kč měsíčně vč. DPH**, opakovaná platba (Stripe Subscriptions). **Bez samoobslužné registrace** — jen prověření členové (zakládá admin). Členové si mohou **rezervovat ateliér na pingpong nebo jednotlivé stoly**; smysl: hlídat obsazenost, aby nikdo nelezl do klubovny, když tam je kurz.
 6. **Drobný prodej** — **online shop zůstává skrytý**, žádné poštovné ani logistika. Potřeba: **pseudo-shop na naší doméně, zobrazený jen lokálně** (přehled prodávaných věcí v ateliéru). **QR kódy** u vystavených věcí i na obrazovce/tabletu s přehledem; platba kartou přes Stripe. **DPH: klasická česká sazba.** Sklad hlídat u nás (ne ve Stripe). Otevřené: jak technicky omezit zobrazení "jen lokálně" (nelinkovaná adresa, PIN, kiosk na tabletu).
 7. **Firemní akce** — **na fakturu** (firmy si je dávají do nákladů), faktura ze Stripe; veřejně se nevypisují ani neplatí online.
+
+### Upřesnění od Milana (19. 10. 2026)
+
+- **Pronájem — lhůta na platbu:** počítá se **od schválení**, tj. od chvíle, kdy zájemci dorazí schvalovací e-mail. Má **2 pracovní dny** na zaplacení; termín je po tu dobu dočasně zablokovaný, po uplynutí se blokace uvolní.
+- **Kurz, vypsaný termín:** platí se **hned** (žádná "bezpečná" lhůta; místa se drží jen po dobu platby, 35 min).
+- **Storno kurzů (návrh Milana, potřebuje opravit překryv hranic):** 7 a více dní předem = vrácení 100 %; 2–6 dní = 50 %; méně než 3 dny = nic. Hranice "2 dny" je ve dvou pásmech → **potvrdit finální znění** (návrh: 7+ dní 100 %, 3–6 dní 50 %, 0–2 dny 0 %). Admin musí umět **vrátit peníze** (celé i částečně, Stripe refund) a udělit výjimku.
+- **Poukázka:** platnost **1 rok** od koupě. Poukázka je obecná (bez vázaného kurzu). Admin dashboard musí ukazovat **přehled koupených a nevyužitých poukázek** (počet, celková hodnota, blížící se konec platnosti).
+- **Pseudo-shop (cesta 6):** zobrazí se jen **na tabletu v kiosk režimu** v ateliéru (ne veřejně).
+- **DPH u poukázky:** Milan zjišťuje u účetní (jednoúčelová vs. víceúčelová poukázka).
+
+### ÚKOL: Obchodní podmínky (VOP) a smluvní podmínky
+
+Sepsat **srozumitelné** (lidským jazykem) a zároveň **právně správné** podmínky. **Právní správnost musí zkontrolovat český právník/advokát** — Claude není právník a nemá k dispozici nástroj pro české právo; návrh textu od Claude je jen podklad. Podmínky se zobrazí zákazníkovi před platbou (odkaz/souhlas v kroku shrnutí) a dostane je e-mailem.
+
+Co musí pokrýt:
+1. **Storno a vrácení peněz u kurzů** (pravidla výše; čas se počítá k začátku kurzu; jak se o storno žádá).
+2. **Právo spotřebitele odstoupit do 14 dnů:** pro služby s pevně daným termínem (kurz) se podle dosavadního výkladu občanského zákoníku (§ 1837 písm. j)) neuplatní, **ale doslovné znění a použitelnost je nutné ověřit u právníka** (Claude to z dostupných zdrojů neověřil). U **poukázky** (bez pevného termínu) a u zboží se právo odstoupit pravděpodobně uplatní — ověřit.
+3. **Poukázka:** platnost 1 rok, co se děje po uplynutí, přenositelnost, jak se uplatňuje (výběr kurzu a rezervace termínu), vrácení peněz.
+4. **Pronájem:** blokace 2 pracovní dny od schválení, cena fixní (vybavení, úklid, omezená káva/čaj), varianty bez vybavení/jen pingpong, s ledničkou nebo bez; storno pronájmu.
+5. **Členství:** 250 Kč měsíčně vč. DPH, opakovaná platba, jak se ruší, kdo je členem (jen prověření).
+6. **Firemní akce:** platba na fakturu.
+7. **Obecné náležitosti** e-shopu (identifikace prodávajícího, reklamace, ochrana osobních údajů/GDPR, řešení sporů).
+
+### ÚKOL: Produkty a ceny ve Stripe (sandbox → ostrý režim)
+
+Vytvořit produkty (kurzy na míru, pronájem celého ateliéru, varianty pronájmu, členství 250 Kč/měsíc vč. DPH, poukázka, drobné zboží). Ceny doplní Milan. Ceny zadávat **s DPH (tax_behavior inclusive)** podle české sazby. Cesta: import CSV v Product catalog, nebo jednorázová admin akce v appce (konektor pro Stripe v registru není).
