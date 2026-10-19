@@ -103,7 +103,7 @@ Zatím se nic nenasazovalo ani nenapojovalo — jen podklad pro budoucí blok "P
 
 - **Pronájem — lhůta na platbu:** počítá se **od schválení**, tj. od chvíle, kdy zájemci dorazí schvalovací e-mail. Má **2 pracovní dny** na zaplacení; termín je po tu dobu dočasně zablokovaný, po uplynutí se blokace uvolní.
 - **Kurz, vypsaný termín:** platí se **hned** (žádná "bezpečná" lhůta; místa se drží jen po dobu platby, 35 min).
-- **Storno kurzů (návrh Milana, potřebuje opravit překryv hranic):** 7 a více dní předem = vrácení 100 %; 2–6 dní = 50 %; méně než 3 dny = nic. Hranice "2 dny" je ve dvou pásmech → **potvrdit finální znění** (návrh: 7+ dní 100 %, 3–6 dní 50 %, 0–2 dny 0 %). Admin musí umět **vrátit peníze** (celé i částečně, Stripe refund) a udělit výjimku.
+- **Storno kurzů (návrh Milana, potřebuje opravit překryv hranic):** 7 a více dní předem = vrácení 100 %; 2–6 dní = 50 %; méně než 3 dny = nic. Hranice "2 dny" je ve dvou pásmech → **SCHVÁLENO Milanem (19. 10. 2026): 7+ dní předem 100 %, 3–6 dní 50 %, 0–2 dny 0 %**. Admin musí umět **vrátit peníze** (celé i částečně, Stripe refund) a udělit výjimku.
 - **Poukázka:** platnost **1 rok** od koupě. Poukázka je obecná (bez vázaného kurzu). Admin dashboard musí ukazovat **přehled koupených a nevyužitých poukázek** (počet, celková hodnota, blížící se konec platnosti).
 - **Pseudo-shop (cesta 6):** zobrazí se jen **na tabletu v kiosk režimu** v ateliéru (ne veřejně).
 - **DPH u poukázky:** Milan zjišťuje u účetní (jednoúčelová vs. víceúčelová poukázka).
@@ -124,3 +124,9 @@ Co musí pokrýt:
 ### ÚKOL: Produkty a ceny ve Stripe (sandbox → ostrý režim)
 
 Vytvořit produkty (kurzy na míru, pronájem celého ateliéru, varianty pronájmu, členství 250 Kč/měsíc vč. DPH, poukázka, drobné zboží). Ceny doplní Milan. Ceny zadávat **s DPH (tax_behavior inclusive)** podle české sazby. Cesta: import CSV v Product catalog, nebo jednorázová admin akce v appce (konektor pro Stripe v registru není).
+
+### Poznámky z 19. 10. 2026
+
+- **Odstoupení do 14 dnů:** Milan postaví pro tuhle otázku vlastního právního agenta a dá vědět výsledek. Do té doby se v podmínkách nic nezakládá na domněnce (viz úkol Obchodní podmínky).
+- **Ceny kurzů nejsou potřeba ve Stripe katalogu:** cena každého vypsaného termínu se zadává v adminu (pole cena) a platba kurzu si částku (včetně slevy) počítá dynamicky. Do Stripe katalogu patří jen produkty s pevnou cenou: kurz na míru, pronájem (celý ateliér a varianty), členství, poukázka, drobné zboží.
+- **Seznam produktů s cenami s DPH sestaví Milan.**
