@@ -49,6 +49,7 @@
 Aktivní jen Členství v klubu (249 Kč měsíčně) a testovací Hrnek s logem (149 Kč); starý produkt „Modelování hlavy“ archivován. Webhook (6 událostí) a zákaznický portál jsou nastavené. Ceny kurzů, odlitků a poukazů se do Stripe katalogu nezakládají, počítá je server dynamicky. Konektor Stripe vidí zatím jen sandbox, ostrý účet se připojí přes „reconsent“ odkaz.
 
 **Poznámky k práci:** vlákna z Cowork (Windows) a claude.ai (MacBook) jsou od 2026-10-20 sjednocená, pravdu drží repo a tato dokumentace. Vše kolem rezervační appky a Vercelu se řeší v jednom vláknu. Změny se zapisují do `zmeny.md`, po sloučení se ověřuje zelený build. Sloučení do `main` provádí Milan.
+**Pravidlo nasazování (dohodnuto 2026-10-20):** změny kolem **plateb, rezervací, databáze a e-mailů** jdou vždy přes větev a Pull request, který po kontrole sloučí Milan (vrácení = jedno kliknutí). **Drobné změny textů a dokumentace** se mohou zapisovat rovnou do `main` (GitHub web editor, vlákno s Chromem). Vlákno v cloudu do `main` zapisovat nemůže, proto používá PR.
 
 ## (starší poznámka, nahrazeno předáním výše) ROZPRACOVÁNO 2026-10-19
 **Dárkové poukazy na kurzy** (Milan schválil návrh):
