@@ -1,5 +1,11 @@
 # Seznam úkolů a stav
-## ▶ ROZPRACOVÁNO – navázat zde (stav 2026-10-19)
+## ▶ PŘEDÁNÍ – navázat zde (stav 2026-10-20)
+**Hotovo a nasazeno v main (Vercel zelený):** členství přes Stripe, storno přihlášky s vratkou, množstevní slevy (2 os. 5 %, 3–4 10 %, 5–6 15 %), betonový odlitek (počet 0 až N, PR #2), logo zarovnané s obsahem, dvousloupcový admin, dárkové poukazy (PR #1: /poukazy, uplatnění kódu na /kurzy, admin přehled).
+**Čeká na Milana / test:** end-to-end test poukazů ve Stripe sandboxu (nákup bez termínu i s termínem, uplatnění kódu, plný termín, propadlý/uplatněný kód, odlitky 2 osoby/1 odlitek = 19 613 Kč u hlavy); ověřit se účetní DPH 21 % u kurzů, odlitků a poukazů; marketingová stránka poukazů na PHP webu (dělá Milan, odkaz /poukazy nebo ?kurz=hlava|relief).
+**Pořadí dál:** 1) test poukazů, 2) správa textů v adminu, 3) potvrzovací e-mail při rezervaci člena, 4) audit toastů. Ostrý Stripe provoz odložen.
+**Poznámky k práci:** rozdělené práce běžela ve dvou vláknech (Cowork na Windows a claude.ai na MacBooku); pravdu drží repo a tato dokumentace. Změny se zapisují do zmeny.md, po sloučení vždy ověřit zelený build.
+
+## (starší poznámka, nahrazeno předáním výše) ROZPRACOVÁNO 2026-10-19
 **Dárkové poukazy na kurzy** (Milan schválil návrh):
 - Hotovo a nasazeno: tabulka `vouchers` (lib/db.ts), `VOUCHER_COURSES` v lib/pricing.ts (hlava 8 270 Kč + odlitek 3 900, reliéf 6 470 Kč + odlitek 3 100, ceny za 1 osobu vč. DPH).
 - Hotovo a SLOUČENO do main (PR #1 sloučen 2026-10-19 16:28, build zelený, nasazeno; udržované ve vláknu na jiném počítači): lib/vouchers.ts, POST /api/vouchers/checkout, webhook větev, e-maily, stránka /poukazy, uplatnění na /kurzy (POST /api/vouchers/redeem), admin přehled poukazů, skrytý panel Slevové stupně, zmeny.md.
