@@ -1,9 +1,54 @@
 # Seznam úkolů a stav
-## ▶ PŘEDÁNÍ – navázat zde (stav 2026-10-20)
-**Hotovo a nasazeno v main (Vercel zelený):** členství přes Stripe, storno přihlášky s vratkou, množstevní slevy (2 os. 5 %, 3–4 10 %, 5–6 15 %), betonový odlitek (počet 0 až N, PR #2), logo zarovnané s obsahem, dvousloupcový admin, dárkové poukazy (PR #1: /poukazy, uplatnění kódu na /kurzy, admin přehled).
-**Čeká na Milana / test:** end-to-end test poukazů ve Stripe sandboxu (nákup bez termínu i s termínem, uplatnění kódu, plný termín, propadlý/uplatněný kód, odlitky 2 osoby/1 odlitek = 19 613 Kč u hlavy); ověřit se účetní DPH 21 % u kurzů, odlitků a poukazů; marketingová stránka poukazů na PHP webu (dělá Milan, odkaz /poukazy nebo ?kurz=hlava|relief).
-**Pořadí dál:** 1) test poukazů, 2) správa textů v adminu, 3) potvrzovací e-mail při rezervaci člena, 4) audit toastů. Ostrý Stripe provoz odložen.
-**Poznámky k práci:** rozdělené práce běžela ve dvou vláknech (Cowork na Windows a claude.ai na MacBooku); pravdu drží repo a tato dokumentace. Změny se zapisují do zmeny.md, po sloučení vždy ověřit zelený build.
+## ▶ PRIORITY A STAV (aktualizováno 2026-10-20)
+
+**Pravidlo řazení:** úkol, který **omezuje spuštění** (ostrý provoz, příjem plateb od zákazníků, bezpečnost, právní nutnost), má **P0**. Zbytek se řadí podle poměru (přínos + dopad na prodej + bezpečnost) k pracnosti. Hodnocení je návrh Claude a Milan ho potvrzuje nebo mění.
+Škály: **Přínos** a **Dopad na prodej** 1–5 (5 = nejvyšší), **Bezpečnost/právo** 0–3 (3 = kritické), **Pracnost** S (do 1 h) / M (půl dne) / L (víc dní) / ext (čeká na někoho mimo nás).
+
+**Cíl:** členství spustit co nejdřív v **ostrém Stripe**; ostré spuštění ostatních plateb (kurzy, poukazy) v listopadu.
+
+### P0 — blokuje spuštění
+| # | Úkol | Blokuje | Bezp. | Přínos | Dopad na prodej | Pracnost | Kdo |
+|---|---|---|---|---|---|---|---|
+| 1 | **Ostrý Stripe pro členství:** aktivace účtu (ověření totožnosti), ve Vercelu ostré `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_MEMBERSHIP_PRICE_ID` (cena 249 Kč měs. už je v ostrém Stripe), `STRIPE_TAX_RATE_ID` (ostrá sazba 21 % vč. DPH), ostrý webhook (6 událostí: `checkout.session.completed`, `checkout.session.expired`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`, `customer.subscription.deleted`), ostrý zákaznický portál (zrušení ke konci období, faktury), údaje o firmě a číslování faktur; poté Redeploy | členství, vše ostré | 3 | 5 | 5 | M | Milan (klíče jen do Vercelu, nikdy do chatu) + Claude (kontrola) |
+| 2 | **Zkušební ostrá platba:** člen za 249 Kč vlastní kartou, kontrola faktury (číslo, DPH 21 %, IČO/DIČ), stavu v Účtech, zrušení přes portál, vratka; ověřit Apple Pay/Google Pay v ostrém režimu | členství | 2 | 4 | 4 | S | Milan + Claude |
+| 3 | **Obchodní a členské podmínky + souhlas před platbou + zásady ochrany osobních údajů** (právník; odkazy doplnit i do portálu Stripe a e-mailů). Doplnit i právní otázku odstoupení do 14 dnů (Milanův právní agent) | všechny platby spotřebitelů | 3 | 4 | 4 | ext (právník) + M (zapojení) | Milan + právník; Claude připraví podklad a zapojení do formulářů |
+| 4 | **DPH s účetní:** členství 21 %, kurzy, odlitky, poukazy (jednoúčelová × víceúčelová), faktury Stripe vs. Caflou | kurzy, poukazy | 3 | 3 | 4 | ext | Milan |
+| 5 | **Ověřit firemní akce:** příznak „firemní akce“ je v kódu hotový; zkontrolovat v adminu, že oba termíny (Předvánoční coworkshop 26. 11., Comp-any 3. 12.) mají příznak a nejsou na veřejném `/kurzy` | kurzy | 2 | 3 | 3 | S | Milan |
+| 6 | **End-to-end test poukazů a odlitků** v sandboxu: nákup bez termínu i s termínem, uplatnění kódu na `/kurzy`, plný termín, propadlý/uplatněný kód, 2 osoby + 1 odlitek = 19 613 Kč u hlavy, e-maily, admin přehled | poukazy, kurzy | 2 | 4 | 5 | S | Milan (proklikání) + Claude (kontrola ve Stripe přes konektor) |
+
+### P1 — silná doporučení před ostrým provozem
+| # | Úkol | Bezp. | Přínos | Dopad na prodej | Pracnost | Poznámka |
+|---|---|---|---|---|---|---|
+| 7 | **Aktualizace Next.js 14.2.5** na záplatovanou verzi 14.2.x | 2 | 3 | 1 | M | Aplikace nemá `middleware.ts`, takže se jí nejznámější zranitelnost obejití middleware pravděpodobně netýká; ostatní zranitelnosti jsem neověřoval. Dělat na větvi s kontrolou Vercel preview |
+| 8 | **Zálohy databáze (Neon) a upozornění na selhání webhooku/e-mailů** (kde se dozvíš, že se platba nezapsala) | 2 | 4 | 3 | S–M | Ověřit plán Neonu a retenci; webhook už loguje chyby, chybí upozornění |
+| 9 | **Marketingová stránka poukazů na PHP webu** s odkazem `/poukazy` (`?kurz=hlava` nebo `?kurz=relief`) | 0 | 4 | 5 | M | Dělá Milan; startuje po testu č. 6 |
+| 10 | **PDF poukaz a vizuál** (dárek před Vánoci) | 0 | 4 | 4 | M | Termín: před vánoční sezónou |
+
+### P2 — hodnota po spuštění, řazeno podle poměru přínos/pracnost
+| # | Úkol | Přínos | Dopad na prodej | Pracnost | Poznámka |
+|---|---|---|---|---|---|
+| 11 | **Potvrzovací e-mail při rezervaci člena** (dnes jen změna/zrušení) | 3 | 2 | S | Navazuje na spuštění členství |
+| 12 | **Správa textů v adminu** nad `lib/uiTexts.ts` (seznam, popis „kde se zobrazuje“, náhled, vrátit výchozí, tabulka `ui_texts`) | 4 | 2 | M | Milan je UX writer a chce ladit tón |
+| 13 | **Pronájem s platbou** (poptávka, dočasná blokace 2 pracovní dny od schválení, e-mail s platbou, finální blokace; telefon povinný) | 5 | 5 | L | Potřebuje ceny a varianty od Milana; produkty ve Stripe se založí až s touto stavbou |
+| 14 | **Audit zpětné vazby (toasty):** správa členů, e-mailové šablony, úprava/smazání rezervace, rychlé přidání, veřejná `/` | 3 | 1 | M | UX pravidlo: každá akce má viditelné potvrzení nebo chybu |
+| 15 | **Přehled poukazů v adminu doplnit** o počet, celkovou hodnotu, blížící se konec platnosti | 3 | 1 | S | Základní přehled už je |
+| 16 | **Vratka poukazu přes appku** (dnes ručně ve Stripe) | 2 | 1 | S | Až po právním výkladu odstoupení |
+
+### P3 — později
+| # | Úkol | Poznámka |
+|---|---|---|
+| 17 | **Kurz na míru / skupina nad 6:** přednastavená cena, automatický schvalovací e-mail s odkazem na platbu | Dnes řeší admin ručně |
+| 18 | **Drobný prodej + QR + kiosk tablet:** tabulka zboží a zásob v appce, platba dynamicky přes Stripe, rezervace kusů jako u míst kurzů; hrnek zůstává testovací | Zásoby se hlídají u nás, ne ve Stripe |
+| 19 | **Půjčovna** (rozhodnutí o ceně, kauci, délce) | Čeká na Milana |
+| 20 | **Role Partner, samoobslužná registrace, tykání členům, slevy na kurzy.php** | Odloženo |
+
+### Hotovo a nasazeno v main (Vercel zelený)
+Členství přes Stripe (otestováno v sandboxu), storno přihlášky s vratkou (7+ dní 100 %, 3–6 dní 50 %, 0–2 dny 0 %), množstevní slevy (2 os. 5 %, 3–4 10 %, 5–6 15 %), betonový odlitek (počet 0 až N), firemní akce skryté na `/kurzy`, dvousloupcový admin, dárkové poukazy (`/poukazy`, uplatnění kódu na `/kurzy`, admin přehled; PR #1 a #2).
+
+### Stav Stripe sandboxu (2026-10-20, ověřeno přes konektor)
+Aktivní jen Členství v klubu (249 Kč měsíčně) a testovací Hrnek s logem (149 Kč); starý produkt „Modelování hlavy“ archivován. Webhook (6 událostí) a zákaznický portál jsou nastavené. Ceny kurzů, odlitků a poukazů se do Stripe katalogu nezakládají, počítá je server dynamicky. Konektor Stripe vidí zatím jen sandbox, ostrý účet se připojí přes „reconsent“ odkaz.
+
+**Poznámky k práci:** vlákna z Cowork (Windows) a claude.ai (MacBook) jsou od 2026-10-20 sjednocená, pravdu drží repo a tato dokumentace. Vše kolem rezervační appky a Vercelu se řeší v jednom vláknu. Změny se zapisují do `zmeny.md`, po sloučení se ověřuje zelený build. Sloučení do `main` provádí Milan.
 
 ## (starší poznámka, nahrazeno předáním výše) ROZPRACOVÁNO 2026-10-19
 **Dárkové poukazy na kurzy** (Milan schválil návrh):
@@ -108,7 +153,7 @@ Zatím se nic nenasazovalo ani nenapojovalo — jen podklad pro budoucí blok "P
 2. **Kurz na míru / skupina nad 6** — schválení adminem zůstává. Ve Stripe **přednastavit produkt** pro tyto případy a doladit **automatický schvalovací e-mail** (s odkazem na platbu).
 3. **Voucher / poukázka** — prodává se **obecná poukázka, ne na konkrétní kurz**. Držitel si pak sám vybere kurz a zarezervuje termín. (Starší návrh: `kurzy-vouchery-specifikace.md`; změna: žádný vázaný kurz.)
 4. **Pronájem prostoru** — tok: poptávka → termín se dočasně zablokuje → admin schválí → e-mail s odkazem na platbu → po zaplacení finální blokace se jménem zájemce. **Telefon povinný.** Blokace se drží **2 pracovní dny** (Milan: "od schválení, tj. den objednávky + 2 pracovní dny" — upřesnit, zda se počítá od schválení, nebo od objednávky). **Celý ateliér = fixní cena** (v základu vybavení, úklid, omezené množství kávy/čaje) → **produkt ve Stripe**. **Levnější varianty:** ateliér bez vybavení, jen pingpong; u pingpongu varianta **s přístupem do ledničky a bez**. Ceny doplní Milan.
-5. **Členství v klubu** — **250 Kč měsíčně vč. DPH**, opakovaná platba (Stripe Subscriptions). **Bez samoobslužné registrace** — jen prověření členové (zakládá admin). Členové si mohou **rezervovat ateliér na pingpong nebo jednotlivé stoly**; smysl: hlídat obsazenost, aby nikdo nelezl do klubovny, když tam je kurz.
+5. **Členství v klubu** — **249 Kč měsíčně vč. DPH**, opakovaná platba (Stripe Subscriptions). **Bez samoobslužné registrace** — jen prověření členové (zakládá admin). Členové si mohou **rezervovat ateliér na pingpong nebo jednotlivé stoly**; smysl: hlídat obsazenost, aby nikdo nelezl do klubovny, když tam je kurz.
 6. **Drobný prodej** — **online shop zůstává skrytý**, žádné poštovné ani logistika. Potřeba: **pseudo-shop na naší doméně, zobrazený jen lokálně** (přehled prodávaných věcí v ateliéru). **QR kódy** u vystavených věcí i na obrazovce/tabletu s přehledem; platba kartou přes Stripe. **DPH: klasická česká sazba.** Sklad hlídat u nás (ne ve Stripe). Otevřené: jak technicky omezit zobrazení "jen lokálně" (nelinkovaná adresa, PIN, kiosk na tabletu).
 7. **Firemní akce** — **na fakturu** (firmy si je dávají do nákladů), faktura ze Stripe; veřejně se nevypisují ani neplatí online.
 
@@ -130,13 +175,13 @@ Co musí pokrýt:
 2. **Právo spotřebitele odstoupit do 14 dnů:** pro služby s pevně daným termínem (kurz) se podle dosavadního výkladu občanského zákoníku (§ 1837 písm. j)) neuplatní, **ale doslovné znění a použitelnost je nutné ověřit u právníka** (Claude to z dostupných zdrojů neověřil). U **poukázky** (bez pevného termínu) a u zboží se právo odstoupit pravděpodobně uplatní — ověřit.
 3. **Poukázka:** platnost 1 rok, co se děje po uplynutí, přenositelnost, jak se uplatňuje (výběr kurzu a rezervace termínu), vrácení peněz.
 4. **Pronájem:** blokace 2 pracovní dny od schválení, cena fixní (vybavení, úklid, omezená káva/čaj), varianty bez vybavení/jen pingpong, s ledničkou nebo bez; storno pronájmu.
-5. **Členství:** 250 Kč měsíčně vč. DPH, opakovaná platba, jak se ruší, kdo je členem (jen prověření).
+5. **Členství:** 249 Kč měsíčně vč. DPH, opakovaná platba, jak se ruší, kdo je členem (jen prověření).
 6. **Firemní akce:** platba na fakturu.
 7. **Obecné náležitosti** e-shopu (identifikace prodávajícího, reklamace, ochrana osobních údajů/GDPR, řešení sporů).
 
 ### ÚKOL: Produkty a ceny ve Stripe (sandbox → ostrý režim)
 
-Vytvořit produkty (kurzy na míru, pronájem celého ateliéru, varianty pronájmu, členství 250 Kč/měsíc vč. DPH, poukázka, drobné zboží). Ceny doplní Milan. Ceny zadávat **s DPH (tax_behavior inclusive)** podle české sazby. Cesta: import CSV v Product catalog, nebo jednorázová admin akce v appce (konektor pro Stripe v registru není).
+Vytvořit produkty (kurzy na míru, pronájem celého ateliéru, varianty pronájmu, členství 249 Kč/měsíc vč. DPH (už založeno), poukázka, drobné zboží). Ceny doplní Milan. Ceny zadávat **s DPH (tax_behavior inclusive)** podle české sazby. Cesta: import CSV v Product catalog, nebo jednorázová admin akce v appce (konektor Stripe je od 2026-10-20 k dispozici, viz Stav Stripe sandboxu).
 
 ### Poznámky z 19. 10. 2026
 
