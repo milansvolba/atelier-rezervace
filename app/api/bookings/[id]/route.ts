@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { store, findConflict } from "@/lib/data";
+import { store, findConflict, findPrepConflictFor } from "@/lib/data";
+import { PREP_MESSAGE } from "@/lib/prep";
 import { requireUser } from "@/lib/auth";
 import { sendBookingChangedEmail, sendBookingCancelledEmail } from "@/lib/email";
 
@@ -34,6 +35,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       { error: `Termín koliduje s existující rezervací: ${conflict.title} (${conflict.startTime}–${conflict.endTime})` },
       { status: 409 }
     );
+  }
+
+  if (await findPrepConflictFor(nextResource, nextDate, nextStart, nextEnd, existing.id)) {
+    return NextResponse.json({ error: PREP_MESSAGE }, { status: 409 });
   }
 
   const updated = await store.update(params.id, {

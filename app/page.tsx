@@ -8,6 +8,7 @@ import {
   resourcesConflict,
   timesOverlap,
 } from "@/lib/types";
+import { HALF_DAYS, HalfDayState, PREP_MESSAGE, halfDayState, findPrepConflict } from "@/lib/prep";
 import {
   DAY_NAMES,
   DAY_NAMES_MON_FIRST,
@@ -20,20 +21,18 @@ import {
 } from "@/lib/calendar";
 
 type ViewMode = "week" | "month" | "quarter" | "year";
-type DayFlag = "free" | "on-request" | "pending" | "rental";
-
-function statusBg(status: DayFlag) {
-  switch (status) {
-    case "rental":
-      return "bg-rental";
-    case "pending":
-      return "bg-pending";
-    case "on-request":
-      return "bg-blue-100";
-    default:
-      return "bg-free";
-  }
-}
+// Barvy stejné jako v adminu: volno = jemně zelená, rezervováno = šedá, čeká na schválení = žlutá.
+// Příprava a úklid před akcí je světlejší šedá s pruhy (nejde rezervovat celý ateliér).
+const HALF_STYLE: Record<HalfDayState, { className: string; style?: React.CSSProperties; label: string }> = {
+  free: { className: "bg-green-100", label: "volno" },
+  taken: { className: "bg-gray-300", label: "rezervováno" },
+  prep: {
+    className: "bg-gray-200",
+    style: { backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,.7) 0 3px, transparent 3px 6px)" },
+    label: "příprava a úklid před akcí",
+  },
+  pending: { className: "bg-[#FAC775]", label: "čeká na schválení" },
+};
 
 // Popisek zobrazeného rozsahu — jde listovat vzad/vpřed přes anchor, takže
 // nejde vždy nutně o "dnešek", ale o aktuálně zvolený rozsah.
@@ -102,6 +101,7 @@ export default function PublicPage() {
   const [contact, setContact] = useState("");
   const [note, setNote] = useState("");
   const [submitted, setSubmitted] = useState<null | "ok" | "err">(null);
+  const [submitError, setSubmitError] = useState("");
   const [customTime, setCustomTime] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -111,26 +111,40 @@ export default function PublicPage() {
       .then(setBookings);
   }, [submitted]);
 
-  // Den je "pronajato", pokud existuje potvrzená rezervace celého ateliéru/klubovny.
-  // "Na vyžádání" znamená, že je obsazené jen nějaké coworkingové místo (stůl/pingpong) —
-  // pronájem celého prostoru má přednost (přináší víc peněz), takže to nejde rovnou
-  // označit za nedostupné, jen je potřeba se domluvit.
-  function dayStatus(d: Date): DayFlag {
+  // Každý den je rozdělený na dopoledne (levá půlka) a odpoledne (pravá půlka); barva ukazuje,
+  // jestli jde v tu dobu požádat o celý ateliér.
+  function dayHalves(d: Date): HalfDayState[] {
     const key = iso(d);
-    const dayBookings = bookings.filter((b) => b.date === key);
-    const hasConfirmedWhole = dayBookings.some(
-      (b) => b.status === "confirmed" && (b.resource === "atelier" || b.resource === "klubovna")
+    return HALF_DAYS.map((h) => halfDayState(bookings, key, h));
+  }
+
+  function renderDayCell(d: Date, tall: boolean, showNumber: boolean) {
+    const past = iso(d) < todayISO;
+    const halves = dayHalves(d);
+    const title = past
+      ? undefined
+      : "Dopoledne: " + HALF_STYLE[halves[0]].label + ", odpoledne: " + HALF_STYLE[halves[1]].label + ". Klikněte pro žádost o tento den.";
+    return (
+      <button
+        type="button"
+        disabled={past}
+        onClick={() => startBookingFor(d)}
+        title={title}
+        className={`relative overflow-hidden w-full ${tall ? "h-10 rounded-md text-xs" : "aspect-square rounded-sm text-[10px]"} flex items-center justify-center ${
+          past ? "opacity-40 cursor-default" : "hover:ring-2 hover:ring-gray-300"
+        }`}
+      >
+        {halves.map((h, i) => (
+          <span
+            key={i}
+            aria-hidden="true"
+            className={`absolute top-0 bottom-0 ${i === 0 ? "left-0" : "right-0"} w-1/2 ${HALF_STYLE[h].className}`}
+            style={HALF_STYLE[h].style}
+          />
+        ))}
+        <span className="relative text-gray-800">{showNumber ? d.getDate() + (tall ? "." : "") : ""}</span>
+      </button>
     );
-    if (hasConfirmedWhole) return "rental";
-    const hasPendingWhole = dayBookings.some(
-      (b) => b.status === "pending" && (b.resource === "atelier" || b.resource === "klubovna")
-    );
-    if (hasPendingWhole) return "pending";
-    const hasIndividual = dayBookings.some(
-      (b) => b.status === "confirmed" && b.resource !== "atelier" && b.resource !== "klubovna"
-    );
-    if (hasIndividual) return "on-request";
-    return "free";
   }
 
   const today = new Date();
@@ -177,9 +191,19 @@ export default function PublicPage() {
     );
   }, [bookings, date, resource, startTime, endTime]);
 
+  // Příprava a úklid: nový termín celého ateliéru nesmí zasáhnout do přípravy jiné akce (ani naopak).
+  const prepConflict = useMemo(() => {
+    if (!date || resource !== "atelier") return null;
+    return findPrepConflict(
+      { date, startTime, endTime },
+      bookings.filter((b) => b.status === "confirmed" && b.resource === "atelier")
+    );
+  }, [bookings, date, resource, startTime, endTime]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(null);
+    setSubmitError("");
     const res = await fetch("/api/requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -201,6 +225,8 @@ export default function PublicPage() {
       setContact("");
       setNote("");
     } else {
+      const data = await res.json().catch(() => ({}));
+      setSubmitError(typeof data.error === "string" ? data.error : "");
       setSubmitted("err");
     }
   }
@@ -256,31 +282,17 @@ export default function PublicPage() {
           </button>
         </div>
         <p className="text-sm text-gray-500 mb-4">
-          Modrá = zkuste to i tak napsat, obvykle se dá domluvit.
+          Každý den je rozdělený na dopoledne (levá půlka) a odpoledne (pravá půlka). Zelená je volno pro celý ateliér.
         </p>
 
         {view === "week" && (
           <div className="grid grid-cols-7 gap-2 mb-4">
-            {nextDays(7, anchor).map((d) => {
-              const status = dayStatus(d);
-              const past = iso(d) < todayISO;
-              return (
-                <div key={iso(d)} className="text-center">
-                  <div className="text-xs text-gray-400 mb-1">{DAY_NAMES[d.getDay()]}</div>
-                  <button
-                    type="button"
-                    disabled={past}
-                    onClick={() => startBookingFor(d)}
-                    className={`w-full h-10 rounded-md ${statusBg(status)} flex items-center justify-center text-xs ${
-                      past ? "opacity-40 cursor-default" : "hover:ring-2 hover:ring-gray-300"
-                    }`}
-                    title={past ? undefined : "Klikněte pro rezervaci tohoto dne"}
-                  >
-                    {d.getDate()}.
-                  </button>
-                </div>
-              );
-            })}
+            {nextDays(7, anchor).map((d) => (
+              <div key={iso(d)} className="text-center">
+                <div className="text-xs text-gray-400 mb-1">{DAY_NAMES[d.getDay()]}</div>
+                {renderDayCell(d, true, true)}
+              </div>
+            ))}
           </div>
         )}
 
@@ -309,24 +321,9 @@ export default function PublicPage() {
                 <div className={view === "month" ? "space-y-0.5" : "space-y-1"}>
                   {monthMatrix(year, month).map((week, wi) => (
                     <div key={wi} className={`grid grid-cols-7 ${view === "month" ? "gap-0.5" : "gap-1"}`}>
-                      {week.map((d, di) => {
-                        if (!d) return <div key={di} />;
-                        const past = iso(d) < todayISO;
-                        return (
-                          <button
-                            type="button"
-                            key={di}
-                            disabled={past}
-                            onClick={() => startBookingFor(d)}
-                            title={past ? undefined : "Klikněte pro rezervaci tohoto dne"}
-                            className={`aspect-square rounded-sm ${statusBg(dayStatus(d))} flex items-center justify-center text-[10px] ${
-                              past ? "opacity-40 cursor-default" : "hover:ring-2 hover:ring-gray-300"
-                            }`}
-                          >
-                            {view === "year" ? "" : d.getDate()}
-                          </button>
-                        );
-                      })}
+                      {week.map((d, di) =>
+                        d ? <div key={di}>{renderDayCell(d, false, view !== "year")}</div> : <div key={di} />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -336,19 +333,15 @@ export default function PublicPage() {
         )}
 
         <div className="flex items-center gap-4 flex-wrap text-xs text-gray-500 mb-4">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-free border border-gray-300 inline-block" /> volno
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-blue-100 inline-block" /> na vyžádání
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-pending inline-block" /> čeká na schválení
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-rental inline-block" /> pronajato
-          </span>
+          {(["free", "taken", "prep", "pending"] as HalfDayState[]).map((k) => (
+            <span key={k} className="flex items-center gap-1.5">
+              <span className={`w-2.5 h-2.5 rounded-sm inline-block ${HALF_STYLE[k].className}`} style={HALF_STYLE[k].style} /> {HALF_STYLE[k].label}
+            </span>
+          ))}
         </div>
+        <p className="text-xs text-gray-500 mb-4">
+          Před akcí na celý ateliér potřebujeme půlden na přípravu a úklid: před odpolední akcí je dopoledne téhož dne bez rezervace, před dopolední akcí odpoledne dne předtím.
+        </p>
         <button
           onClick={() => setShowForm((s) => !s)}
           className="h-10 px-4 rounded-md border border-gray-300 text-sm hover:bg-gray-50"
@@ -461,9 +454,11 @@ export default function PublicPage() {
 
           {date && conflictingBooking && (
             <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">
-              {RESOURCE_LABELS[resource]} už má na tenhle den zamluvený sice někdo jiný, ale třeba to nějak
-              vymyslíme. Když ne, ozveme se vám a najdeme jiný termín.
+              Tento termín už je obsazený. Vyberte prosím jiný čas nebo den.
             </div>
+          )}
+          {date && !conflictingBooking && prepConflict && (
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">{PREP_MESSAGE}</div>
           )}
 
           <label className="block text-sm">
@@ -503,9 +498,13 @@ export default function PublicPage() {
             Údaje použijeme jen ke komunikaci o téhle rezervaci a smažeme je nejpozději 12 měsíců po akci.
           </p>
 
-          {submitted === "err" && <p className="text-sm text-red-600">Něco se nepovedlo, zkuste to prosím znovu.</p>}
+          {submitted === "err" && <p className="text-sm text-red-600">{submitError || "Něco se nepovedlo, zkuste to prosím znovu."}</p>}
 
-          <button type="submit" className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm">
+          <button
+            type="submit"
+            disabled={!!conflictingBooking || !!prepConflict}
+            className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm disabled:opacity-40"
+          >
             Odeslat žádost
           </button>
         </form>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { store, findConflict } from "@/lib/data";
+import { store, findConflict, findPrepConflictFor } from "@/lib/data";
+import { PREP_MESSAGE } from "@/lib/prep";
 import { Booking } from "@/lib/types";
 import { requireUser } from "@/lib/auth";
 import { users } from "@/lib/users";
@@ -35,6 +36,10 @@ export async function POST(req: NextRequest) {
       { error: `Termín koliduje s existující rezervací: ${conflict.title} (${conflict.startTime}–${conflict.endTime})` },
       { status: 409 }
     );
+  }
+
+  if (await findPrepConflictFor(resource, date, startTime, endTime)) {
+    return NextResponse.json({ error: PREP_MESSAGE }, { status: 409 });
   }
 
   // Admin může rezervaci rovnou přiřadit konkrétnímu členovi (rozpoznanému z
