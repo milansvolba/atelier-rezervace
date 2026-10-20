@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { store, findConflict } from "@/lib/data";
+import { store, findConflict, findPrepConflictFor } from "@/lib/data";
+import { PREP_MESSAGE } from "@/lib/prep";
 import { Booking } from "@/lib/types";
 import { sendAdminNewRequestEmail, sendRequesterReceivedEmail } from "@/lib/email";
 
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
   const conflict = await findConflict(resource, date, startTime, endTime);
   if (conflict) {
     return NextResponse.json({ error: "Tento termín je už obsazený. Vyber prosím jiný čas." }, { status: 409 });
+  }
+  if (await findPrepConflictFor(resource, date, startTime, endTime)) {
+    return NextResponse.json({ error: PREP_MESSAGE }, { status: 409 });
   }
   const booking: Booking = {
     id: crypto.randomUUID(),

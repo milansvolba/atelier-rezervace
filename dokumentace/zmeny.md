@@ -6,6 +6,11 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-20 — Příprava a úklid před akcí na celý ateliér + barvy veřejného kalendáře (rezervace)
+Pravidlo (`lib/prep.ts`, `findPrepConflictFor` v `lib/data.ts`): rezervace celého ateliéru (kurz, firemní akce, pronájem) potřebuje volný půlden na přípravu. Akce od 12:00 dál blokuje dopoledne 8:00–12:00 téhož dne, akce začínající před 12:00 blokuje odpoledne 12:00–20:00 dne předtím. Platí oboustranně (nová akce nesmí zasáhnout do přípravy jiné ani naopak), kontroluje se při veřejné žádosti, vytvoření a úpravě rezervace i při schválení žádosti (409 s vysvětlením). Týká se jen resource „atelier“, členové si mohou rezervovat jednotlivá místa mimo čas samotné akce a po přihlášení vidí akci na celý ateliér s názvem.
+Veřejný kalendář (`app/page.tsx`): stejné barvy jako admin (volno zelená, rezervováno šedá, čeká na schválení žlutá, příprava a úklid světlejší šedá s pruhy); každý den je rozdělený na dopoledne (levá půlka) a odpoledne (pravá půlka). Formulář žádosti předem varuje před obsazeným termínem i před kolizí s přípravou a odeslání v takovém případě zablokuje; chybu ze serveru ukáže doslovně. Modrá „na vyžádání“ zrušena.
+Netestováno vizuálně (build lokálně nejde kvůli Google Fonts); logika pravidla ověřena skriptem (11 případů) a stavy půlek dne skriptem.
+
 ## 2026-10-20 — Počet odlitků místo „pro každého“ (rezervace)
 Betonový odlitek už není ano/ne pro všechny: u jedné osoby je zaškrtávátko, u víc osob výběr 0 až počet osob (tlačítko „pro každého“). Platí na `/poukazy` i v objednávce kurzu na `/kurzy`. Server počítá cenu z počtu (`clampCastings`, `computeOrder(…, castings, …)`), do Stripe jde položka odlitku s tímto množstvím, metadata `casting` nese počet. Poukaz má nový sloupec `vouchers.casting_count` (starší poukazy s `casting = true` se berou jako odlitky pro všechny). Počet vidí admin v přehledu poukazů, v e-mailech a v poznámce přihlášky.
 

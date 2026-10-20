@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { store, findConflict } from "@/lib/data";
+import { store, findConflict, findPrepConflictFor } from "@/lib/data";
+import { PREP_MESSAGE } from "@/lib/prep";
 import { requireAdmin } from "@/lib/auth";
 import { sendRequesterDecisionEmail } from "@/lib/email";
 
@@ -18,6 +19,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         { error: `Mezitím vznikla kolize s: ${conflict.title}. Nejdřív to vyřešte.` },
         { status: 409 }
       );
+    }
+    if (await findPrepConflictFor(booking.resource, booking.date, booking.startTime, booking.endTime, booking.id)) {
+      return NextResponse.json({ error: PREP_MESSAGE }, { status: 409 });
     }
     await store.update(booking.id, { status: "confirmed" });
   } else if (action === "reject") {
