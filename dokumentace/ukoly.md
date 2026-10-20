@@ -181,7 +181,7 @@ Co musí pokrýt:
 
 ### ÚKOL: Produkty a ceny ve Stripe (sandbox → ostrý režim)
 
-Vytvořit produkty (kurzy na míru, pronájem celého ateliéru, varianty pronájmu, členství 250 Kč/měsíc vč. DPH, poukázka, drobné zboží). Ceny doplní Milan. Ceny zadávat **s DPH (tax_behavior inclusive)** podle české sazby. Cesta: import CSV v Product catalog, nebo jednorázová admin akce v appce (konektor Stripe je od 2026-10-20 k dispozici, viz Stav Stripe sandboxu).
+Vytvořit produkty (kurzy na míru, pronájem celého ateliéru, varianty pronájmu, členství 249 Kč/měsíc vč. DPH (už založeno), poukázka, drobné zboží). Ceny doplní Milan. Ceny zadávat **s DPH (tax_behavior inclusive)** podle české sazby. Cesta: import CSV v Product catalog, nebo jednorázová admin akce v appce (konektor Stripe je od 2026-10-20 k dispozici, viz Stav Stripe sandboxu).
 
 ### Poznámky z 19. 10. 2026
 
