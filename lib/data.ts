@@ -1,7 +1,7 @@
 import { sql, ensureSchema } from "./db";
 import { Booking, BookingCategory, ResourceId, resourcesConflict, timesOverlap } from "./types";
 import { notifyDataChanged } from "./webhooks";
-import { findPrepConflict } from "./prep";
+import { findPrepConflict, PrepConflict, PrepRole } from "./prep";
 import { iso, addDays } from "./calendar";
 
 function rowToBooking(r: Record<string, unknown>): Booking {
@@ -141,20 +141,17 @@ export async function findConflict(
 }
 
 
-// Pravidlo přípravy a úklidu (lib/prep.ts): týká se jen rezervací celého ateliéru. Vrací konfliktní potvrzenou akci
-// na celý ateliér, jejíž příprava by zasáhla do nového termínu (nebo naopak).
+// Pravidlo přípravy a úklidu (lib/prep.ts) podle role. Vrací konflikt (a o jaký druh jde), nebo null.
 export async function findPrepConflictFor(
-  resource: ResourceId,
-  date: string,
-  startTime: string,
-  endTime: string,
+  candidate: { resource: ResourceId; date: string; startTime: string; endTime: string },
+  role: PrepRole,
   ignoreId?: string
-): Promise<Booking | null> {
-  if (resource !== "atelier") return null;
-  const [y, m, d] = date.split("-").map(Number);
+): Promise<PrepConflict | null> {
+  if (role === "admin") return null;
+  const [y, m, d] = candidate.date.split("-").map(Number);
   const base = new Date(y, m - 1, d);
-  const days = [iso(addDays(base, -1)), date, iso(addDays(base, 1))];
+  const days = [iso(addDays(base, -1)), candidate.date, iso(addDays(base, 1))];
   const lists = await Promise.all(days.map((day) => store.byDate(day)));
-  const existing = lists.flat().filter((b) => b.status === "confirmed" && b.resource === "atelier" && b.id !== ignoreId);
-  return findPrepConflict({ date, startTime, endTime }, existing);
+  const existing = lists.flat().filter((b) => b.status === "confirmed" && b.id !== ignoreId);
+  return findPrepConflict(candidate, existing, role);
 }

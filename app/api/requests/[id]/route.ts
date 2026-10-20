@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { store, findConflict, findPrepConflictFor } from "@/lib/data";
-import { PREP_MESSAGE } from "@/lib/prep";
+import { store, findConflict } from "@/lib/data";
 import { requireAdmin } from "@/lib/auth";
 import { sendRequesterDecisionEmail } from "@/lib/email";
 
@@ -20,9 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         { status: 409 }
       );
     }
-    if (await findPrepConflictFor(booking.resource, booking.date, booking.startTime, booking.endTime, booking.id)) {
-      return NextResponse.json({ error: PREP_MESSAGE }, { status: 409 });
-    }
+    // Příprava a úklid: admin ji smí při schvalování přebít (viz lib/prep.ts), proto se tu nekontroluje.
     await store.update(booking.id, { status: "confirmed" });
   } else if (action === "reject") {
     await store.update(booking.id, { status: "rejected" });

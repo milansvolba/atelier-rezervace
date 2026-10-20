@@ -8,7 +8,7 @@ import {
   resourcesConflict,
   timesOverlap,
 } from "@/lib/types";
-import { HALF_DAYS, HalfDayState, PREP_MESSAGE, halfDayState, findPrepConflict } from "@/lib/prep";
+import { HALF_DAYS, HalfDayState, halfDayState, findPrepConflict, prepMessage } from "@/lib/prep";
 import {
   DAY_NAMES,
   DAY_NAMES_MON_FIRST,
@@ -193,10 +193,11 @@ export default function PublicPage() {
 
   // Příprava a úklid: nový termín celého ateliéru nesmí zasáhnout do přípravy jiné akce (ani naopak).
   const prepConflict = useMemo(() => {
-    if (!date || resource !== "atelier") return null;
+    if (!date) return null;
     return findPrepConflict(
-      { date, startTime, endTime },
-      bookings.filter((b) => b.status === "confirmed" && b.resource === "atelier")
+      { resource, date, startTime, endTime },
+      bookings.filter((b) => b.status === "confirmed"),
+      "public"
     );
   }, [bookings, date, resource, startTime, endTime]);
 
@@ -458,7 +459,7 @@ export default function PublicPage() {
             </div>
           )}
           {date && !conflictingBooking && prepConflict && (
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">{PREP_MESSAGE}</div>
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">{prepMessage("public", prepConflict.kind)}</div>
           )}
 
           <label className="block text-sm">

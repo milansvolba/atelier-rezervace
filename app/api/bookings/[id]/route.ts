@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { store, findConflict, findPrepConflictFor } from "@/lib/data";
-import { PREP_MESSAGE } from "@/lib/prep";
+import { prepMessage, PrepRole } from "@/lib/prep";
 import { requireUser } from "@/lib/auth";
 import { sendBookingChangedEmail, sendBookingCancelledEmail } from "@/lib/email";
 
@@ -37,8 +37,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     );
   }
 
-  if (await findPrepConflictFor(nextResource, nextDate, nextStart, nextEnd, existing.id)) {
-    return NextResponse.json({ error: PREP_MESSAGE }, { status: 409 });
+  const prepRole: PrepRole = session.role === "admin" ? "admin" : "member";
+  const prep = await findPrepConflictFor({ resource: nextResource, date: nextDate, startTime: nextStart, endTime: nextEnd }, prepRole, existing.id);
+  if (prep) {
+    return NextResponse.json({ error: prepMessage(prepRole, prep.kind) }, { status: 409 });
   }
 
   const updated = await store.update(params.id, {

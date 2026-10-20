@@ -18,6 +18,7 @@ import {
   monthMatrix,
   startOfWeekMon,
 } from "@/lib/calendar";
+import { windowsOnDate, restrictedInWindow } from "@/lib/prep";
 
 type ViewMode = "day" | "week" | "month" | "quarter" | "year";
 type Role = "admin" | "member";
@@ -1837,6 +1838,12 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
         <>
           <div className="bg-white border border-gray-200 rounded-xl p-5">
             <p className="font-medium mb-3">Rozpis {fmt(anchor)}</p>
+            {windowsOnDate(bookings, date).map((w, i) => (
+              <p key={i} className="mb-2 text-xs rounded-md bg-gray-100 border border-gray-200 text-gray-600 px-2 py-1">
+                {w.kind === "cleanup" ? "Probíhá úklid" : "Příprava"} ateliéru {w.start}–{w.end}
+                {isAdmin ? " — jako admin můžeš rezervovat i tak." : " — rezervovat lze jen stoly."}
+              </p>
+            ))}
             <div className="space-y-2.5">
               {(["atelier", "klubovna"] as ResourceId[]).map((r) =>
                 confirmedByResourceToday[r].length > 0 ? (
@@ -2030,8 +2037,16 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                     const d = addDays(startOfWeekMon(anchor), i);
                     const dISO = iso(d);
                     const eff = effectiveStatus(r, dISO, bookings);
+                    // Příprava/úklid kolem akce na celý ateliér: člen vidí poznámku a smí jen stoly, admin smí vše.
+                    const wins = windowsOnDate(bookings, dISO);
+                    const prepKinds = wins.length > 0 && eff.kind !== "confirmed" && eff.kind !== "blocked";
+                    const prepLocked = prepKinds && restrictedInWindow(isAdmin ? "admin" : "member", r);
+                    const prepLabel = wins.some((w) => w.kind === "cleanup") ? "probíhá úklid" : "příprava";
+                    const prepTime = wins.map((w) => `${w.start}–${w.end}`).join(", ");
                     const cellText =
-                      eff.kind === "confirmed"
+                      prepLocked
+                        ? prepLabel
+                        : eff.kind === "confirmed"
                         ? eff.items.map((b) => `${b.startTime}–${b.endTime}`).join(", ")
                         : eff.kind === "blocked"
                         ? `${eff.by.startTime}–${eff.by.endTime}`
@@ -2039,7 +2054,9 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                         ? "čeká"
                         : "";
                     const hoverTitle =
-                      eff.kind === "confirmed"
+                      prepKinds
+                        ? `${prepLabel} (${prepTime})${prepLocked ? "" : isAdmin ? " — jako admin můžeš rezervovat i tak" : " — stoly rezervovat můžeš"}`
+                        : eff.kind === "confirmed"
                         ? eff.items.map((b) => `${b.title} ${b.startTime}–${b.endTime}`).join(", ")
                         : eff.kind === "blocked"
                         ? `Blokováno (${RESOURCE_LABELS[eff.by.resource]} ${eff.by.startTime}–${eff.by.endTime})`
@@ -2058,12 +2075,16 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                               setDetailBooking(eff.by);
                               return;
                             }
+                            if (prepLocked) {
+                              toast(`${prepLabel} ateliéru (${prepTime}) — v tuto dobu lze rezervovat jen stoly.`);
+                              return;
+                            }
                             setQuickAdd({ resource: r, date: dISO });
                           }}
                           title={hoverTitle}
-                          className={`w-full h-10 rounded-md text-[10px] px-1 flex items-center justify-center text-center overflow-hidden ${cellClasses(
-                            eff.kind
-                          )}`}
+                          className={`w-full h-10 rounded-md text-[10px] px-1 flex items-center justify-center text-center overflow-hidden ${
+                            prepLocked ? "bg-gray-200 text-gray-500" : cellClasses(eff.kind)
+                          }`}
                         >
                           <span className="truncate">{cellText}</span>
                         </button>
