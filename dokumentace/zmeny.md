@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-20 — Veřejný kalendář jen se dvěma stavy (rezervace)
+Bez přihlášení se v kalendáři a legendě ukazuje jen Volno a Rezervováno. Příprava a úklid se zobrazují jako rezervováno, čekající žádosti jako volno; hláška při kolizi je obecná („Tento termín není k dispozici“). Důvody (úklid, příprava, firemní akce) vidí jen členové a admin. Odstraněn vysvětlující odstavec pod legendou.
+
 ## 2026-10-20 — Příprava a úklid v2: okna kolem akce podle role (rezervace)
 Přepsáno `lib/prep.ts` podle příkladů Milana. Okna kolem akce na CELÝ ateliér (konstanty nahoře v souboru): akce od 12:00 dál = příprava téhož dne 8:00–14:00 a úklid následující den 8:00–12:00; dopolední akce (začíná před 12:00, končí do 13:00) = příprava den předtím 12:00–20:00 a úklid téhož dne od 12:00 do 20:00. Příklady: 26. 11. 2026 akce od 17:00 → 26. 11. 8–14 příprava, 27. 11. dopoledne úklid; 29. 10. 2026 školení 8–12 → 28. 10. odpoledne příprava, 29. 10. 12–20 úklid.
 V oknech smí: admin vše (jen on je může přebít, i při schvalování žádosti), člen jen jednotlivé stoly a okno (ne celý ateliér, klubovnu ani pingpong), veřejnost nic. Platí i obráceně: novou akci na celý ateliér nelze vložit, pokud by její příprava nebo úklid zasáhly do cizí rezervace (admin může). Kontroluje se v `/api/requests`, `/api/bookings` a `/api/bookings/[id]` s rolí ze session.

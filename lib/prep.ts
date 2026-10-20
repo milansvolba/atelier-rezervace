@@ -88,12 +88,12 @@ export function findPrepConflict(candidate: Cand, existing: Booking[], role: Pre
 }
 
 export function prepMessage(role: PrepRole, kind: "window" | "own"): string {
+  // Veřejnost nemá vědět, proč termín nejde (příprava, úklid, interní akce) – jen že není k dispozici.
+  if (role === "public") return "Tento termín bohužel není k dispozici. Vyberte prosím jiný.";
   if (kind === "own") {
     return "Před a po akci na celý ateliér potřebujeme čas na přípravu a úklid, a v tom čase už je jiná rezervace. Vyberte prosím jiný termín.";
   }
-  return role === "member"
-    ? "V době přípravy nebo úklidu ateliéru před a po akci si můžete rezervovat jen jednotlivé stoly."
-    : "V tomto čase probíhá příprava nebo úklid ateliéru před a po akci, rezervace není možná. Vyberte prosím jiný čas.";
+  return "V době přípravy nebo úklidu ateliéru před a po akci si můžete rezervovat jen jednotlivé stoly.";
 }
 
 // Okna přípravy a úklidu připadající na daný den (pro popisky v kalendáři).
