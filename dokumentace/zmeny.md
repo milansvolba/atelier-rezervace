@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-20 — Počet odlitků místo „pro každého“ (rezervace)
+Betonový odlitek už není ano/ne pro všechny: u jedné osoby je zaškrtávátko, u víc osob výběr 0 až počet osob (tlačítko „pro každého“). Platí na `/poukazy` i v objednávce kurzu na `/kurzy`. Server počítá cenu z počtu (`clampCastings`, `computeOrder(…, castings, …)`), do Stripe jde položka odlitku s tímto množstvím, metadata `casting` nese počet. Poukaz má nový sloupec `vouchers.casting_count` (starší poukazy s `casting = true` se berou jako odlitky pro všechny). Počet vidí admin v přehledu poukazů, v e-mailech a v poznámce přihlášky.
+
 ## 2026-10-19 — Dárkové poukazy na kurzy (rezervace) — na větvi `claude/vouchers-store`, zatím nenasazeno
 Nákup: stránka `/poukazy` (kurz hlava/reliéf, 1–6 osob se stejnou skupinovou slevou jako u kurzů, volitelný odlitek, volitelný pevný termín, jméno/e-mail kupujícího, jméno obdarovaného, vzkaz; `?kurz=hlava|relief` předvybere kurz). Cena je vždy z ceníku poukazů (`VOUCHER_COURSES`), počítá ji server v `POST /api/vouchers/checkout`. Po zaplacení webhook (`meta.kind === "voucher"`, `lib/vouchers.ts` `handleVoucherPaid`) vytvoří poukaz (kód ATL-XXXX-XXXX, platnost 12 měsíců), pošle kupujícímu e-mail s kódem a adminům upozornění; idempotence přes unikátní index `vouchers_stripe_session_idx`. Poukaz s pevným termínem rovnou vytvoří potvrzenou přihlášku.
 Uplatnění: na `/kurzy` v kroku 2 odkaz „Mám dárkový poukaz“ → kód → `POST /api/vouchers/redeem` (poukaz se atomicky označí jako uplatněný, vznikne potvrzená přihláška na celý počet osob poukazu, kontrola kapacity, kurzu a platnosti; e-mail obdarovanému i adminům). Poukaz s pevným termínem se znovu uplatnit nedá. Texty jsou v `lib/uiTexts.ts` (skupina „Dárkový poukaz“).

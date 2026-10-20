@@ -110,6 +110,8 @@ await sql`
           redeemed_at timestamptz
         );
       `;
+      // Počet odlitků v poukazu (starší řádky mají jen casting ano/ne; viz rowToVoucher).
+      await sql`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS casting_count integer NOT NULL DEFAULT 0`;
       // Jeden poukaz na jednu platbu — idempotence webhooku (NULL stripe_session se neomezuje).
       await sql`CREATE UNIQUE INDEX IF NOT EXISTS vouchers_stripe_session_idx ON vouchers (stripe_session)`;
       // Příznaky termínů kurzů (zatím jen: firemní akce, která se neukazuje veřejně na /kurzy).

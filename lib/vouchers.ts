@@ -5,6 +5,7 @@ import { signupStore } from "./signups";
 import { courseFlags } from "./courseFlags";
 import { paymentStore } from "./stripe";
 import { voucherCourse } from "./pricing";
+import { castingText } from "./voucherConfig";
 import { Booking, CourseSignup } from "./types";
 
 // Dárkové poukazy na kurzy. Tabulka `vouchers` je v lib/db.ts, ceny kurzů (VOUCHER_COURSES) v lib/pricing.ts.
@@ -20,7 +21,7 @@ export interface Voucher {
   courseTitle: string;
   bookingId?: string; // pevný termín, pokud ho kupující zvolil
   people: number;
-  casting: boolean; // poukaz zahrnuje betonový odlitek pro každou osobu
+  castingCount: number; // počet betonových odlitků v poukazu (0 až people)
   amountCzk: number;
   buyerName: string;
   buyerEmail: string;
@@ -52,7 +53,7 @@ function rowToVoucher(r: Record<string, unknown>): Voucher {
     courseTitle: r.course_title as string,
     bookingId: (r.booking_id as string) ?? undefined,
     people: Number(r.people),
-    casting: !!r.casting,
+    castingCount: Number(r.casting_count) > 0 ? Number(r.casting_count) : r.casting ? Number(r.people) : 0, // starší poukazy měly jen ano/ne = pro všechny
     amountCzk: Number(r.amount_czk),
     buyerName: r.buyer_name as string,
     buyerEmail: r.buyer_email as string,
@@ -131,9 +132,9 @@ export const voucherStore = {
       const code = generateVoucherCode();
       try {
         const rows = await sql`
-          INSERT INTO vouchers (id, code, topic, course_title, booking_id, people, casting, amount_czk,
+          INSERT INTO vouchers (id, code, topic, course_title, booking_id, people, casting, casting_count, amount_czk,
                                 buyer_name, buyer_email, recipient_name, message, status, stripe_session, expires_at)
-          VALUES (${id}, ${code}, ${v.topic}, ${v.courseTitle}, ${v.bookingId ?? null}, ${v.people}, ${v.casting}, ${Math.round(v.amountCzk)},
+          VALUES (${id}, ${code}, ${v.topic}, ${v.courseTitle}, ${v.bookingId ?? null}, ${v.people}, ${v.castingCount > 0}, ${v.castingCount}, ${Math.round(v.amountCzk)},
                   ${v.buyerName}, ${v.buyerEmail}, ${v.recipientName ?? null}, ${v.message ?? null}, 'active', ${v.stripeSession ?? null}, ${v.expiresAt})
           RETURNING *
         `;
@@ -183,7 +184,7 @@ function addMonths(d: Date, months: number): Date {
 }
 
 // Zpracuje zaplacenou Stripe Checkout Session poukazu (obj = data.object události checkout.session.completed).
-// Metadata (nastavuje POST /api/vouchers/checkout): kind=voucher, topic, people, casting ("1"/"0"),
+// Metadata (nastavuje POST /api/vouchers/checkout): kind=voucher, topic, people, casting (počet odlitků jako text; starší "1"/"0"),
 // bookingId (volitelně), buyerName, buyerEmail, recipientName, message.
 // Vrací null, pokud se session už zpracovala (Stripe může událost doručit opakovaně) nebo je neplatná.
 // Idempotenci zajišťuje unikátní index vouchers_stripe_session_idx: když zápis poukazu selže, Stripe událost
@@ -219,7 +220,7 @@ export async function handleVoucherPaid(sessionId: string, obj: Record<string, u
       courseTitle: course.title,
       bookingId: booking?.id,
       people,
-      casting: meta.casting === "1" || Number(meta.casting) > 0,
+      castingCount: Math.max(0, Math.min(people, Math.floor(Number(meta.casting) || 0))),
       amountCzk,
       buyerName,
       buyerEmail,
@@ -259,7 +260,7 @@ export async function handleVoucherPaid(sessionId: string, obj: Record<string, u
     contact: voucher.buyerEmail,
     people,
     note:
-      "Dárkový poukaz " + voucher.code + " (zaplaceno online, " + amountCzk + " Kč" + (voucher.casting ? ", vč. betonového odlitku" : "") + ")." +
+      "Dárkový poukaz " + voucher.code + " (zaplaceno online, " + amountCzk + " Kč" + (voucher.castingCount > 0 ? ", vč. " + castingText(voucher.castingCount) : "") + ")." +
       (voucher.recipientName ? " Kupující: " + voucher.buyerName + "." : ""),
     status: "confirmed",
     createdAt: new Date().toISOString(),

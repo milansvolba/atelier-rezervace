@@ -45,11 +45,11 @@ export default function KurzyPage() {
   const [payResult, setPayResult] = useState<null | "ok" | "cancel">(null);
   const [step, setStep] = useState(2);
   const [signupPhone, setSignupPhone] = useState("");
-  const [withCasting, setWithCasting] = useState(false);
+  const [castings, setCastings] = useState(0); // počet odlitků (0 až počet míst)
   // Uplatnění dárkového poukazu (kód se ověří na serveru, poukaz určuje počet osob a odlitek).
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [voucherCode, setVoucherCode] = useState("");
-  const [voucherInfo, setVoucherInfo] = useState<null | { code: string; people: number; casting: boolean }>(null);
+  const [voucherInfo, setVoucherInfo] = useState<null | { code: string; people: number; castingCount: number }>(null);
   const [voucherErr, setVoucherErr] = useState("");
   const [voucherDone, setVoucherDone] = useState(false);
 
@@ -211,7 +211,7 @@ export default function KurzyPage() {
     const discount = discountFor(n, c.capacity);
     const total = c.price * n;
     const totalAfter = Math.round(total * (1 - discount / 100));
-    const casting = withCasting && c.castingPrice ? c.castingPrice * n : 0;
+    const casting = c.castingPrice ? c.castingPrice * Math.min(castings, n) : 0;
     return { discount, total, totalAfter, casting, grand: totalAfter + casting };
   }
   const quote = selectedCourse && !voucherInfo ? quoteFor(selectedCourse, signupPeople) : null;
@@ -250,9 +250,9 @@ export default function KurzyPage() {
       });
       const data = await r.json().catch(() => ({}));
       if (r.ok && data.people) {
-        setVoucherInfo({ code: voucherCode, people: data.people, casting: !!data.casting });
+        setVoucherInfo({ code: voucherCode, people: data.people, castingCount: Number(data.castingCount) || 0 });
         setSignupPeople(data.people);
-        setWithCasting(!!data.casting);
+        setCastings(Number(data.castingCount) || 0);
       } else {
         setVoucherErr(data.error || t("kurzy.voucher.err"));
       }
@@ -286,7 +286,7 @@ export default function KurzyPage() {
         resetVoucher();
         setStep(2);
         setSignupPeople(1);
-        setWithCasting(false);
+        setCastings(0);
         setPayBusy(false);
         return;
       }
@@ -310,7 +310,7 @@ export default function KurzyPage() {
       people: signupPeople,
       note,
       honeypot,
-      casting: withCasting,
+      casting: Math.min(castings, signupPeople),
     });
     try {
       if (selectedCourse.price) {
@@ -487,7 +487,7 @@ export default function KurzyPage() {
                 {voucherInfo && (
                   <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-md p-3">
                     {t("kurzy.voucher.applied", { code: voucherInfo.code.toUpperCase(), people: String(voucherInfo.people), seats: seatsWord(voucherInfo.people) })}
-                    {voucherInfo.casting ? " " + t("kurzy.voucher.casting") : ""}
+                    {voucherInfo.castingCount > 0 ? " " + t("kurzy.voucher.casting", { count: String(voucherInfo.castingCount) }) : ""}
                   </p>
                 )}
                 {!voucherInfo && <div className="flex items-center gap-3">
@@ -517,14 +517,27 @@ export default function KurzyPage() {
                   </p>
                 )}
                 {selectedCourse.castingPrice && !voucherInfo ? (
-                  <label className="flex items-start gap-2 text-sm rounded-md border border-gray-200 p-3">
-                    <input type="checkbox" className="mt-1" checked={withCasting} onChange={(e) => setWithCasting(e.target.checked)} />
-                    <span>
-                      Přidat odlitek do betonu pro každého účastníka (+{selectedCourse.castingPrice} Kč/os.)
-                      <br />
-                      <span className="text-xs text-gray-500">Vaše dílo vám odléváme do speciálního betonu. Termín předání domluvíme na kurzu.</span>
-                    </span>
-                  </label>
+                  signupPeople === 1 ? (
+                    <label className="flex items-start gap-2 text-sm rounded-md border border-gray-200 p-3">
+                      <input type="checkbox" className="mt-1" checked={castings > 0} onChange={(e) => setCastings(e.target.checked ? 1 : 0)} />
+                      <span>
+                        Přidat odlitek do betonu (+{selectedCourse.castingPrice} Kč)
+                        <br />
+                        <span className="text-xs text-gray-500">Vaše dílo vám odléváme do speciálního betonu. Termín předání domluvíme na kurzu.</span>
+                      </span>
+                    </label>
+                  ) : (
+                    <div className="text-sm rounded-md border border-gray-200 p-3 space-y-2">
+                      <p>Odlitky do betonu (+{selectedCourse.castingPrice} Kč za kus). Kolik jich chcete?</p>
+                      <div className="flex items-center gap-3">
+                        <button type="button" aria-label="Méně odlitků" disabled={castings <= 0} onClick={() => setCastings(Math.max(0, castings - 1))} className="h-9 w-9 rounded-md border border-gray-300 text-lg disabled:opacity-40">−</button>
+                        <span className="text-lg font-semibold w-8 text-center">{Math.min(castings, signupPeople)}</span>
+                        <button type="button" aria-label="Více odlitků" disabled={castings >= signupPeople} onClick={() => setCastings(Math.min(signupPeople, castings + 1))} className="h-9 w-9 rounded-md border border-gray-300 text-lg disabled:opacity-40">+</button>
+                        <button type="button" onClick={() => setCastings(signupPeople)} className="text-xs underline">pro každého</button>
+                      </div>
+                      <p className="text-xs text-gray-500">Vaše dílo vám odléváme do speciálního betonu. Termín předání domluvíme na kurzu.</p>
+                    </div>
+                  )
                 ) : null}
                 {!voucherInfo && (
                   <div className="rounded-md border border-gray-200 p-3 space-y-2">
@@ -692,7 +705,7 @@ export default function KurzyPage() {
                     )}
                     {quote.casting > 0 && (
                       <div className="flex justify-between">
-                        <span>{signupPeople} × betonový odlitek</span>
+                        <span>{Math.min(castings, signupPeople)} × betonový odlitek</span>
                         <span>{quote.casting} Kč</span>
                       </div>
                     )}
@@ -762,7 +775,7 @@ export default function KurzyPage() {
                       setVoucherDone(false);
                       setStep(2);
                       setSignupPeople(1);
-                      setWithCasting(false);
+                      setCastings(0);
                       setSignupSent(null);
                       setPayError("");
                       requestAnimationFrame(() => {
