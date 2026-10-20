@@ -2,7 +2,7 @@
 ## ▶ ROZPRACOVÁNO – navázat zde (stav 2026-10-19)
 **Dárkové poukazy na kurzy** (Milan schválil návrh):
 - Hotovo a nasazeno: tabulka `vouchers` (lib/db.ts), `VOUCHER_COURSES` v lib/pricing.ts (hlava 8 270 Kč + odlitek 3 900, reliéf 6 470 Kč + odlitek 3 100, ceny za 1 osobu vč. DPH).
-- Hotovo na větvi `claude/vouchers-store` (PR #1, nenasazeno): lib/vouchers.ts, POST /api/vouchers/checkout, webhook větev, e-maily, stránka /poukazy, uplatnění na /kurzy (POST /api/vouchers/redeem), admin přehled poukazů, skrytý panel Slevové stupně, zmeny.md.
+- Hotovo a SLOUČENO do main (PR #1 sloučen 2026-10-19 16:28, build zelený, nasazeno; udržované ve vláknu na jiném počítači): lib/vouchers.ts, POST /api/vouchers/checkout, webhook větev, e-maily, stránka /poukazy, uplatnění na /kurzy (POST /api/vouchers/redeem), admin přehled poukazů, skrytý panel Slevové stupně, zmeny.md.
 - ZBÝVÁ: otestovat end-to-end ve Stripe sandboxu na preview nasazení (nákup bez termínu, s termínem, uplatnění kódu, plný termín, propadlý/uplatněný kód), pak sloučit do main po Milanově souhlasu; doladit texty (uiTexts, e-maily); PDF poukaz + vizuál; Milan dá odkaz /poukazy na web (PHP).
 **Pořadí dál:** krok 4 správa textů v adminu, krok 3 potvrzovací e-mail při rezervaci člena. Ostrý Stripe provoz odložen.
 
