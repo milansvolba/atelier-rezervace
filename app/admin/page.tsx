@@ -1403,7 +1403,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     if (res.ok) setSignups(await res.json());
   }
 
-  const [vouchers, setVouchers] = useState<{ id: string; code: string; courseTitle: string; people: number; casting: boolean; amountCzk: number; buyerName: string; buyerEmail: string; recipientName?: string; bookingId?: string; status: "active" | "redeemed"; expiresAt: string }[]>([]);
+  const [vouchers, setVouchers] = useState<{ id: string; code: string; courseTitle: string; people: number; castingCount: number; amountCzk: number; buyerName: string; buyerEmail: string; recipientName?: string; bookingId?: string; status: "active" | "redeemed"; expiresAt: string }[]>([]);
 
   async function loadVouchers() {
     const res = await fetch("/api/vouchers");
@@ -1816,7 +1816,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                     {v.code} <span className={v.status === "active" ? "text-green-700" : "text-gray-400"}>· {v.status === "active" ? (new Date(v.expiresAt) < new Date() ? "propadlý" : "aktivní") : "uplatněný"}</span>
                   </p>
                   <p className="text-xs text-gray-500">
-                    {v.courseTitle} · {v.people} os.{v.casting ? " · odlitek" : ""} · {v.amountCzk} Kč · platí do {new Date(v.expiresAt).toLocaleDateString("cs-CZ")}
+                    {v.courseTitle} · {v.people} os.{v.castingCount > 0 ? " · odlitky: " + v.castingCount : ""} · {v.amountCzk} Kč · platí do {new Date(v.expiresAt).toLocaleDateString("cs-CZ")}
                   </p>
                   <p className="text-xs text-gray-500">
                     Kupující: {v.buyerName}, {v.buyerEmail}{v.recipientName ? " · pro: " + v.recipientName : ""}{v.bookingId ? " · pevný termín" : ""}

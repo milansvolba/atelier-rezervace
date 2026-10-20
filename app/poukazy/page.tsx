@@ -23,7 +23,7 @@ function fmtDate(dateISO: string) {
 export default function PoukazyPage() {
   const [topic, setTopic] = useState<string>(VOUCHER_COURSES[0].key);
   const [people, setPeople] = useState(1);
-  const [casting, setCasting] = useState(false);
+  const [castings, setCastings] = useState(0); // počet odlitků (0 až počet osob)
   const [terms, setTerms] = useState<Term[]>([]);
   const [bookingId, setBookingId] = useState("");
   const [buyerName, setBuyerName] = useState("");
@@ -49,7 +49,7 @@ export default function PoukazyPage() {
 
   const course = VOUCHER_COURSES.find((c) => c.key === topic) ?? VOUCHER_COURSES[0];
   const courseTerms = terms.filter((t) => t.title.toLowerCase().includes(course.match) && (t.spotsLeft === null || t.spotsLeft >= people));
-  const price = computeOrder(course.pricePerPerson, people, casting, course.castingPrice);
+  const price = computeOrder(course.pricePerPerson, people, Math.min(castings, people), course.castingPrice);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,7 +59,7 @@ export default function PoukazyPage() {
       const r = await fetch("/api/vouchers/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, people, casting, bookingId: bookingId || undefined, buyerName, buyerEmail, recipientName, message, honeypot }),
+        body: JSON.stringify({ topic, people, casting: Math.min(castings, people), bookingId: bookingId || undefined, buyerName, buyerEmail, recipientName, message, honeypot }),
       });
       const data = await r.json().catch(() => ({}));
       if (r.ok && data.url) {
@@ -120,10 +120,22 @@ export default function PoukazyPage() {
           <p className="text-xs text-gray-500 mt-1">Čím víc osob, tím větší skupinová sleva (od 2 osob).</p>
         </div>
 
-        <label className="flex items-start gap-2 text-sm rounded-md border border-gray-200 p-3">
-          <input type="checkbox" className="mt-1" checked={casting} onChange={(e) => setCasting(e.target.checked)} />
-          <span>Přidat betonový odlitek pro každého (+{course.castingPrice} Kč/os.)</span>
-        </label>
+        {people === 1 ? (
+          <label className="flex items-start gap-2 text-sm rounded-md border border-gray-200 p-3">
+            <input type="checkbox" className="mt-1" checked={castings > 0} onChange={(e) => setCastings(e.target.checked ? 1 : 0)} />
+            <span>Přidat betonový odlitek (+{course.castingPrice} Kč)</span>
+          </label>
+        ) : (
+          <div className="text-sm rounded-md border border-gray-200 p-3 space-y-2">
+            <p>Betonové odlitky (+{course.castingPrice} Kč za kus). Kolik jich chcete?</p>
+            <div className="flex items-center gap-3">
+              <button type="button" aria-label="Méně odlitků" disabled={castings <= 0} onClick={() => setCastings(Math.max(0, castings - 1))} className="h-9 w-9 rounded-md border border-gray-300 text-lg disabled:opacity-40">−</button>
+              <span className="text-lg font-semibold w-8 text-center">{Math.min(castings, people)}</span>
+              <button type="button" aria-label="Více odlitků" disabled={castings >= people} onClick={() => setCastings(Math.min(people, castings + 1))} className="h-9 w-9 rounded-md border border-gray-300 text-lg disabled:opacity-40">+</button>
+              <button type="button" onClick={() => setCastings(people)} className="text-xs underline">pro každého</button>
+            </div>
+          </div>
+        )}
 
         <label className="block text-sm">
           Termín
@@ -151,7 +163,7 @@ export default function PoukazyPage() {
             <div className="flex justify-between text-green-700"><span>Skupinová sleva {price.discountPercent} %</span><span>−{price.courseBefore - price.courseAfter} Kč</span></div>
           )}
           {price.castingTotal > 0 && (
-            <div className="flex justify-between"><span>{people} × betonový odlitek</span><span>{price.castingTotal} Kč</span></div>
+            <div className="flex justify-between"><span>{Math.min(castings, people)} × betonový odlitek</span><span>{price.castingTotal} Kč</span></div>
           )}
           <div className="flex justify-between font-semibold text-base pt-1"><span>Celkem</span><span>{price.total} Kč</span></div>
         </div>

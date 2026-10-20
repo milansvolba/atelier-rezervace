@@ -6,6 +6,7 @@ import { voucherCourse } from "@/lib/pricing";
 import { paymentStore } from "@/lib/stripe";
 import { voucherStore, isExpired } from "@/lib/vouchers";
 import { sendVoucherRedeemedEmails } from "@/lib/email";
+import { castingText } from "@/lib/voucherConfig";
 import { CourseSignup } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (dryRun) {
-    return NextResponse.json({ ok: true, people: voucher.people, casting: voucher.casting, courseTitle: voucher.courseTitle });
+    return NextResponse.json({ ok: true, people: voucher.people, castingCount: voucher.castingCount, courseTitle: voucher.courseTitle });
   }
 
   const signupName = String(name ?? "").trim();
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
     contact: signupContact,
     people: voucher.people,
     note:
-      "Dárkový poukaz " + voucher.code + (voucher.casting ? " (vč. betonového odlitku)" : "") + "." +
+      "Dárkový poukaz " + voucher.code + (voucher.castingCount > 0 ? " (vč. " + castingText(voucher.castingCount) + ")" : "") + "." +
       (note ? " " + String(note).slice(0, 300) : ""),
     status: "confirmed",
     createdAt: new Date().toISOString(),

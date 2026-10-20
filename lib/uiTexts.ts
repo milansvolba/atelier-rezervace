@@ -204,8 +204,8 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     group: "Dárkový poukaz",
     label: "Poukaz zahrnuje odlitek",
     description: "Dodatek k hlášce o ověřeném poukazu, pokud poukaz zahrnuje betonový odlitek.",
-    vars: [],
-    text: "Včetně betonového odlitku.",
+    vars: ["count"],
+    text: "Včetně betonových odlitků: {{count}}.",
   },
   "kurzy.voucher.button": {
     group: "Dárkový poukaz",

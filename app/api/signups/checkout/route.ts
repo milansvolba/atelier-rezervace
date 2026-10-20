@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
-import { computeOrder, castingPriceFor } from "@/lib/pricing";
+import { computeOrder, castingPriceFor, clampCastings } from "@/lib/pricing";
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
@@ -59,15 +59,15 @@ export async function POST(req: NextRequest) {
 
   // Množstevní sleva podle počtu lidí + volitelný betonový odlitek pro každého účastníka (lib/pricing.ts).
   const castingPrice = castingPriceFor(booking.title);
-  const withCasting = !!casting && castingPrice !== null;
-  const price = computeOrder(booking.price, seats, withCasting, castingPrice ?? 0);
+  const castings = castingPrice !== null ? clampCastings(casting, seats) : 0;
+  const price = computeOrder(booking.price, seats, castings, castingPrice ?? 0);
   const contactStr = String(contact).trim();
   const email = contactStr.includes("@") ? contactStr : undefined;
 
   try {
     const session = await createCheckoutSession({
       amountCzk: price.courseAfter,
-      extraItems: withCasting ? [{ name: "Betonový odlitek — " + booking.title, amountCzk: castingPrice as number, quantity: seats }] : undefined,
+      extraItems: castings > 0 ? [{ name: "Betonový odlitek — " + booking.title, amountCzk: castingPrice as number, quantity: castings }] : undefined,
       productName: booking.title + " — " + fmtDate(booking.date) + ", " + seats + " " + seatsWord(seats),
       customerEmail: email,
       metadata: {
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         name: String(name).slice(0, 200),
         contact: contactStr.slice(0, 200),
         people: String(seats),
-        casting: withCasting ? String(seats) : "0",
+        casting: String(castings),
         note: String(note ?? "").slice(0, 300),
       },
       successUrl: APP_URL + "/kurzy?platba=ok",

@@ -3,6 +3,7 @@ import { Booking, CourseSignup, RESOURCE_LABELS } from "./types";
 import { getTemplate, renderTemplate } from "./emailTemplates";
 import { logEmail } from "./emailLog";
 import type { Voucher } from "./vouchers";
+import { castingText } from "./voucherConfig";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Atelier na Pobřeží <rezervace@ateliernapobrezi.cz>";
@@ -299,7 +300,7 @@ function voucherSummaryHtml(v: Voucher, booking?: Booking) {
   const people = v.people + " " + (v.people === 1 ? "osoba" : v.people <= 4 ? "osoby" : "osob");
   return (
     `<p>Kurz: <strong>${esc(v.courseTitle)}</strong><br>` +
-    `Počet osob: ${people}${v.casting ? ", včetně betonového odlitku" : ""}<br>` +
+    `Počet osob: ${people}${v.castingCount > 0 ? ", včetně " + castingText(v.castingCount) : ""}<br>` +
     (v.recipientName ? `Pro: ${esc(v.recipientName)}<br>` : "") +
     (booking ? `Termín: ${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}<br>` : "") +
     `Platí do: ${fmtDate(v.expiresAt.slice(0, 10))}</p>`
@@ -347,12 +348,12 @@ export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, si
   const html = wrap(
     `<p>Dobrý den, ${esc(signup.name)},</p>` +
       `<p>poukaz <strong>${esc(v.code)}</strong> je uplatněný a vaše místo na kurzu je <strong>potvrzené</strong>.</p>` +
-      `<p>Kurz: <strong>${esc(booking.title)}</strong><br>Termín: ${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}<br>Počet osob: ${signup.people}${v.casting ? ", včetně betonového odlitku" : ""}</p>` +
+      `<p>Kurz: <strong>${esc(booking.title)}</strong><br>Termín: ${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}<br>Počet osob: ${signup.people}${v.castingCount > 0 ? ", včetně " + castingText(v.castingCount) : ""}</p>` +
       `<p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`
   );
   const adminHtml = wrap(
     `<p>Byl uplatněn dárkový poukaz <strong>${esc(v.code)}</strong> na termín ${fmtDate(booking.date)} (${esc(booking.title)}).</p>` +
-      `<p>Přihlášen: ${esc(signup.name)}, ${esc(signup.contact)}, ${signup.people} os.${v.casting ? ", vč. odlitku" : ""}</p>` +
+      `<p>Přihlášen: ${esc(signup.name)}, ${esc(signup.contact)}, ${signup.people} os.${v.castingCount > 0 ? ", vč. odlitků: " + v.castingCount : ""}</p>` +
       (overbooked ? `<p><strong>Pozor:</strong> termín mezitím přesáhl kapacitu, zkontrolujte ji.</p>` : "") +
       `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
   );

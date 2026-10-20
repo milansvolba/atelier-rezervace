@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
-import { computeOrder, voucherCourse } from "@/lib/pricing";
+import { computeOrder, voucherCourse, clampCastings } from "@/lib/pricing";
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ function peopleWord(n: number) {
 // klient částku neposílá. Poukaz (tabulka vouchers) vznikne až po zaplacení ve webhooku
 // /api/stripe/webhook, větev meta.kind === "voucher" (lib/vouchers.ts, handleVoucherPaid).
 //
-// Tělo: { topic: "hlava"|"relief", people, casting?, bookingId?, buyerName, buyerEmail,
+// Tělo: { topic: "hlava"|"relief", people, casting? (počet odlitků 0 až people), bookingId?, buyerName, buyerEmail,
 //         recipientName?, message?, honeypot? }
 // bookingId je volitelný pevný termín; bez něj si obdarovaný termín vybere sám později.
 export async function POST(req: NextRequest) {
@@ -76,13 +76,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Množstevní sleva podle počtu osob + volitelný betonový odlitek pro každou osobu (lib/pricing.ts).
-  const withCasting = !!casting;
-  const price = computeOrder(course.pricePerPerson, seats, withCasting, course.castingPrice);
+  const castings = clampCastings(casting, seats);
+  const price = computeOrder(course.pricePerPerson, seats, castings, course.castingPrice);
 
   try {
     const session = await createCheckoutSession({
       amountCzk: price.courseAfter,
-      extraItems: withCasting ? [{ name: "Betonový odlitek — " + course.title, amountCzk: course.castingPrice, quantity: seats }] : undefined,
+      extraItems: castings > 0 ? [{ name: "Betonový odlitek — " + course.title, amountCzk: course.castingPrice, quantity: castings }] : undefined,
       productName:
         "Dárkový poukaz — " + course.title + ", " + seats + " " + peopleWord(seats) +
         (booking ? " (termín " + fmtDate(booking.date) + ")" : ""),
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
         kind: "voucher",
         topic: course.key,
         people: String(seats),
-        casting: withCasting ? "1" : "0",
+        casting: String(castings),
         bookingId: booking ? booking.id : "",
         buyerName: name.slice(0, 200),
         buyerEmail: email.slice(0, 200),

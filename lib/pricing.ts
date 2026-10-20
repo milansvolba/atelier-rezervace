@@ -28,12 +28,19 @@ export interface OrderPrice {
   total: number;
 }
 
-// Slevu dostává jen cena kurzu; odlitek se počítá za každého účastníka bez slevy.
-export function computeOrder(pricePerPerson: number, people: number, withCasting: boolean, castingPrice: number): OrderPrice {
+// Slevu dostává jen cena kurzu; odlitek se počítá za každý objednaný kus (0 až počet osob) bez slevy.
+// Počet odlitků z požadavku: true = pro všechny (starší klient), číslo = tolik odlitků, vždy 0 až počet osob.
+export function clampCastings(raw: unknown, people: number): number {
+  if (raw === true) return people;
+  const n = Math.floor(Number(raw) || 0);
+  return Math.max(0, Math.min(people, n));
+}
+
+export function computeOrder(pricePerPerson: number, people: number, castings: number, castingPrice: number): OrderPrice {
   const discountPercent = groupDiscountPercent(people);
   const courseBefore = pricePerPerson * people;
   const courseAfter = Math.round(courseBefore * (1 - discountPercent / 100));
-  const castingTotal = withCasting ? castingPrice * people : 0;
+  const castingTotal = castingPrice * Math.max(0, Math.min(people, castings));
   return { discountPercent, courseBefore, courseAfter, castingTotal, total: courseAfter + castingTotal };
 }
 
