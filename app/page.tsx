@@ -21,7 +21,7 @@ import {
 } from "@/lib/calendar";
 
 type ViewMode = "week" | "month" | "quarter" | "year";
-// Barvy stejné jako v adminu: volno = jemně zelená, rezervováno = šedá, čeká na schválení = žlutá.
+// Veřejný kalendář: volno (zelená), rezervováno (šedá), čeká na schválení (žlutá); důvody (úklid, akce) vidí jen členové a admin.
 // Příprava a úklid před akcí je světlejší šedá s pruhy (nejde rezervovat celý ateliér).
 const HALF_STYLE: Record<HalfDayState, { className: string; style?: React.CSSProperties; label: string }> = {
   free: { className: "bg-green-100", label: "volno" },
@@ -115,7 +115,11 @@ export default function PublicPage() {
   // jestli jde v tu dobu požádat o celý ateliér.
   function dayHalves(d: Date): HalfDayState[] {
     const key = iso(d);
-    return HALF_DAYS.map((h) => halfDayState(bookings, key, h));
+    // Veřejnost vidí jen volno, rezervováno a čeká na schválení: příprava/úklid se tváří jako rezervováno.
+    return HALF_DAYS.map((h): HalfDayState => {
+      const st = halfDayState(bookings, key, h);
+      return st === "prep" ? "taken" : st;
+    });
   }
 
   function renderDayCell(d: Date, tall: boolean, showNumber: boolean) {
@@ -334,15 +338,12 @@ export default function PublicPage() {
         )}
 
         <div className="flex items-center gap-4 flex-wrap text-xs text-gray-500 mb-4">
-          {(["free", "taken", "prep", "pending"] as HalfDayState[]).map((k) => (
+          {(["free", "taken", "pending"] as HalfDayState[]).map((k) => (
             <span key={k} className="flex items-center gap-1.5">
               <span className={`w-2.5 h-2.5 rounded-sm inline-block ${HALF_STYLE[k].className}`} style={HALF_STYLE[k].style} /> {HALF_STYLE[k].label}
             </span>
           ))}
         </div>
-        <p className="text-xs text-gray-500 mb-4">
-          Před akcí na celý ateliér potřebujeme půlden na přípravu a úklid: před odpolední akcí je dopoledne téhož dne bez rezervace, před dopolední akcí odpoledne dne předtím.
-        </p>
         <button
           onClick={() => setShowForm((s) => !s)}
           className="h-10 px-4 rounded-md border border-gray-300 text-sm hover:bg-gray-50"
