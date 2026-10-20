@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { store, findConflict, findPrepConflictFor } from "@/lib/data";
-import { PREP_MESSAGE } from "@/lib/prep";
+import { prepMessage, PrepRole } from "@/lib/prep";
 import { Booking } from "@/lib/types";
 import { requireUser } from "@/lib/auth";
 import { users } from "@/lib/users";
@@ -38,8 +38,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (await findPrepConflictFor(resource, date, startTime, endTime)) {
-    return NextResponse.json({ error: PREP_MESSAGE }, { status: 409 });
+  const prepRole: PrepRole = session.role === "admin" ? "admin" : "member";
+  const prep = await findPrepConflictFor({ resource, date, startTime, endTime }, prepRole);
+  if (prep) {
+    return NextResponse.json({ error: prepMessage(prepRole, prep.kind) }, { status: 409 });
   }
 
   // Admin může rezervaci rovnou přiřadit konkrétnímu členovi (rozpoznanému z
