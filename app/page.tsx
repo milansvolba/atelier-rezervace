@@ -6,8 +6,10 @@ import {
   ResourceId,
   RESOURCE_LABELS,
   resourcesConflict,
+  resolveHeardAbout,
   timesOverlap,
 } from "@/lib/types";
+import { HeardAboutField } from "@/components/HeardAboutField";
 import { HALF_DAYS, HalfDayState, halfDayState, findPrepConflict, prepMessage } from "@/lib/prep";
 import {
   DAY_NAMES,
@@ -100,6 +102,8 @@ export default function PublicPage() {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [note, setNote] = useState("");
+  const [heardAbout, setHeardAbout] = useState("");
+  const [heardAboutOther, setHeardAboutOther] = useState("");
   const [submitted, setSubmitted] = useState<null | "ok" | "err">(null);
   const [submitError, setSubmitError] = useState("");
   const [customTime, setCustomTime] = useState(false);
@@ -221,6 +225,7 @@ export default function PublicPage() {
         requesterName: name,
         requesterContact: contact,
         note,
+        heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
       }),
     });
     if (res.ok) {
@@ -229,6 +234,8 @@ export default function PublicPage() {
       setName("");
       setContact("");
       setNote("");
+      setHeardAbout("");
+      setHeardAboutOther("");
     } else {
       const data = await res.json().catch(() => ({}));
       setSubmitError(typeof data.error === "string" ? data.error : "");
@@ -495,6 +502,13 @@ export default function PublicPage() {
               placeholder="K čemu prostor potřebujete, kolik lidí přijde…"
             />
           </label>
+
+          <HeardAboutField
+            value={heardAbout}
+            onChange={setHeardAbout}
+            otherValue={heardAboutOther}
+            onOtherChange={setHeardAboutOther}
+          />
 
           <p className="text-xs text-gray-400">
             Údaje použijeme jen ke komunikaci o téhle rezervaci a smažeme je nejpozději 12 měsíců po akci.
