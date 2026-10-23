@@ -1355,6 +1355,58 @@ function EmailsPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+// Přehled "Odkud o nás víte?" — součty napříč žádostmi, přihláškami/platbami na kurz
+// a nákupy poukazů (GET /api/admin/referral-stats). Jen pro orientaci, nic se tu needituje.
+function ReferralStatsPanel({ onClose }: { onClose: () => void }) {
+  const [combined, setCombined] = useState<{ label: string; count: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/referral-stats")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setCombined(Array.isArray(d.combined) ? d.combined : []))
+      .catch(() => setError("Nepodařilo se načíst přehled."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const total = combined.reduce((sum, r) => sum + r.count, 0);
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-xl p-5 w-full max-w-md space-y-4 max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between">
+          <p className="font-medium">Odkud nás znají</p>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-sm">✕</button>
+        </div>
+        <p className="text-xs text-gray-500">
+          Součet za všechny žádosti, přihlášky/platby na kurz a nákupy poukazů, kde návštěvník pole nepovinně vyplnil.
+        </p>
+        {loading && <p className="text-sm text-gray-400">Načítám…</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {!loading && !error && combined.length === 0 && (
+          <p className="text-sm text-gray-500">Zatím žádná vyplněná odpověď.</p>
+        )}
+        {combined.length > 0 && (
+          <div className="space-y-2">
+            {combined.map((r) => (
+              <div key={r.label} className="flex items-center justify-between text-sm border-t border-gray-100 pt-2 first:border-t-0 first:pt-0">
+                <span>{r.label}</span>
+                <span className="text-gray-500">
+                  {r.count} {total > 0 ? `· ${Math.round((r.count / total) * 100)} %` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout: () => void }) {
   const [view, setView] = useState<ViewMode>("day");
   const [anchor, setAnchor] = useState(new Date());
@@ -1367,6 +1419,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [showMembers, setShowMembers] = useState(false);
   const [showEmails, setShowEmails] = useState(false);
+  const [showReferral, setShowReferral] = useState(false);
   const [members, setMembers] = useState<AppUser[]>([]);
   const [matchedMemberId, setMatchedMemberId] = useState<string | null>(null);
   const [form, setForm] = useState<{
@@ -1631,6 +1684,11 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           {isAdmin && (
             <button onClick={() => setShowEmails(true)} className="text-sm text-gray-500 hover:text-gray-800">
               E-maily
+            </button>
+          )}
+          {isAdmin && (
+            <button onClick={() => setShowReferral(true)} className="text-sm text-gray-500 hover:text-gray-800">
+              Odkud nás znají
             </button>
           )}
           {!isAdmin && !session.membershipFree && (
@@ -2242,6 +2300,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
       {showMembers && <MembersPanel onClose={() => setShowMembers(false)} />}
       {showEmails && <EmailsPanel onClose={() => setShowEmails(false)} />}
+      {showReferral && <ReferralStatsPanel onClose={() => setShowReferral(false)} />}
 
     {toastMsg && (
         <div role="status" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm rounded-md px-4 py-2 shadow-lg">
