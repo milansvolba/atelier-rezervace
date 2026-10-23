@@ -9,7 +9,7 @@ import { sendAdminNewSignupEmail, sendSignupReceivedEmail } from "@/lib/email";
 // POST /api/signups — veřejný formulář přihlášky na vypsaný termín kurzu.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { bookingId, name, contact, people, note, honeypot } = body;
+  const { bookingId, name, contact, people, note, heardAbout, honeypot } = body;
 
   // Jednoduchá anti-spam past — skryté pole, které lidský návštěvník nevyplní.
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     note,
     status: "pending",
     createdAt: new Date().toISOString(),
+    heardAbout: typeof heardAbout === "string" && heardAbout.trim() ? heardAbout.trim().slice(0, 200) : undefined,
   };
   await signupStore.add(signup);
 
