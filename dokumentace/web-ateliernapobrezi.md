@@ -23,8 +23,10 @@ Statický PHP web s jednoduchým vlastním mini CMS pro texty. **Není v gitu** 
 ├── reference.php             # Reference (scaffold)
 ├── admin.php                 # Mini CMS — editace textů z data/content.json
 ├── index_forpsi.php          # Výchozí placeholder stránka hostingu, nepoužívá se
-├── .htaccess                  # Přesměrování bez .php přípony (clean URLs) + další pravidla
+├── 404.php                   # Vlastní chybová stránka (404) s mini-rozcestníkem, viz sekce níže
+├── .htaccess                  # Přesměrování bez .php přípony (clean URLs) + další pravidla + ErrorDocument 404 + bezpečnostní HTTP hlavičky (viz sekce Chybová stránka níže)
 ├── robots.txt
+├── sitemap.xml                # XML mapa webu (12 URL), odkazovaná z robots.txt
 ├── script.js                  # Sdílený JS (mobilní menu apod.)
 ├── styles.css                 # Sdílené styly
 ├── images/                    # Statické obrázky
@@ -62,6 +64,16 @@ Statický PHP web s jednoduchým vlastním mini CMS pro texty. **Není v gitu** 
 ## Clean URLs
 
 `.htaccess` v kořeni `/www` přepisuje adresy bez přípony `.php` na skutečné soubory, takže se používá např. `/kurzy` místo `/kurzy.php`. Platí pro všechny hlavní stránky. Platí i pro nové stránky `kurz-modelovani-hlavy` a `kurz-relief`.
+
+## Chybová stránka (404) a přístupnost
+
+Od 23. 10. 2026 má web vlastní 404 stránku místo defaultní hostingové: `.htaccess` má direktivu `ErrorDocument 404 /404`, což projde přes standardní clean-URL přepisovací pravidla (interně se namapuje na `404.php`) a Apache si při tomhle interním přesměrování sám drží HTTP status 404. `404.php` je postavená na stejné šabloně jako ostatní stránky (`render_main_nav()`, `render_footer()` apod.) a obsahuje mini-rozcestník s dlaždicemi na Kurzy, Pronájem ateliéru a Firemní akce plus odkaz na dárkové poukazy — a v textu pod nadpisem jsou klíčová slova prolinkovaná na stejné stránky.
+
+**Přístupnost (skip-link):** všech 13 veřejných stránek má na začátku `<body>` odkaz `<a href="#main" class="skip-link">Přeskočit na obsah</a>` a hned za `</header>` prázdný `<div id="main"></div>` — standardní technika pro uživatele klávesnice, aby mohli přeskočit opakovanou navigaci. Styl `.skip-link` je v `styles.css` (skrytý mimo fokus, viditelný po navigaci klávesnicí na `:focus`).
+
+**HTTP security hlavičky:** `.htaccess` nastavuje přes `mod_headers` `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin` a `Permissions-Policy: geolocation=(), microphone=(), camera=()`. Vědomě vynechané: Content-Security-Policy (vyžadovalo by pečlivé allowlistování GA/Clarity/Stripe/Google Fonts, vysoké riziko, že něco rozbije) a HSTS (riziko dopadu na subdomény jako `rezervace.ateliernapobrezi.cz`, pokud by nebyly všechny jistě HTTPS-ready).
+
+**Sitemap:** `sitemap.xml` v kořeni `/www` (standardní `<urlset>` se `<loc>`/`<lastmod>` pro 12 hlavních URL, bez `/obchod`, `/lide` a `/404`) je odkazovaná z `robots.txt` řádkem `Sitemap: https://www.ateliernapobrezi.cz/sitemap.xml`. Při přidání, odebrání nebo přesunu stránky ve struktuře webu je potřeba `sitemap.xml` ručně aktualizovat (pravidlo je i ve skillu `atelier-sprava-webu`) — stává se to jen zřídka.
 
 ## Propojení s rezervačním systémem
 
