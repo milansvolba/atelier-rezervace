@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { DAY_NAMES_MON_FIRST, MONTH_NAMES, iso, monthMatrix } from "@/lib/calendar";
 import { DEFAULT_UI_TEXTS, fillText } from "@/lib/uiTexts";
 import { groupDiscountPercent } from "@/lib/pricing";
+import { resolveHeardAbout } from "@/lib/types";
+import { HeardAboutField } from "@/components/HeardAboutField";
 
 interface CourseCard {
   id: string;
@@ -45,6 +47,9 @@ export default function KurzyPage() {
   const [payResult, setPayResult] = useState<null | "ok" | "cancel">(null);
   const [step, setStep] = useState(2);
   const [signupPhone, setSignupPhone] = useState("");
+  // Sdílené pro krokový formulář přihlášky/platby i pro poptávku na míru níže (nikdy se nepoužívají zároveň).
+  const [heardAbout, setHeardAbout] = useState("");
+  const [heardAboutOther, setHeardAboutOther] = useState("");
   const [castings, setCastings] = useState(0); // počet odlitků (0 až počet míst)
   // Uplatnění dárkového poukazu (kód se ověří na serveru, poukaz určuje počet osob a odlitek).
   const [voucherOpen, setVoucherOpen] = useState(false);
@@ -182,6 +187,7 @@ export default function KurzyPage() {
         requesterName: customName,
         requesterContact: customContact,
         note: `Počet osob: ${customPeople || "neuvedeno"}. ${customNote}`.trim(),
+        heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
       }),
     });
     if (res.ok) {
@@ -191,6 +197,8 @@ export default function KurzyPage() {
       setCustomContact("");
       setCustomPeople("");
       setCustomNote("");
+      setHeardAbout("");
+      setHeardAboutOther("");
     } else {
       setCustomSent("err");
     }
@@ -311,6 +319,7 @@ export default function KurzyPage() {
       note,
       honeypot,
       casting: Math.min(castings, signupPeople),
+      heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
     });
     try {
       if (selectedCourse.price) {
@@ -337,6 +346,8 @@ export default function KurzyPage() {
           setSignupContact("");
           setSignupPhone("");
           setSignupNote("");
+          setHeardAbout("");
+          setHeardAboutOther("");
           setSignupPeople(1);
           setSignupFor(null);
           setStep(2);
@@ -652,6 +663,12 @@ export default function KurzyPage() {
                     onChange={(e) => setSignupNote(e.target.value)}
                   />
                 </label>
+                <HeardAboutField
+                  value={heardAbout}
+                  onChange={setHeardAbout}
+                  otherValue={heardAboutOther}
+                  onOtherChange={setHeardAboutOther}
+                />
                 <div className="flex gap-2 flex-wrap pt-1">
                   <button
                     type="button"
@@ -882,6 +899,12 @@ export default function KurzyPage() {
                 onChange={(e) => setCustomNote(e.target.value)}
               />
             </label>
+            <HeardAboutField
+              value={heardAbout}
+              onChange={setHeardAbout}
+              otherValue={heardAboutOther}
+              onOtherChange={setHeardAboutOther}
+            />
             <button className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm">Odeslat poptávku</button>
           </form>
         )}
