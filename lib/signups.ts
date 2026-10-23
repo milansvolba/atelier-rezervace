@@ -12,6 +12,7 @@ function rowToSignup(r: Record<string, unknown>): CourseSignup {
     note: (r.note as string) ?? undefined,
     status: r.status as SignupStatus,
     createdAt: typeof created === "string" ? created : created.toISOString(),
+    heardAbout: (r.heard_about as string) ?? undefined,
   };
 }
 
@@ -41,8 +42,8 @@ export const signupStore = {
   async add(s: CourseSignup): Promise<CourseSignup> {
     await ensureSchema();
     await sql`
-      INSERT INTO course_signups (id, booking_id, name, contact, people, note, status, created_at)
-      VALUES (${s.id}, ${s.bookingId}, ${s.name}, ${s.contact}, ${s.people}, ${s.note ?? null}, ${s.status}, ${s.createdAt})
+      INSERT INTO course_signups (id, booking_id, name, contact, people, note, status, created_at, heard_about)
+      VALUES (${s.id}, ${s.bookingId}, ${s.name}, ${s.contact}, ${s.people}, ${s.note ?? null}, ${s.status}, ${s.createdAt}, ${s.heardAbout ?? null})
     `;
     return s;
   },
