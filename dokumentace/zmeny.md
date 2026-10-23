@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-23 — P2 bezpečnostní/přístupnostní balíček, nová 404 stránka, oprava darkove-poukazy.php (web)
+
+Přidán `sitemap.xml` (12 URL) a odkaz na něj v `robots.txt`. Do `.htaccess` doplněny standardní HTTP security hlavičky (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy) a `ErrorDocument 404 /404`. Do `styles.css` přidán `.skip-link` styl a na všech 13 veřejných stránek přidán skip-link + `#main` kotva (přístupnost pro klávesnici). Nová stránka `404.php` ve stylu webu s mini-rozcestníkem (kurzy, pronájem, firemní akce, dárkové poukazy) a prolinkovaným textem na klíčová slova. Při té příležitosti opraven `darkove-poukazy.php`: chybělo `<?=` u `render_main_nav()`, `render_footer()` a `render_analytics_banner()`, takže se na stránce tiše nevykreslovala hlavička s logem, patička ani cookie lišta — teď fixed. Vše provedeno přes plugin forpsi-ftp a živě ověřeno.
+
 ## 2026-10-20 — Veřejný kalendář se třemi stavy (rezervace)
 Bez přihlášení se v kalendáři a legendě ukazuje Volno, Rezervováno a Čeká na schválení. Příprava a úklid se zobrazují jako rezervováno; hláška při kolizi je obecná („Tento termín není k dispozici“). Důvody (úklid, příprava, firemní akce) vidí jen členové a admin. Odstraněn vysvětlující odstavec pod legendou.
 
