@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-23 — Oprava inline editace a obrázek na darkove-poukazy.php (web)
+
+Stránka `darkove-poukazy.php` měla všechny texty obalené navíc funkcí `e(t(...))` místo samotného `t(...)` — to u přihlášeného admina rozbíjelo inline editaci (span `t-edit` se zobrazoval jako escapovaný text místo fungujícího pole). Opraveno na stejný zápis jako na ostatních stránkách. Přidán nový editovatelný obrázek v hero sekci (`poukazy_hero_image`, přes `render_editable_image`) — stejný mechanismus nahrávání jako jinde na webu (`img-edit` + `/save-image`), pro vizuál/fotku dárkového poukazu. FAQ odpovědi na stránce teď taky nejsou dvakrát escapované (umožní v budoucnu vložit odkaz).
+
 ## 2026-10-23 — P2 bezpečnostní/přístupnostní balíček, nová 404 stránka, oprava darkove-poukazy.php (web)
 
 Přidán `sitemap.xml` (12 URL) a odkaz na něj v `robots.txt`. Do `.htaccess` doplněny standardní HTTP security hlavičky (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy) a `ErrorDocument 404 /404`. Do `styles.css` přidán `.skip-link` styl a na všech 13 veřejných stránek přidán skip-link + `#main` kotva (přístupnost pro klávesnici). Nová stránka `404.php` ve stylu webu s mini-rozcestníkem (kurzy, pronájem, firemní akce, dárkové poukazy) a prolinkovaným textem na klíčová slova. Při té příležitosti opraven `darkove-poukazy.php`: chybělo `<?=` u `render_main_nav()`, `render_footer()` a `render_analytics_banner()`, takže se na stránce tiše nevykreslovala hlavička s logem, patička ani cookie lišta — teď fixed. Vše provedeno přes plugin forpsi-ftp a živě ověřeno.
