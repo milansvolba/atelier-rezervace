@@ -48,6 +48,8 @@ export function ensureSchema() {
       await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS category text NOT NULL DEFAULT 'pronajem';`;
       await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS capacity integer;`;
       await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS price integer;`;
+      // "Odkud o nás víte?" u veřejné žádosti (nepovinné) — viz lib/types.ts REFERRAL_OPTIONS.
+      await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS heard_about text;`;
 
       await sql`
         CREATE TABLE IF NOT EXISTS course_signups (
@@ -62,6 +64,8 @@ export function ensureSchema() {
         );
       `;
       await sql`CREATE INDEX IF NOT EXISTS course_signups_booking_idx ON course_signups (booking_id);`;
+      // "Odkud o nás víte?" u veřejné přihlášky / platby (nepovinné) — viz lib/types.ts REFERRAL_OPTIONS.
+      await sql`ALTER TABLE course_signups ADD COLUMN IF NOT EXISTS heard_about text;`;
 
       // Online platby přes Stripe Checkout (viz lib/stripe.ts). id = ID Stripe Checkout Session.
 // Slouží k dočasnému držení míst během platby a k idempotenci webhooku.
@@ -112,6 +116,8 @@ await sql`
       `;
       // Počet odlitků v poukazu (starší řádky mají jen casting ano/ne; viz rowToVoucher).
       await sql`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS casting_count integer NOT NULL DEFAULT 0`;
+      // "Odkud o nás víte?" u nákupu poukazu (nepovinné) — viz lib/types.ts REFERRAL_OPTIONS.
+      await sql`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS heard_about text`;
       // Jeden poukaz na jednu platbu — idempotence webhooku (NULL stripe_session se neomezuje).
       await sql`CREATE UNIQUE INDEX IF NOT EXISTS vouchers_stripe_session_idx ON vouchers (stripe_session)`;
       // Příznaky termínů kurzů (zatím jen: firemní akce, která se neukazuje veřejně na /kurzy).
