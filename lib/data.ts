@@ -31,6 +31,7 @@ function rowToBooking(r: Record<string, unknown>): Booking {
     category: ((r.category as BookingCategory) ?? "pronajem") as BookingCategory,
     capacity: (r.capacity as number) ?? undefined,
     price: (r.price as number) ?? undefined,
+    heardAbout: (r.heard_about as string) ?? undefined,
   };
 }
 
@@ -57,7 +58,7 @@ export const store = {
   async all(): Promise<Booking[]> {
     await ensureSchema();
     await pruneOldBookings();
-    const rows = await sql`SELECT id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price FROM bookings ORDER BY date, start_time`;
+    const rows = await sql`SELECT id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price, heard_about FROM bookings ORDER BY date, start_time`;
     return rows.map(rowToBooking);
   },
 
@@ -65,12 +66,12 @@ export const store = {
     await ensureSchema();
     await sql`
       INSERT INTO bookings
-        (id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price)
+        (id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price, heard_about)
       VALUES
         (${b.id}, ${b.resource}, ${b.date}, ${b.startTime}, ${b.endTime}, ${b.title},
          ${b.requesterName ?? null}, ${b.requesterContact ?? null}, ${b.note ?? null},
          ${b.status}, ${b.source}, ${b.extraMonitor ?? false}, ${b.userId ?? null}, ${b.createdAt},
-         ${b.category ?? "pronajem"}, ${b.capacity ?? null}, ${b.price ?? null})
+         ${b.category ?? "pronajem"}, ${b.capacity ?? null}, ${b.price ?? null}, ${b.heardAbout ?? null})
     `;
     // Webhook: nová rezervace může být kurz, který se má promítnout na webu (viz lib/webhooks.ts).
     notifyDataChanged("booking.created", { bookingId: b.id, category: b.category });
@@ -93,7 +94,7 @@ export const store = {
         price = COALESCE(${patch.price ?? null}, price)
       WHERE id = ${id}
     `;
-    const rows = await sql`SELECT id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price FROM bookings WHERE id = ${id}`;
+    const rows = await sql`SELECT id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price, heard_about FROM bookings WHERE id = ${id}`;
     const result = rows[0] ? rowToBooking(rows[0]) : null;
     // Webhook: úprava (např. termín/kapacita/zrušení) může měnit veřejný výpis kurzů.
     if (result) notifyDataChanged("booking.updated", { bookingId: id, category: result.category });
@@ -102,13 +103,13 @@ export const store = {
 
   async byDate(date: string): Promise<Booking[]> {
     await ensureSchema();
-    const rows = await sql`SELECT id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price FROM bookings WHERE date = ${date}`;
+    const rows = await sql`SELECT id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price, heard_about FROM bookings WHERE date = ${date}`;
     return rows.map(rowToBooking);
   },
 
   async byUser(userId: string): Promise<Booking[]> {
     await ensureSchema();
-    const rows = await sql`SELECT id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price FROM bookings WHERE user_id = ${userId} ORDER BY date, start_time`;
+    const rows = await sql`SELECT id, resource, date, start_time, end_time, title, requester_name, requester_contact, note, status, source, extra_monitor, user_id, created_at, category, capacity, price, heard_about FROM bookings WHERE user_id = ${userId} ORDER BY date, start_time`;
     return rows.map(rowToBooking);
   },
 
