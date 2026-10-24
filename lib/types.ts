@@ -66,6 +66,7 @@ export interface Booking {
   category?: BookingCategory; // default "pronajem" u starých záznamů
   capacity?: number; // kapacita kurzu (počet míst), jen category="kurz"
   price?: number; // cena kurzu za osobu v Kč, jen category="kurz"
+  heardAbout?: string; // nepovinné, z veřejného formuláře žádosti — viz REFERRAL_OPTIONS níže
 }
 
 // Přihláška účastníka na vypsaný termín kurzu (Booking s category="kurz").
@@ -80,6 +81,31 @@ export interface CourseSignup {
   note?: string;
   status: SignupStatus;
   createdAt: string;
+  heardAbout?: string; // nepovinné, z veřejné přihlášky / nákupu — viz REFERRAL_OPTIONS níže
+}
+
+// "Odkud o nás víte?" — nepovinné pole na veřejných formulářích (žádost o pronájem/kurz,
+// přihláška/platba na kurz, nákup dárkového poukazu). Ukládá se rovnou jako hotový popisek
+// (ne interní kód), ať se dá v adminu zobrazit a sčítat bez dalšího překladu.
+export const REFERRAL_OPTIONS: { value: string; label: string }[] = [
+  { value: "facebook", label: "Facebook" },
+  { value: "instagram", label: "Instagram" },
+  { value: "pinterest", label: "Pinterest" },
+  { value: "doporuceni", label: "Osobní doporučení" },
+  { value: "plakat", label: "Plakát / leták" },
+  { value: "tisk", label: "Časopis / noviny" },
+  { value: "jine", label: "Jinde" },
+];
+
+// Spojí výběr z REFERRAL_OPTIONS s volným textem u "Jinde" do jednoho uloženého řetězce.
+// Prázdný výběr vrací undefined (pole je nepovinné, nic se neukládá).
+export function resolveHeardAbout(selected: string, otherText: string): string | undefined {
+  if (!selected) return undefined;
+  if (selected === "jine") {
+    const custom = otherText.trim();
+    return custom ? `Jiné: ${custom}` : "Jiné";
+  }
+  return REFERRAL_OPTIONS.find((o) => o.value === selected)?.label ?? selected;
 }
 
 // Vrátí true, pokud by dvě rezervace na stejný den kolidovaly (překryv času + konflikt zdrojů).

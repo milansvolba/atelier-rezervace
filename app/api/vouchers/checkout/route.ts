@@ -28,7 +28,7 @@ function peopleWord(n: number) {
 // bookingId je volitelný pevný termín; bez něj si obdarovaný termín vybere sám později.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { topic, people, casting, bookingId, buyerName, buyerEmail, recipientName, message, honeypot } = body;
+  const { topic, people, casting, bookingId, buyerName, buyerEmail, recipientName, message, heardAbout, honeypot } = body;
 
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
         buyerEmail: email.slice(0, 200),
         recipientName: String(recipientName ?? "").trim().slice(0, 100),
         message: String(message ?? "").trim().slice(0, 300),
+        heardAbout: String(heardAbout ?? "").trim().slice(0, 200),
       },
       successUrl: APP_URL + "/poukazy?platba=ok",
       cancelUrl: APP_URL + "/poukazy?platba=zrusena",
