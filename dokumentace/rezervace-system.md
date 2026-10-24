@@ -157,6 +157,14 @@ Tok: `/kurzy` → "Zaplatit a rezervovat" → `POST /api/signups/checkout` (serv
 - **Známá omezení:** pokud zápis přihlášky po zaplacení selže, platba je jen ve Stripe (webhook se kvůli idempotenci znovu nezpracuje) — dohledat v dashboardu a přidat ručně. Po zrušené platbě drží místa zbytek 35minutového okna.
 - **Zatím neřešeno:** pronájem (poptávka → schválení → platba → finální blokace), členství (recurring), drobný prodej / QR, vrácení peněz, faktury. Viz `ukoly.md`.
 
+## „Odkud o nás víte?“ — sledování zdroje zájemců (od 24. 10. 2026)
+
+Nepovinné pole na všech veřejných formulářích (žádost o pronájem/kurz, přihláška/platba na kurz, nákup dárkového poukazu) — sdílená komponenta `components/HeardAboutField.tsx`, nabízené možnosti v `REFERRAL_OPTIONS` (`lib/types.ts`), volba „Jiné“ zobrazí vlastní textové pole.
+
+Hodnota se ukládá do nepovinného sloupce `heard_about` (`ensureSchema()` v `lib/db.ts`) ve třech tabulkách: `bookings` (žádosti o pronájem/kurz), `course_signups` (přihlášky a platby na kurz) a `vouchers` (nákup dárkového poukazu).
+
+Admin přehled „Odkud nás znají“ v `/admin` (`ReferralStatsPanel`, `app/admin/page.tsx`) čte `GET /api/admin/referral-stats` — sečte vyplněné odpovědi napříč všemi třemi tabulkami a zobrazí počty a procenta za jednotlivé zdroje; řádky bez vyplněné hodnoty se do součtu nepočítají.
+
 ## Co zbývá doladit
 
 - Samoobslužná registrace zájemců o členství (zatím se noví členové zakládají jen ručně adminem).
