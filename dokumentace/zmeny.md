@@ -6,6 +6,18 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-24 — Sledování zdroje zájemců „Odkud o nás víte?“ (rezervace)
+
+Přidáno pole „Odkud o nás víte?“ do rezervačního formuláře, přihlášky na kurz i formuláře pro dárkové poukazy — ukládá se jako nový sloupec `heard_about` v tabulkách `bookings`, `course_signups` a `vouchers`. Přibyl admin přehled statistik zdrojů (`/api/admin/referral-stats`) pro vyhodnocení, odkud lidé nejčastěji přicházejí. Vyvíjeno na větvi `odkud-o-nas-vite`, otevřen PR #8 (https://github.com/milansvolba/atelier-rezervace/pull/8).
+
+## 2026-10-24 — Tučné písmo (Ctrl+B) v inline editaci textů (web)
+
+Do inline editace textů na webu (`t-edit` pole) přidána podpora tučného písma přes Ctrl+B / Cmd+B — označený text se obalí do `**...**`, při uložení se převede na `<strong>`. Stejný princip jako dosavadní zápis odkazů `[text](url)`, bez nutnosti měnit `content.json`.
+
+## 2026-10-24 — Darkové poukazy: oprava tlačítek, přehození sekcí, akordeon u kurzů (web)
+
+Na stránce `darkove-poukazy.php` opravena špatně nastylovaná tlačítka „Koupit poukaz“ (chyběla základní třída `btn`, zůstala jen `btn-primary`). Sekce s nabídkou kurzů a cenou teď jde vidět hned po úvodních faktech, až pod ní návod na postup objednání (dřív to bylo obráceně). Karty kurzů v nabídce rozšířeny o rozklikávací akordeon s dalšími informacemi (náplň kurzu, co je v ceně, odkaz na detail kurzu), aby lidé nemuseli odcházet ze stránky pro víc informací.
+
 ## 2026-10-23 — Oprava inline editace a obrázek na darkove-poukazy.php (web)
 
 Stránka `darkove-poukazy.php` měla všechny texty obalené navíc funkcí `e(t(...))` místo samotného `t(...)` — to u přihlášeného admina rozbíjelo inline editaci (span `t-edit` se zobrazoval jako escapovaný text místo fungujícího pole). Opraveno na stejný zápis jako na ostatních stránkách. Přidán nový editovatelný obrázek v hero sekci (`poukazy_hero_image`, přes `render_editable_image`) — stejný mechanismus nahrávání jako jinde na webu (`img-edit` + `/save-image`), pro vizuál/fotku dárkového poukazu. FAQ odpovědi na stránce teď taky nejsou dvakrát escapované (umožní v budoucnu vložit odkaz).
