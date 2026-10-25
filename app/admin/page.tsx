@@ -1408,7 +1408,7 @@ function ReferralStatsPanel({ onClose }: { onClose: () => void }) {
 }
 
 function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout: () => void }) {
-  const [view, setView] = useState<ViewMode>("day");
+  const [view, setView] = useState<ViewMode>("week");
   const [anchor, setAnchor] = useState(new Date());
   const [filterResource, setFilterResource] = useState<ResourceId | "summary">("summary");
   const [bookings, setBookings] = useState<Booking[]>([]);
