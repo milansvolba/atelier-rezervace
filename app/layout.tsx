@@ -3,6 +3,7 @@ import { Comfortaa, Work_Sans } from "next/font/google";
 import "./globals.css";
 import HeaderNav from "@/components/HeaderNav";
 import AppShell from "@/components/AppShell";
+import BackToSite from "@/components/BackToSite";
 import AnalyticsConsent from "@/components/AnalyticsConsent";
 
 // Stejné fonty jako hlavní web ateliernapobrezi.cz (Comfortaa pro nadpisy a logo, Work Sans pro text) —
@@ -29,8 +30,9 @@ return (
   <html lang="cs" className={`${comfortaa.variable} ${workSans.variable}`}>
     <body className="min-h-screen font-body">
       <AppShell>
+        <BackToSite />
         <header className="flex items-center justify-between mb-6">
-          <a href="/">
+          <a href="https://ateliernapobrezi.cz" aria-label="Ateliér na pobřeží – hlavní web">
             <img src="/logo.png" alt="Ateliér na pobřeží" className="h-10 w-auto" />
           </a>
           <HeaderNav />

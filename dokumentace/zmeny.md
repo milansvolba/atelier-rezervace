@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-25 — Odkaz zpět na hlavní web v hlavičce rezervací (rezervace)
+
+Logo v hlavičce teď vede na `https://ateliernapobrezi.cz` (dřív na úvodní rozpis rezervací), nad hlavičkou přibyl malý textový odkaz „← Zpět na web ateliéru“ (nový `components/BackToSite.tsx`, v administraci se neukazuje), protože ne každý ví, že logo je klikací (doporučení NN/g). Aby se z Kurzů dalo vrátit na rozpis, přibyl do menu v `HeaderNav.tsx` odkaz „Rezervace“ (mimo úvodní stránku). E-maily se tím neřeší.
+
 ## 2026-10-25 — DESIGN.md: design system a UX writing pravidla (web + rezervace)
 
 Do kořene repa přidán `DESIGN.md` — jediný zdroj pravdy o vzhledu (tokeny: barvy, písma, zaoblení, mezery), komponentách a obsahových pravidlech (hlas, slovník, formáty, vzory microcopy) pro web i rezervační systém. Formát: YAML tokeny + text, inspirováno Google DESIGN.md (alpha) a DTCG; čtou ho lidé i AI agenti. Hodnoty převzaty z produkčního `styles.css` a ověřeny proti `tailwind.config.ts`, `layout.tsx` a `app/page.tsx` (stavy veřejného kalendáře). Součástí je seznam otevřených bodů z auditu (překlepy, kontrast textu v akcentní barvě, viditelný fokus ve formulářích, barvy kalendáře mimo značkovou paletu). Validátor `@google/design.md lint` zatím nespuštěn.
