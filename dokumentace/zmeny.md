@@ -6,6 +6,16 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-25 — Společný vzhled všech e-mailů (rezervace)
+
+Všechny e-maily mají jednu obálku: logo, zlatá linka, nadpis (z předmětu), patička s adresou a telefonem, responzivní šířka (nový `lib/emailLayout.ts`, vzhled podle DESIGN.md). Texty šablon (i upravené v adminu) se při odeslání zestylizují. Tlačítko se v šabloně píše jako `<a class="btn" href="...">Text</a>` v samostatném odstavci, staré černé tlačítko se převede automaticky. K HTML se nově posílá i textová verze. Odesílatel a texty mají „Ateliér na pobřeží“ s diakritikou. Magic link tyká (chodí jen členům a adminům). Opravy: „Penize“, „napšete“, dvojí „bohužel“, správný tvar „osoby/osob“ v e-mailu adminům.
+
+**Bezpečnost:** jména, poznámky a vzkazy od zákazníků se do e-mailů vkládají escapované (dřív se v e-mailech adminům vkládaly jako HTML). Poznámka od admina v e-mailu žadateli se proto zobrazí jako prostý text, ne jako HTML.
+
+Odpovědi zákazníků chodí na `rezervace@ateliernapobrezi.cz`, které přeposílá na schránky provozovatelů. Stav: větev `emaily-sablona`, před nasazením ověřit testovacím e-mailem (načtení loga z `/logo.png`, zobrazení názvu odesílatele s diakritikou).
+
+---
+
 ## 2026-10-25 — Odkaz zpět na hlavní web v hlavičce rezervací (rezervace)
 
 Logo v hlavičce teď vede na `https://ateliernapobrezi.cz` (dřív na úvodní rozpis rezervací), nad hlavičkou přibyl malý textový odkaz „← Zpět na web ateliéru“ (nový `components/BackToSite.tsx`, v administraci se neukazuje), protože ne každý ví, že logo je klikací (doporučení NN/g). Aby se z Kurzů dalo vrátit na rozpis, přibyl do menu v `HeaderNav.tsx` odkaz „Rezervace“ (mimo úvodní stránku). E-maily se tím neřeší.

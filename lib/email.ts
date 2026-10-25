@@ -4,9 +4,11 @@ import { getTemplate, renderTemplate } from "./emailTemplates";
 import { logEmail } from "./emailLog";
 import type { Voucher } from "./vouchers";
 import { castingText } from "./voucherConfig";
+import { button, esc, htmlToText, renderEmail, styleEmailBody } from "./emailLayout";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
-const FROM = "Atelier na Pobřeží <rezervace@ateliernapobrezi.cz>";
+// Odpovědi zákazníků chodí na rezervace@ (přeposílá se na schránky provozovatelů).
+const FROM = "Ateliér na pobřeží <rezervace@ateliernapobrezi.cz>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://rezervace.ateliernapobrezi.cz";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "milan.svolba@gmail.com,petr.svolba@gmail.com")
   .split(",")
@@ -27,6 +29,7 @@ function getClient(): Resend | null {
 // Odešle e-mail a zapíše pokus do email_log (bez ohledu na to, jestli se
 // odeslání povedlo) — meta.type odpovídá klíči šablony nebo systémovému typu
 // e-mailu (magic_link, welcome), meta.bookingId/signupId je jen pro přehled v adminu.
+// K HTML se vždy posílá i textová verze (lepší doručitelnost).
 async function send(
   to: string | string[],
   subject: string,
@@ -43,7 +46,7 @@ async function send(
     return;
   }
   try {
-    await c.emails.send({ from: FROM, to, subject, html });
+    await c.emails.send({ from: FROM, to, subject, html, text: htmlToText(html) });
     await logEmail({ ...meta, recipient, subject, status: "sent" });
   } catch (err) {
     console.error(`[email] Odeslání "${subject}" pro ${recipient} selhalo:`, err);
@@ -60,11 +63,27 @@ function isWholeSpace(resource: Booking["resource"]) {
   return resource === "atelier" || resource === "klubovna";
 }
 
-function wrap(bodyHtml: string) {
-  return `<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;">${bodyHtml}<p style="margin-top:24px;color:#888;font-size:12px;">Atelier na Pobřeží · rezervace.ateliernapobrezi.cz</p></div>`;
+// 1 osoba, 2–4 osoby, 5 a více osob.
+function peopleWord(n: number) {
+  return n === 1 ? "osoba" : n >= 2 && n <= 4 ? "osoby" : "osob";
+}
+
+// Společná obálka e-mailu (logo, nadpis, patička). Text uvnitř se zestylizuje
+// (odstavce, odkazy, tlačítka) a nadpis stránky je title.
+function wrap(bodyHtml: string, title: string, opts: { replyLine?: boolean } = {}) {
+  return renderEmail({ title, bodyHtml: styleEmailBody(bodyHtml), replyLine: opts.replyLine });
+}
+
+// Předmět bez dovětku s názvem ateliéru slouží jako nadpis e-mailu.
+function titleFromSubject(subject: string) {
+  return subject.replace(/\s+[—–-]\s+Ate(?:lier|liér) na Pobřeží$/i, "").replace(/\s+[—–-]\s+Ateliér na pobřeží$/i, "");
 }
 
 // Sestaví e-mail ze šablony (výchozí, nebo upravená adminem) a odešle ho.
+// Proměnné se do předmětu vkládají tak, jak jsou, do těla escapované (text od zákazníků
+// se nesmí dostat do HTML). Jedinou výjimkou je noteBlock, který už je hotové HTML.
+const RAW_HTML_VARS = new Set(["noteBlock"]);
+
 async function sendFromTemplate(
   key: Parameters<typeof getTemplate>[0],
   to: string | string[],
@@ -73,20 +92,24 @@ async function sendFromTemplate(
 ) {
   const tpl = await getTemplate(key);
   const subject = renderTemplate(tpl.subject, vars);
-  const html = wrap(renderTemplate(tpl.body, vars));
+  const bodyVars = Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, RAW_HTML_VARS.has(k) ? v : esc(v)]));
+  const html = wrap(renderTemplate(tpl.body, bodyVars), titleFromSubject(subject), { replyLine: !key.startsWith("admin_") });
   await send(to, subject, html, { type: key, ...meta });
 }
 
 // --- Přihlašovací odkaz (magic link) pro admina/člena ---
 // Systémový e-mail, needitovatelný přes admin šablony (bezpečnostně citlivé).
+// Chodí jen členům a adminům, proto se tyká.
 export async function sendMagicLinkEmail(user: { name: string; email: string }, link: string) {
-  const subject = "Přihlášení do rezervací — Atelier na Pobřeží";
-  const html = wrap(`
-    <p>Dobrý den${user.name ? ` ${user.name}` : ""},</p>
-    <p>klikněte na tlačítko níže a budete přihlášeni. Odkaz platí 15 minut a jde použít jen jednou.</p>
-    <p style="margin-top:20px;"><a href="${link}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Račte vstoupit</a></p>
-    <p style="color:#888;font-size:13px;margin-top:16px;">Pokud jste o přihlášení nežádali, tento e-mail prostě ignorujte.</p>
-  `);
+  const subject = "Přihlášení do rezervací — Ateliér na pobřeží";
+  const html = wrap(
+    `<p>Ahoj${user.name ? ` ${esc(user.name)}` : ""},</p>
+    <p>klikni na tlačítko níže a přihlásíme tě. Odkaz platí 15 minut a jde použít jen jednou.</p>
+    ${button("Račte vstoupit", link)}
+    <p style="font-size:14px;">Pokud jsi o přihlášení nežádal/a, tento e-mail prostě ignoruj.</p>`,
+    "Přihlášení do rezervací",
+    { replyLine: false }
+  );
   await send(user.email, subject, html, { type: "magic_link" });
 }
 
@@ -96,28 +119,31 @@ export async function sendWelcomeEmail(
   link: string,
   payLink?: string
 ) {
-  const subject = "Vítejte v Atelieru na Pobřeží! 🎉";
+  const subject = "Vítej v Ateliéru na pobřeží! 🎉";
   const payBlock = payLink
     ? `
     <p style="margin-top:22px;"><strong>Členství v klubu</strong><br>Členství funguje jako měsíční předplatné. Platbu kartou založíš na zabezpečené stránce Stripe, fakturu dostaneš e-mailem. Předplatné můžeš kdykoli zrušit po přihlášení do rezervací.</p>
-    <p style="margin-top:10px;"><a href="${payLink}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaplatit členství</a></p>
-    <p style="color:#888;font-size:13px;margin-top:10px;">Tenhle odkaz na platbu platí 30 dní.</p>`
+    ${button("Zaplatit členství", payLink)}
+    <p style="font-size:14px;">Tenhle odkaz na platbu platí 30 dní.</p>`
     : "";
-  const html = wrap(`
-    <p>Ahoj ${user.name}!</p>
-    <p>Právě jsi dostal/a přístup do rezervačního systému Atelieru na Pobřeží 🎨.</p>
-    <p style="margin-top:16px;">Teď si můžeš rezervovat místo:</p>
-    <p style="margin-top:10px;"><a href="${link}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaber si flek</a></p>
-    <p style="color:#888;font-size:13px;margin-top:16px;">Tenhle odkaz platí 15 minut. Až vyprší, stačí na přihlašovací stránce znovu zadat svůj e-mail a pošleme nový.</p>
+  const html = wrap(
+    `
+    <p>Ahoj ${esc(user.name)}!</p>
+    <p>Právě jsi dostal/a přístup do rezervačního systému Ateliéru na pobřeží 🎨.</p>
+    <p>Teď si můžeš rezervovat místo:</p>
+    ${button("Zaber si flek", link)}
+    <p style="font-size:14px;">Tenhle odkaz platí 15 minut. Až vyprší, stačí na přihlašovací stránce znovu zadat svůj e-mail a pošleme nový.</p>
     ${payBlock}
-  `);
+  `,
+    "Vítej v Ateliéru na pobřeží"
+  );
   await send(user.email, subject, html, { type: "welcome" });
 }
 
 // --- Adminům: nová žádost od veřejnosti (pronájem, nebo poptávka na kurz) ---
 export async function sendAdminNewRequestEmail(booking: Booking) {
   const isCourse = booking.category === "kurz";
-  const noteBlock = booking.note ? `<p>${isCourse ? "Poznámka" : "Účel"}: ${booking.note}</p>` : "";
+  const noteBlock = booking.note ? `<p>${isCourse ? "Poznámka" : "Účel"}: ${esc(booking.note)}</p>` : "";
   const vars = {
     name: booking.requesterName || "",
     date: fmtDate(booking.date),
@@ -172,7 +198,7 @@ export async function sendRequesterDecisionEmail(booking: Booking, approved: boo
     date: fmtDate(booking.date),
     startTime: booking.startTime,
     endTime: booking.endTime,
-    noteBlock: note ? `<p>${note}</p>` : "",
+    noteBlock: note ? `<p>${esc(note)}</p>` : "",
     noteSuffix: note ? `, ${note}` : "",
   };
   if (isCourse) {
@@ -233,12 +259,12 @@ export async function sendAdminNewSignupEmail(booking: Booking, signup: CourseSi
     {
       name: signup.name,
       people: String(signup.people),
-      peopleWord: signup.people === 1 ? "osoba" : "osoby/osob",
+      peopleWord: peopleWord(signup.people),
       courseTitle: booking.title,
       date: fmtDate(booking.date),
       startTime: booking.startTime,
       endTime: booking.endTime,
-      noteBlock: signup.note ? `<p>Poznámka: ${signup.note}</p>` : "",
+      noteBlock: signup.note ? `<p>Poznámka: ${esc(signup.note)}</p>` : "",
       contact: signup.contact,
       adminUrl: `${APP_URL}/admin`,
     },
@@ -266,10 +292,11 @@ export async function sendSignupReceivedEmail(booking: Booking, signup: CourseSi
 // Storno přihlášky na kurz zadané adminem (s případnou vratkou).
 export async function sendSignupCancelledEmail(booking: Booking, signup: CourseSignup, refundCzk: number) {
   const refundLine = refundCzk > 0
-    ? `<p>Vrátíme vám <strong>${refundCzk} Kč</strong> na kartu, kterou jste platili. Penize obvykle dorazí do 5–10 pracovních dnů.</p>`
+    ? `<p>Vrátíme vám <strong>${refundCzk} Kč</strong> na kartu, kterou jste platili. Peníze obvykle dorazí do 5–10 pracovních dnů.</p>`
     : "";
   const html = wrap(
-    `<p>Dobrý den, ${signup.name},</p><p>vaše přihláška na kurz <strong>${booking.title}</strong> (${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}) byla stornována.</p>${refundLine}<p>V případě dotazů nám napšete odpovědí na tento e-mail.</p>`
+    `<p>Dobrý den, ${esc(signup.name)},</p><p>vaše přihláška na kurz <strong>${esc(booking.title)}</strong> (${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}) byla stornována.</p>${refundLine}<p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`,
+    "Storno přihlášky na kurz"
   );
   await send(signup.contact, "Storno přihlášky na kurz", html, { type: "signup_cancelled", bookingId: booking.id, signupId: signup.id });
 }
@@ -291,11 +318,7 @@ export async function sendSignupDecisionEmail(booking: Booking, signup: CourseSi
 }
 
 // --- Dárkové poukazy na kurzy ---
-// Texty zadává kupující (jméno, vzkaz), proto se do HTML escapují.
-function esc(t: string) {
-  return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
+// Texty zadává kupující (jméno, vzkaz), proto se do HTML escapují (esc z emailLayout).
 function voucherSummaryHtml(v: Voucher, booking?: Booking) {
   const people = v.people + " " + (v.people === 1 ? "osoba" : v.people <= 4 ? "osoby" : "osob");
   return (
@@ -319,7 +342,8 @@ export async function sendVoucherEmail(v: Voucher, booking?: Booking) {
       `<p style="font-size:22px;letter-spacing:2px;"><strong>${esc(v.code)}</strong></p>` +
       voucherSummaryHtml(v, booking) +
       msg +
-      redeem
+      redeem,
+    "Váš dárkový poukaz"
   );
   await send(v.buyerEmail, "Váš dárkový poukaz " + v.code, html, { type: "voucher_buyer", bookingId: booking?.id });
 }
@@ -338,7 +362,9 @@ export async function sendAdminNewVoucherEmail(
       `<p>Kupující: ${esc(v.buyerName)}, ${esc(v.buyerEmail)}</p>` +
       (v.message ? `<p>Vzkaz: ${esc(v.message)}</p>` : "") +
       warn +
-      `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
+      `<p><a class="btn" href="${APP_URL}/admin">Otevřít admin</a></p>`,
+    "Nový dárkový poukaz " + v.code,
+    { replyLine: false }
   );
   await send(ADMIN_EMAILS, "Nový dárkový poukaz " + v.code, html, { type: "voucher_admin", bookingId: opts.booking?.id });
 }
@@ -349,13 +375,16 @@ export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, si
     `<p>Dobrý den, ${esc(signup.name)},</p>` +
       `<p>poukaz <strong>${esc(v.code)}</strong> je uplatněný a vaše místo na kurzu je <strong>potvrzené</strong>.</p>` +
       `<p>Kurz: <strong>${esc(booking.title)}</strong><br>Termín: ${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}<br>Počet osob: ${signup.people}${v.castingCount > 0 ? ", včetně " + castingText(v.castingCount) : ""}</p>` +
-      `<p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`
+      `<p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`,
+    "Poukaz uplatněn, vaše místo je potvrzené"
   );
   const adminHtml = wrap(
     `<p>Byl uplatněn dárkový poukaz <strong>${esc(v.code)}</strong> na termín ${fmtDate(booking.date)} (${esc(booking.title)}).</p>` +
       `<p>Přihlášen: ${esc(signup.name)}, ${esc(signup.contact)}, ${signup.people} os.${v.castingCount > 0 ? ", vč. odlitků: " + v.castingCount : ""}</p>` +
       (overbooked ? `<p><strong>Pozor:</strong> termín mezitím přesáhl kapacitu, zkontrolujte ji.</p>` : "") +
-      `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
+      `<p><a class="btn" href="${APP_URL}/admin">Otevřít admin</a></p>`,
+    "Uplatněn poukaz " + v.code,
+    { replyLine: false }
   );
   await Promise.all([
     send(signup.contact, "Poukaz uplatněn, vaše místo je potvrzené", html, { type: "voucher_redeemed", bookingId: booking.id, signupId: signup.id }),

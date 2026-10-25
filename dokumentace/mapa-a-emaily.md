@@ -29,7 +29,7 @@ Menu: Domů / Kurzy / Pronájem prostoru / Kontakt (položka "Rezervovat" odstra
 
 ---
 
-## Seznam transakčních e-mailů (16 typů)
+## Seznam transakčních e-mailů (21 typů)
 
 Zdroj: `lib/emailTemplates.ts` (šablony) + `lib/email.ts` (odesílací logika). Editovatelné šablony jde upravit v adminu (Šablony e-mailů); systémové ne (bezpečnostně citlivé).
 
@@ -50,10 +50,19 @@ Zdroj: `lib/emailTemplates.ts` (šablony) + `lib/email.ts` (odesílací logika).
 13. **Přihlášený: místo potvrzeno** — po schválení přihlášky.
 14. **Přihlášený: místo nelze potvrdit** — po zamítnutí (typicky plná kapacita).
 
-### Systémové, needitovatelné — 2
+### Systémové, needitovatelné — 7
 
 15. **Přihlašovací odkaz (magic link)** — jednorázový odkaz platný 15 minut, pro admina i člena.
 16. **Uvítací e-mail** — při založení nového účtu, rovnou s přihlašovacím odkazem.
+17. **Storno přihlášky na kurz** — když admin stornuje přihlášku, s případnou vratkou na kartu.
+18. **Dárkový poukaz kupujícímu** — po zaplacení, s kódem poukazu a návodem, jak ho uplatnit.
+19. **Admin: nový dárkový poukaz** — adminům po zaplacení poukazu (s upozorněním, když je potřeba ruční zásah).
+20. **Poukaz uplatněn (obdarovanému)** — potvrzení místa po uplatnění poukazu.
+21. **Admin: poukaz uplatněn** — adminům po uplatnění poukazu.
+
+Plánované: platba členství se nezdařila (člen, tykání), připomínka před kurzem.
+
+Vzhled všech e-mailů řeší společná obálka `lib/emailLayout.ts` (logo, nadpis z předmětu, patička). Tlačítko v šabloně: `<a class="btn" href="...">Text</a>` v samostatném odstavci. Tykání se používá jen u e-mailů členům (magic link, uvítací e-mail).
 
 ---
 

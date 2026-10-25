@@ -37,8 +37,9 @@ export interface TemplateForAdmin extends TemplateDef {
 
 // Výchozí texty — pokud admin nic neupraví, používají se tyhle. Zástupné
 // symboly {{promenna}} se při odeslání nahradí skutečnými hodnotami (viz
-// renderTemplate). Patička s "Atelier na Pobřeží · rezervace..." se
-// připojuje automaticky při odeslání, není součástí šablony.
+// renderTemplate). Logo, nadpis (z předmětu) a patička se
+// přidávají automaticky při odeslání (lib/emailLayout.ts), nejsou součástí šablony.
+// Tlačítko se zapisuje jako <a class="btn" href="...">Text</a> v samostatném odstavci.
 export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
   admin_new_request_kurz: {
     label: "Admin: nová poptávka na kurz",
@@ -48,8 +49,8 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     body: `<p><strong>{{name}}</strong> má zájem o skupinový kurz na míru na <strong>{{date}}</strong> od {{startTime}} do {{endTime}}.</p>
 {{noteBlock}}
 <p>Kontakt: {{contact}}</p>
-<p style="margin-top:16px;"><a href="{{adminUrl}}" style="background:#111;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Zobrazit a rozhodnout</a></p>
-<p style="color:#888;font-size:13px;">Termín kurzu se v rozpisu zablokuje až po potvrzení.</p>`,
+<p><a class="btn" href="{{adminUrl}}">Zobrazit a rozhodnout</a></p>
+<p style="font-size:14px;">Termín kurzu se v rozpisu zablokuje až po potvrzení.</p>`,
   },
   admin_new_request_pronajem: {
     label: "Admin: nová žádost o pronájem",
@@ -59,14 +60,14 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     body: `<p><strong>{{name}}</strong> žádá o {{what}} na <strong>{{date}}</strong> od {{startTime}} do {{endTime}}.</p>
 {{noteBlock}}
 <p>Kontakt: {{contact}}</p>
-<p style="margin-top:16px;"><a href="{{adminUrl}}" style="background:#111;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Zobrazit a rozhodnout</a></p>
-<p style="color:#888;font-size:13px;">Termín se v rozpisu zablokuje až po schválení.</p>`,
+<p><a class="btn" href="{{adminUrl}}">Zobrazit a rozhodnout</a></p>
+<p style="font-size:14px;">Termín se v rozpisu zablokuje až po schválení.</p>`,
   },
   requester_received_kurz: {
     label: "Žadatel: poptávka na kurz přijata",
     description: "Potvrzení pro zájemce hned po odeslání poptávky na skupinový kurz.",
     vars: ["name", "date", "startTime", "endTime"],
-    subject: "Přijali jsme vaši poptávku na kurz — Atelier na Pobřeží",
+    subject: "Přijali jsme vaši poptávku na kurz — Ateliér na pobřeží",
     body: `<p>Dobrý den {{name}},</p>
 <p>vaši poptávku na skupinový kurz na míru na <strong>{{date}}</strong> od {{startTime}} do {{endTime}} jsme přijali. Ozveme se co nejdřív, nejpozději následující pracovní den, s potvrzením nebo návrhem nejbližšího volného termínu.</p>`,
   },
@@ -74,7 +75,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     label: "Žadatel: žádost o pronájem přijata",
     description: "Potvrzení pro žadatele hned po odeslání žádosti o pronájem / rezervaci místa.",
     vars: ["name", "what", "date", "startTime", "endTime"],
-    subject: "Přijali jsme vaši žádost — Atelier na Pobřeží",
+    subject: "Přijali jsme vaši žádost — Ateliér na pobřeží",
     body: `<p>Dobrý den {{name}},</p>
 <p>vaši {{what}} na <strong>{{date}}</strong> od {{startTime}} do {{endTime}} jsme přijali. Ozveme se co nejdřív, nejpozději následující pracovní den.</p>`,
   },
@@ -140,7 +141,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     body: `<p><strong>{{name}}</strong> ({{people}} {{peopleWord}}) se přihlásil/a na kurz <strong>{{courseTitle}}</strong>, {{date}} od {{startTime}} do {{endTime}}.</p>
 {{noteBlock}}
 <p>Kontakt: {{contact}}</p>
-<p style="margin-top:16px;"><a href="{{adminUrl}}" style="background:#111;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Zobrazit a rozhodnout</a></p>`,
+<p><a class="btn" href="{{adminUrl}}">Zobrazit a rozhodnout</a></p>`,
   },
   signup_received: {
     label: "Přihlášený: přihláška přijata",
@@ -163,7 +164,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     description: "Pošle se, když admin zamítne přihlášku na vypsaný termín kurzu (např. plná kapacita).",
     vars: ["name", "courseTitle", "date", "startTime", "endTime"],
     subject: "K vaší přihlášce na kurz — {{date}}",
-    body: `<p>Dobrý den {{name}},</p><p>na kurz <strong>{{courseTitle}}</strong> ({{date}} {{startTime}}–{{endTime}}) vás bohužel nemůžeme zapsat — kapacita je bohužel plná. Ozveme se s dalším možným termínem.</p>`,
+    body: `<p>Dobrý den {{name}},</p><p>na kurz <strong>{{courseTitle}}</strong> ({{date}} {{startTime}}–{{endTime}}) vás bohužel nemůžeme zapsat, kapacita je plná. Ozveme se s dalším možným termínem.</p>`,
   },
 };
 
