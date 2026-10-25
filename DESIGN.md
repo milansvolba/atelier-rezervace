@@ -298,8 +298,9 @@ Při tvorbě nebo úpravě stránky, komponenty či textu pro Ateliér:
 4. Text na světlém pozadí nikdy v barvě `accent`.
 5. Každá změna se zapíše do `dokumentace/zmeny.md`. U textů říkej, že jde o návrh ke schválení Milanem.
 6. Web ateliernapobrezi.cz **není v gitu**. Úpravy jdou přes FTP, texty přes `data/content.json` a admin.
-   Funkce `t(klíč, výchozí)` v `inc/content.php` pole zaregistruje sama výchozím textem. Cíl tlačítek
-   se nastavuje klíči `<název>_target` (hodnoty z `internal_link_targets()`, např. `kontakt`, `kurzy_vyber`).
+   Texty upravované přímo na stránce (inline) stačí zapsat jako `t(klíč, výchozí)` v šabloně. Pole ve formuláři
+   `admin.php` se navíc při uložení tiše zahodí, pokud klíč není v `content_defaults()` ani v `content.json`.
+   Cíl tlačítek se nastavuje klíči `<název>_target` (hodnoty z `internal_link_targets()`, např. `kontakt`, `kurzy_vyber`).
    Postup pro nová pole je vždy podle aktuální `dokumentace/web-ateliernapobrezi.md`.
 
 ## 8. Otevřené body z auditu (24. 10. 2026)
