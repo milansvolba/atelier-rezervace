@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-25 — DESIGN.md: design system a UX writing pravidla (web + rezervace)
+
+Do kořene repa přidán `DESIGN.md` — jediný zdroj pravdy o vzhledu (tokeny: barvy, písma, zaoblení, mezery), komponentách a obsahových pravidlech (hlas, slovník, formáty, vzory microcopy) pro web i rezervační systém. Formát: YAML tokeny + text, inspirováno Google DESIGN.md (alpha) a DTCG; čtou ho lidé i AI agenti. Hodnoty převzaty z produkčního `styles.css` a ověřeny proti `tailwind.config.ts`, `layout.tsx` a `app/page.tsx` (stavy veřejného kalendáře). Součástí je seznam otevřených bodů z auditu (překlepy, kontrast textu v akcentní barvě, viditelný fokus ve formulářích, barvy kalendáře mimo značkovou paletu). Validátor `@google/design.md lint` zatím nespuštěn.
+
+---
+
 ## 2026-10-24 — Sledování zdroje zájemců „Odkud o nás víte?“ (rezervace)
 
 Přidáno pole „Odkud o nás víte?“ do rezervačního formuláře, přihlášky na kurz i formuláře pro dárkové poukazy — ukládá se jako nový sloupec `heard_about` v tabulkách `bookings`, `course_signups` a `vouchers`. Přibyl admin přehled statistik zdrojů (`/api/admin/referral-stats`) pro vyhodnocení, odkud lidé nejčastěji přicházejí. Vyvíjeno na větvi `odkud-o-nas-vite`, otevřen PR #8 (https://github.com/milansvolba/atelier-rezervace/pull/8).
