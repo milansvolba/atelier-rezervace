@@ -16,6 +16,8 @@ V `index.php` jsou nadpis a úvodní věta sekce s fotkou areálu Kolinea (`home
 
 Logo v hlavičce teď vede na `https://ateliernapobrezi.cz` (dřív na úvodní rozpis rezervací), nad hlavičkou přibyl malý textový odkaz „← Zpět na web ateliéru“ (nový `components/BackToSite.tsx`, v administraci se neukazuje), protože ne každý ví, že logo je klikací (doporučení NN/g). Aby se z Kurzů dalo vrátit na rozpis, přibyl do menu v `HeaderNav.tsx` odkaz „Rezervace“ (mimo úvodní stránku). E-maily se tím neřeší.
 
+Navíc dialog před odchodem z rozdělaného formuláře (`components/LeaveLink.tsx`, používá ho logo i textový odkaz): „Opravdu už odcházíte? Místo zatím není zarezervované.“ s tlačítky „Dokončit rezervaci“ (hlavní, vpravo) a „Odejít“. Ukáže se jen když je v některém formuláři vyplněné textové pole (jméno, kontakt, poznámka); předvyplněné datum a čas se nepočítají. U zavření záložky nebo tlačítka Zpět v prohlížeči jde jen o standardní hlášku prohlížeče, její text změnit nejde. Do `DESIGN.md` (6.2) přibyl řádek tónu pro tuhle situaci a pravidlo, že u rozhodování vyhrává srozumitelnost před humorem.
+
 ---
 
 ## 2026-10-25 — Opravy překlepů a odkazů tlačítek na hlavním webu (web)
