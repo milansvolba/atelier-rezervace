@@ -229,6 +229,12 @@ vyhledávání): dárek, pár, kamarádi, firemní tým.
 | Chyba | klidně, řekne, co dál, nikdy nevinit | „Nepodařilo se nám odeslat žádost. Zkuste to prosím znovu, nebo nám napište na info@ateliernapobrezi.cz.“ `NÁVRH` |
 | Prázdný stav | nabídne další krok | „Zatím tu nejsou žádné vypsané termíny. Napište nám, domluvíme vlastní.“ `NÁVRH` |
 | Zrušení, zamítnutí | vstřícně, s alternativou | „Tento termín bohužel nejde. Rádi najdeme jiný.“ `NÁVRH` |
+| Odchod z rozdělaného formuláře | srozumitelně a přirozeně, žádný vtip na sílu; jedna věta o důsledku | „Opravdu už odcházíte? Místo zatím není zarezervované.“ Tlačítka: **Dokončit rezervaci** (hlavní, vpravo) · Odejít |
+
+Pravidlo pro humor: hravost nesmí působit vynuceně. Tam, kde člověk rozhoduje
+(rezervace, platba, odchod z formuláře), vyhrává srozumitelnost. Vtip jen tam,
+kde nic neriskuje (hero, 404, prázdné stavy). Zavrhnutý příklad: „Hlína ještě není
+vymodelovaná“ – moc násilné a nepřirozené.
 
 ### 6.3 Slovník (jedno slovo = jedna věc)
 | Používat | Nepoužívat | Poznámka |

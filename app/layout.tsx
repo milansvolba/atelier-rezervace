@@ -4,6 +4,7 @@ import "./globals.css";
 import HeaderNav from "@/components/HeaderNav";
 import AppShell from "@/components/AppShell";
 import BackToSite from "@/components/BackToSite";
+import LeaveLink from "@/components/LeaveLink";
 import AnalyticsConsent from "@/components/AnalyticsConsent";
 
 // Stejné fonty jako hlavní web ateliernapobrezi.cz (Comfortaa pro nadpisy a logo, Work Sans pro text) —
@@ -32,9 +33,9 @@ return (
       <AppShell>
         <BackToSite />
         <header className="flex items-center justify-between mb-6">
-          <a href="https://ateliernapobrezi.cz" aria-label="Ateliér na pobřeží – hlavní web">
+          <LeaveLink href="https://ateliernapobrezi.cz" ariaLabel="Ateliér na pobřeží – hlavní web">
             <img src="/logo.png" alt="Ateliér na pobřeží" className="h-10 w-auto" />
-          </a>
+          </LeaveLink>
           <HeaderNav />
         </header>
         {children}
