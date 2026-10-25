@@ -18,7 +18,9 @@ Statický PHP web s jednoduchým vlastním mini CMS pro texty. **Není v gitu** 
 ├── kurz-relief.php          # Detail kurzu Modelování reliéfu
 ├── pronajem.php            # Pronájem prostoru
 ├── kontakt.php             # Kontakt
-├── lide.php                 # Lidé (kdo ateliér vede)
+├── o-atelieru.php           # O ateliéru (příběh, upcyklace, lidé; dříve stránka „Lidé“)
+├── lide.php                 # Jen trvalé přesměrování 301 na /o-atelieru
+├── firemni-akce.php          # Firemní akce
 ├── obchod.php               # Obchod / pseudogalerie (zatím skrytý z menu)
 ├── reference.php             # Reference (scaffold)
 ├── admin.php                 # Mini CMS — editace textů z data/content.json
@@ -85,15 +87,30 @@ Od 20. 8. 2026 navíc appka rezervace po každé změně rezervace/termínu (vyt
 
 Pokud u kurzu aktuálně nejsou vypsané žádné konkrétní termíny, detailní stránka zobrazí obecný odkaz na rezervační kalendář místo prázdného seznamu.
 
-## Menu
+## Menu a patička
 
-Hlavní i patičkové menu: Domů, Kurzy, Pronájem prostoru, Kontakt. Položka **Rezervovat** byla z hlavičky odstraněna (CTA na rezervaci je silněji umístěné přímo na stránce Pronájem). Položka **Obchod** je z obou menu schovaná — stránka `obchod.php` existuje, ale zatím bez odkazu, čeká na dokončení prodeje děl umělců (pseudogalerie).
+Hlavní menu i patička se generují společnými funkcemi v `inc/content.php` (`render_main_nav()`, `render_footer()`); stránky jen volají `<?= render_main_nav() ?>` a `<?= render_footer() ?>`. Výjimka: skrytá `obchod.php` má pořád statické menu i patičku. Obsah menu a odkazů v patičce se upravuje v dolní liště přihlášeného admina tlačítky **Upravit menu** a **Upravit patičku**.
+
+- Data v `data/content.json`: `main_menu` (hlavní menu), `footer_menu` (sloupec Navigace v patičce) a `footer_contact` (sloupec Kontakt). Jsou to JSON seznamy položek `{label, target, url?}`. `target` je klíč z registru `internal_link_targets()` (jen stránky, které existují jako `.php` soubor, kontroluje `menu_target_exists()`), `custom` (vlastní adresa v `url`: `https://…`, `mailto:`, `tel:`, `#kotva`) nebo `none` (jen text bez odkazu, jen v patičce). Prázdná hodnota = výchozí seznam (`menu_default_items()`, `footer_default_items()`; kontakty v patičce se drží podle `contact_*`, dokud se neupraví).
+- Texty patičky (`footer_brand_heading`, `footer_tagline`, `footer_nav_heading`, `footer_contact_heading`, `footer_copyright`) se upravují inline jako ostatní texty.
+- Výchozí hlavní menu: Domů, Kurzy, Pronájem prostor, Firemní akce, O ateliéru, Kontakt. Položka **Obchod** je schovaná — stránka `obchod.php` existuje, ale zatím bez odkazu, čeká na dokončení prodeje děl umělců (pseudogalerie). Odkaz na **Rezervace** je v patičce.
+- Nová stránka do menu: vytvořit soubor `xyz.php`, přidat záznam do `internal_link_targets()` v `inc/content.php`, pak ji vybrat v editoru menu.
+
+## Odkazy, odstavce a video v textech (inline editace)
+
+- **Odkaz v textu:** `[text](cíl)` — cíl je `#kotva`, `stranka#kotva`, klíč z `internal_link_targets()`, `https://…` (otevře se v novém okně), `mailto:` nebo `tel:`. Řeší `t_link_markup()`; vstup se nejdřív escapuje, nepovolené cíle zůstanou textem. Kotvy mají globálně `scroll-margin-top: 96px`.
+- **Odstavce:** Enter v edit módu = nový odstavec (`\n\n` → `<br><br>`), Shift+Enter = nový řádek (`\n` → `<br>`).
+- **Edit mód:** třída `t-editing` na `body`; odkazy se v něm neotevírají (globální capture-listener na kliknutí), takže jde klikat do textu uvnitř odkazů a karet.
+- **Klikatelné karty:** třída `card-clickable` a poslední `<a>` přímo v kartě (`::after` přes celou kartu); v edit módu se překryv vypíná.
+- **Video:** `render_editable_video($klíč, $titulek)` — YouTube odkaz uložený pod klíčem; veřejně se nezobrazí, dokud není vyplněný; admin má tlačítka Přidat/Změnit/Odebrat. Iframe `youtube-nocookie.com` se načte až po kliknutí. Použité klíče: `kurz_relief_video`, `kurz_hlavy_video`, `oat_makingof_video`.
 
 ## Stav jednotlivých stránek
 
 - **Kurzy** — hotovo: `kurzy.php` jako rozcestník + vlastní detailní stránka pro každý kurz (live termíny, reference, schema.org), skupinové slevy počítané v rezervačním systému. Fotky u detailních stránek čekají na Milana (zatím placeholder).
 - **Pronájem prostoru** — obohaceno, silnější CTA.
-- **Lidé** — hotovo, vlastní CMS pole v `content.json`.
+- **O ateliéru** — hotovo (dříve „Lidé“, `/lide` přesměrovává trvale 301): příběh, sekce o upcyklaci, Making of video (`#making-of`) a lidé (`#petr`, `#milan`); texty v CMS `oat_*`, `lide_*`, `person_*`.
+- **Firemní akce** — hotovo (`firemni-akce.php`), v menu i na Home.
+- **Kontakt** — formulář, údaje a sekce „Jak se k nám dostat“ (`#jak-se-k-nam`); nákres cesty od nádraží a foto vchodu čekají na Milana.
 - **Reference** — scaffold hotový (stránka + pruh referencí u Kurzů), obsah čeká na skutečné reference od Milana.
 - **Obchod / pseudogalerie** — odloženo, čeká na rozhodnutí o prodeji děl umělců.
 - **Fotky na klíčových místech** — čeká na skutečné fotky od Milana.
