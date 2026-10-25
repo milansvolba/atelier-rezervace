@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-25 — Home: fotka areálu zarovnaná s nadpisem sekce „Místo konání“ (web)
+
+V `index.php` jsou nadpis a úvodní věta sekce s fotkou areálu Kolinea (`home_story_heading`, `home_story_quote`) přesunuty z řádku přes celou šířku do levého sloupce dvousloupcové mřížky (`grid-2` s `align-items:start`). Fotka tak začíná ve stejné výšce jako nadpis a nadpis se zalamuje na šířku bloku vedle fotky. Na mobilu zůstává pořadí nadpis → text → fotka. Texty a jejich klíče beze změny. Nasazeno přes FTP plugin (`forpsi-ftp`) s automatickou zálohou původního souboru a ověřeno naživo (desktop i úzký displej).
+
+---
+
 ## 2026-10-25 — Odkaz zpět na hlavní web v hlavičce rezervací (rezervace)
 
 Logo v hlavičce teď vede na `https://ateliernapobrezi.cz` (dřív na úvodní rozpis rezervací), nad hlavičkou přibyl malý textový odkaz „← Zpět na web ateliéru“ (nový `components/BackToSite.tsx`, v administraci se neukazuje), protože ne každý ví, že logo je klikací (doporučení NN/g). Aby se z Kurzů dalo vrátit na rozpis, přibyl do menu v `HeaderNav.tsx` odkaz „Rezervace“ (mimo úvodní stránku). E-maily se tím neřeší.
@@ -93,6 +99,23 @@ Po platbě se člen vrací na `/clenstvi?platba=ok` (poděkování, co dál, tla
 
 ## 2026-10-19 — Členství v klubu: platba předplatného přes Stripe (rezervace)
 Člen dostane v uvítacím e-mailu odkaz na platbu měsíčního předplatného (Stripe Checkout, režim subscription; cena z env `STRIPE_MEMBERSHIP_PRICE_ID`). Odkaz `/api/membership/manage?token=…` platí 30 dní. Po přihlášení má člen nahoře odkaz „Členství“ (platba, nebo zákaznický portál Stripe: karta, faktury, zrušení). Webhook (`lib/membership.ts`) nastavuje stav členství (`none/active/past_due/canceled`, sloupce `membership_status`, `stripe_customer_id`, `stripe_subscription_id` v tabulce `users`) z událostí `checkout.session.completed` (subscription), `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`. Stav je vidět v adminu v panelu Účty. Faktury s číslem vystavuje Stripe.
+
+## 2026-10-15 — O ateliéru, editovatelné menu a patička, odkazy v textech, video a „Jak se k nám dostat“ (web)
+
+Souhrn série úprav hlavního webu z jednoho dne (dopsáno zpětně 25. 10.). Změny jsou v `inc/content.php`, `styles.css`, příslušných stránkách a v textech (`data/content.json`).
+
+- **Stránka „O ateliéru“** (`o-atelieru.php`) nahradila „Lidé“. `lide.php` je nyní jen trvalé přesměrování 301 na `/o-atelieru`. Pořadí sekcí: příběh (`#pribeh`) → Making of (`#making-of`, viditelné jen s videem, adminovi vždy) → Proč nechceme plevelit svět novými věcmi (`#upcyklace`) → lidé (`#lide`, karty `#petr` a `#milan`). Nové klíče textů `oat_*`, původní `lide_*`/`person_*`/`people_*` zůstaly; klíč cíle `lide` v `internal_link_targets()` zůstal jako alias.
+- **Odkazy přímo v textech**: v libovolném inline textu lze psát `[text](cíl)`; cíl je `#kotva`, `stranka#kotva`, klíč z `internal_link_targets()`, `https://…` (nové okno), `mailto:` nebo `tel:`. Řeší `t_link_markup()` (vstup se nejdřív escapuje, jiné cíle zůstanou textem). Adminovi `t()` přidá `data-raw`; v edit módu se ukáže zdrojový zápis, po uložení textu s odkazem se stránka obnoví.
+- **Enter v inline editoru** vloží nový odstavec, Shift+Enter nový řádek. Ukládá se jako `\n\n` / `\n`, na webu se vykreslí jako `<br><br>` / `<br>`.
+- **Edit mód neotevírá odkazy**: třída `t-editing` na `body` a globální capture-listener na kliknutí, takže jde klikat do textu uvnitř odkazů, tlačítek a karet.
+- **Klikatelné karty** (`.card-clickable`, tzv. stretched link) u tří boxů „Co u nás najdete“ na Home; třetí box „Firemní akce a teambuilding“ vede na `/firemni-akce`.
+- **Hlavní menu a patička** jsou společné funkce `render_main_nav()` a `render_footer()` místo kopie v každé stránce (kromě skryté `obchod.php`). Data v `content.json`: `main_menu`, `footer_menu`, `footer_contact` (JSON seznamy `{label, target, url?}`; `target` je klíč z registru, `custom` nebo `none`). V dolní liště admina jsou tlačítka „Upravit menu“ a „Upravit patičku“. Položka se zobrazí jen když cílová stránka existuje (`menu_target_exists()`).
+- **Video (YouTube)**: `render_editable_video()` — veřejnost nevidí nic, dokud není video; admin odkaz přidává, mění nebo odebírá tlačítkem. Iframe `youtube-nocookie.com` se načte až po kliknutí, náhled z YouTube jen po souhlasu s cookies. Použito na `kurz-relief.php`, `kurz-modelovani-hlavy.php` a v sekci Making of na O ateliéru.
+- **Kontakt — Jak se k nám dostat** (`#jak-se-k-nam`): rychlé karty (nová třída `.quickfact-grid-3`), vlakem z Prahy, Pardubic, Kutné Hory a Poděbrad, cesta od nádraží, autem, v okolí; sloty na nákres cesty a foto vchodu jsou pro veřejnost skryté, dokud se nenahrají.
+
+**Poučení:** (1) Při testu kliků v prohlížeči přes nástroj platí souřadnice ze screenshotu, ne CSS pixely. (2) Po uložení `styles.css` může otevřená záložka držet starou verzi, dokud se stránka nenačte znovu (cache-busting `?v=` se změní až s novým HTML).
+
+---
 
 ## 2026-10-14 — Analytics MVP: GA4 + Search Console + Microsoft Clarity + cookie lišta (web + rezervace)
 
