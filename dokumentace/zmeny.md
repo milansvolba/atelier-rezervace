@@ -10,6 +10,14 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 Logo v hlavičce teď vede na `https://ateliernapobrezi.cz` (dřív na úvodní rozpis rezervací), nad hlavičkou přibyl malý textový odkaz „← Zpět na web ateliéru“ (nový `components/BackToSite.tsx`, v administraci se neukazuje), protože ne každý ví, že logo je klikací (doporučení NN/g). Aby se z Kurzů dalo vrátit na rozpis, přibyl do menu v `HeaderNav.tsx` odkaz „Rezervace“ (mimo úvodní stránku). E-maily se tím neřeší.
 
+---
+
+## 2026-10-25 — Opravy překlepů a odkazů tlačítek na hlavním webu (web)
+
+V `data/content.json` opraveno 10 textových klíčů: „tembulding“ → teambuilding, „činnosi“ → činnosti, „všednách“ → všedních, „něvenujete“ → nevěnujete (2×), „přítelky“ → přítelkyni, „v ateléru“ → v ateliéru a chybějící mezera, rozbitá věta „zpracovats tématem“ → „zpracovat“ (návrh, ke schválení Milanem), „pohodlném“ → pohodlné, „nednesete“ → neodnesete, dvojité tečky v patičce a kartě Firemní akce. Úvodní stránka: tlačítka měla odkazy jen podle pevných záloh v `index.php`, takže „Zjistit více o pronájmu“ vedlo na rezervace, „Kontaktovat nás“ na /pronajem a „Vybrat termín kurzu“ na /kontakt. Přidány klíče `hero_pronajem_btn_primary_target` (`pronajem`), `hero_pronajem_btn_secondary_target` (`kontakt`) a `banner_home_button_target` (`kurzy_vyber`) — jdou měnit v adminu. Postup: stažení `content.json`, přesné náhrady textu s kontrolou počtu výskytů a platnosti JSON, nahrání zpět (záloha původního souboru na Milanově počítači), ověření shody otisku na serveru a vykreslených stránek. Poučení: velký `content.json` neupravovat přepisem z paměti, ale stažením a přesnými náhradami.
+
+---
+
 ## 2026-10-25 — DESIGN.md: design system a UX writing pravidla (web + rezervace)
 
 Do kořene repa přidán `DESIGN.md` — jediný zdroj pravdy o vzhledu (tokeny: barvy, písma, zaoblení, mezery), komponentách a obsahových pravidlech (hlas, slovník, formáty, vzory microcopy) pro web i rezervační systém. Formát: YAML tokeny + text, inspirováno Google DESIGN.md (alpha) a DTCG; čtou ho lidé i AI agenti. Hodnoty převzaty z produkčního `styles.css` a ověřeny proti `tailwind.config.ts`, `layout.tsx` a `app/page.tsx` (stavy veřejného kalendáře). Součástí je seznam otevřených bodů z auditu (překlepy, kontrast textu v akcentní barvě, viditelný fokus ve formulářích, barvy kalendáře mimo značkovou paletu). Validátor `@google/design.md lint` zatím nespuštěn.
