@@ -15,6 +15,10 @@ V repu `atelier-rezervace` je i starší návrhový dokument `kurzy-vouchery-spe
 
 Průběžný log novinek a změn — datované záznamy, co se kdy udělalo a proč. Nová položka se přidává při každé netriviální změně (nová funkce, oprava chyby, změna chování). Součástí skillu pro správu webu.
 
+## [../DESIGN.md](../DESIGN.md)
+
+Design system a pravidla textů (UX writing) pro web i rezervace: tokeny (barvy, písma, zaoblení, mezery), komponenty, hlas, slovník, formáty a vzory microcopy. **Před každou změnou vzhledu, komponenty nebo textu ho přečti** a drž se ho; když měníš tokeny nebo komponentu, uprav ve stejném kroku i DESIGN.md. Hodnoty vycházejí z produkčního `styles.css` a `tailwind.config.ts`.
+
 ## Přístupy a přihlašování
 
 - **GitHub** (`milansvolba/atelier-rezervace`) — kód rezervačního systému, editace přes webový editor GitHubu (commit do `main` = automatický deploy na Vercelu).
