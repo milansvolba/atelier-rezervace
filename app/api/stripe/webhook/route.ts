@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
           note,
           status: "confirmed",
           createdAt: new Date().toISOString(),
+          heardAbout: meta.heardAbout?.trim() || undefined,
         };
         await signupStore.add(signup);
         try {

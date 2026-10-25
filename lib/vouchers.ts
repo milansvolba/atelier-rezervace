@@ -32,6 +32,7 @@ export interface Voucher {
   createdAt: string;
   expiresAt: string;
   redeemedAt?: string;
+  heardAbout?: string; // nepovinné, z formuláře nákupu — viz lib/types.ts REFERRAL_OPTIONS
 }
 
 // Platnost poukazu od zaplacení.
@@ -64,6 +65,7 @@ function rowToVoucher(r: Record<string, unknown>): Voucher {
     createdAt: iso(r.created_at),
     expiresAt: iso(r.expires_at),
     redeemedAt: r.redeemed_at ? iso(r.redeemed_at) : undefined,
+    heardAbout: (r.heard_about as string) ?? undefined,
   };
 }
 
@@ -133,9 +135,9 @@ export const voucherStore = {
       try {
         const rows = await sql`
           INSERT INTO vouchers (id, code, topic, course_title, booking_id, people, casting, casting_count, amount_czk,
-                                buyer_name, buyer_email, recipient_name, message, status, stripe_session, expires_at)
+                                buyer_name, buyer_email, recipient_name, message, status, stripe_session, expires_at, heard_about)
           VALUES (${id}, ${code}, ${v.topic}, ${v.courseTitle}, ${v.bookingId ?? null}, ${v.people}, ${v.castingCount > 0}, ${v.castingCount}, ${Math.round(v.amountCzk)},
-                  ${v.buyerName}, ${v.buyerEmail}, ${v.recipientName ?? null}, ${v.message ?? null}, 'active', ${v.stripeSession ?? null}, ${v.expiresAt})
+                  ${v.buyerName}, ${v.buyerEmail}, ${v.recipientName ?? null}, ${v.message ?? null}, 'active', ${v.stripeSession ?? null}, ${v.expiresAt}, ${v.heardAbout ?? null})
           RETURNING *
         `;
         return rowToVoucher(rows[0]);
@@ -228,6 +230,7 @@ export async function handleVoucherPaid(sessionId: string, obj: Record<string, u
       message: meta.message?.trim() || undefined,
       stripeSession: sessionId,
       expiresAt: addMonths(new Date(), VOUCHER_VALID_MONTHS).toISOString(),
+      heardAbout: meta.heardAbout?.trim() || undefined,
     });
   } catch (e) {
     if (e instanceof DuplicateVoucherSessionError) return null;
@@ -264,6 +267,7 @@ export async function handleVoucherPaid(sessionId: string, obj: Record<string, u
       (voucher.recipientName ? " Kupující: " + voucher.buyerName + "." : ""),
     status: "confirmed",
     createdAt: new Date().toISOString(),
+    heardAbout: voucher.heardAbout,
   };
   try {
     await signupStore.add(signup);

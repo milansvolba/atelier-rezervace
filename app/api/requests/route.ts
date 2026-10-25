@@ -8,7 +8,7 @@ import { sendAdminNewRequestEmail, sendRequesterReceivedEmail } from "@/lib/emai
 // Nevytváří potvrzenou rezervaci, jen "pending" záznam čekající na schválení adminem.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { resource, date, startTime, endTime, title, requesterName, requesterContact, note, category, honeypot } = body;
+  const { resource, date, startTime, endTime, title, requesterName, requesterContact, note, category, heardAbout, honeypot } = body;
 
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     source: "public",
     createdAt: new Date().toISOString(),
     category: category === "kurz" ? "kurz" : "pronajem",
+    heardAbout: typeof heardAbout === "string" && heardAbout.trim() ? heardAbout.trim().slice(0, 200) : undefined,
   };
   await store.add(booking);
 

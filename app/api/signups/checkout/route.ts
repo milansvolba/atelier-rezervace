@@ -24,7 +24,7 @@ function seatsWord(n: number) {
 // (course_signups) vznikne až po zaplacení ve webhooku /api/stripe/webhook.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { bookingId, name, contact, people, note, honeypot, casting } = body;
+  const { bookingId, name, contact, people, note, honeypot, casting, heardAbout } = body;
 
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
         people: String(seats),
         casting: String(castings),
         note: String(note ?? "").slice(0, 300),
+        heardAbout: String(heardAbout ?? "").trim().slice(0, 200),
       },
       successUrl: APP_URL + "/kurzy?platba=ok",
       cancelUrl: APP_URL + "/kurzy?platba=zrusena",

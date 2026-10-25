@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { VOUCHER_COURSES, computeOrder } from "@/lib/pricing";
 import { VOUCHER_VALID_MONTHS } from "@/lib/voucherConfig";
+import { resolveHeardAbout } from "@/lib/types";
+import { HeardAboutField } from "@/components/HeardAboutField";
 
 interface Term {
   id: string;
@@ -30,6 +32,8 @@ export default function PoukazyPage() {
   const [buyerEmail, setBuyerEmail] = useState("");
   const [recipientName, setRecipientName] = useState("");
   const [message, setMessage] = useState("");
+  const [heardAbout, setHeardAbout] = useState("");
+  const [heardAboutOther, setHeardAboutOther] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -59,7 +63,18 @@ export default function PoukazyPage() {
       const r = await fetch("/api/vouchers/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, people, casting: Math.min(castings, people), bookingId: bookingId || undefined, buyerName, buyerEmail, recipientName, message, honeypot }),
+        body: JSON.stringify({
+          topic,
+          people,
+          casting: Math.min(castings, people),
+          bookingId: bookingId || undefined,
+          buyerName,
+          buyerEmail,
+          recipientName,
+          message,
+          heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
+          honeypot,
+        }),
       });
       const data = await r.json().catch(() => ({}));
       if (r.ok && data.url) {
@@ -156,6 +171,12 @@ export default function PoukazyPage() {
           Vzkaz na poukaz (nepovinné)
           <input className={input} maxLength={300} value={message} onChange={(e) => setMessage(e.target.value)} />
         </label>
+        <HeardAboutField
+          value={heardAbout}
+          onChange={setHeardAbout}
+          otherValue={heardAboutOther}
+          onOtherChange={setHeardAboutOther}
+        />
 
         <div className="border-t border-gray-100 pt-3 text-sm space-y-1">
           <div className="flex justify-between"><span>{people} × {course.pricePerPerson} Kč</span><span>{price.courseBefore} Kč</span></div>
