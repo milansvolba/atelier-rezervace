@@ -1,5 +1,5 @@
 # Seznam úkolů a stav
-## ▶ PRIORITY A STAV (aktualizováno 2026-10-20)
+## ▶ PRIORITY A STAV (aktualizováno 2026-10-25)
 
 **Pravidlo řazení:** úkol, který **omezuje spuštění** (ostrý provoz, příjem plateb od zákazníků, bezpečnost, právní nutnost), má **P0**. Zbytek se řadí podle poměru (přínos + dopad na prodej + bezpečnost) k pracnosti. Hodnocení je návrh Claude a Milan ho potvrzuje nebo mění.
 Škály: **Přínos** a **Dopad na prodej** 1–5 (5 = nejvyšší), **Bezpečnost/právo** 0–3 (3 = kritické), **Pracnost** S (do 1 h) / M (půl dne) / L (víc dní) / ext (čeká na někoho mimo nás).
@@ -41,6 +41,7 @@
 | 18 | **Drobný prodej + QR + kiosk tablet:** tabulka zboží a zásob v appce, platba dynamicky přes Stripe, rezervace kusů jako u míst kurzů; hrnek zůstává testovací | Zásoby se hlídají u nás, ne ve Stripe |
 | 19 | **Půjčovna** (rozhodnutí o ceně, kauci, délce) | Čeká na Milana |
 | 20 | **Role Partner, samoobslužná registrace, tykání členům, slevy na kurzy.php** | Odloženo |
+| 21 | **Bílá čekací obrazovka s velkým logem** při přechodu z rezervací (klik na logo) na úvodní stránku hlavního webu: zjistit, jestli jde o záměrný splash na PHP webu (kontrola `index.php` a hlavičky přes FTP nebo Chrome), případně ho zobrazovat jen při první návštěvě za relaci | Nahlásil Milan 2026-10-25, nijak nevadí, nejnižší priorita. Rezervační appka čekací obrazovku nemá (v kódu žádná není), hlavní web jsem zatím neověřil |
 
 ### Hotovo a nasazeno v main (Vercel zelený)
 Členství přes Stripe (otestováno v sandboxu), storno přihlášky s vratkou (7+ dní 100 %, 3–6 dní 50 %, 0–2 dny 0 %), množstevní slevy (2 os. 5 %, 3–4 10 %, 5–6 15 %), betonový odlitek (počet 0 až N), firemní akce skryté na `/kurzy`, dvousloupcový admin, dárkové poukazy (`/poukazy`, uplatnění kódu na `/kurzy`, admin přehled; PR #1 a #2).
