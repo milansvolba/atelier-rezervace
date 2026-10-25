@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Vždy rezervovat místo pro posuvník, ať se obsah neposúvá o pár pixelů mezi krátkými (Den) a dlouhými (Týden, Měsíc...) pohledy. */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: #f2f2f0;
   color: #1c1c1c;
