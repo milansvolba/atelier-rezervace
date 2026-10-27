@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-27 — Platby naostro: fakturační údaje a fronta „Doklad k vystavení“ (rezervace)
+
+Daňové doklady za kurzy a poukazy se vystavují ručně v Caflou, Stripe žádnou fakturu nevystavuje (`invoice_creation` se nepoužívá). Stripe Checkout (`lib/stripe.ts`) teď povinně sbírá fakturační adresu a volitelně IČO/DIČ (`billing_address_collection`, `tax_id_collection`). Po zaplacení (webhook) se údaje uloží do tabulky `payments` (nové sloupce kind, description, billing, paid_at, invoice_status, invoice_number, invoice_issued_at, correction_needed; modul `lib/invoices.ts`) a adminům přijde e-mail „Doklad k vystavení“ s odběratelem, částkou, rozpadem DPH 21 % (základ = částka / 1,21) a datem přijetí platby (= DUZP, k potvrzení účetní). Zákazník dostane upozornění, že potvrzení ze Stripe není daňový doklad a faktura přijde zvlášť (u poukazu přímo v e-mailu s kódem, u kurzu samostatným e-mailem). V adminu přibyl panel „Doklad k vystavení“ (tlačítko Vystaveno s nepovinným číslem dokladu, po 5 dnech se řádek zvýrazní jako po lhůtě; lhůtu upřesní účetní). Vratka (storno) označí platbu jako „vystavit opravný doklad“. Firemní akce jsou na veřejných Kurzech skryté už dřív. Pozdější krok: vystavování přes Caflou API. Členství se tímhle nemění.
+
+---
+
 ## 2026-10-25 — Home: fotka areálu zarovnaná s nadpisem sekce „Místo konání“ (web)
 
 V `index.php` jsou nadpis a úvodní věta sekce s fotkou areálu Kolinea (`home_story_heading`, `home_story_quote`) přesunuty z řádku přes celou šířku do levého sloupce dvousloupcové mřížky (`grid-2` s `align-items:start`). Fotka tak začíná ve stejné výšce jako nadpis a nadpis se zalamuje na šířku bloku vedle fotky. Na mobilu zůstává pořadí nadpis → text → fotka. Texty a jejich klíče beze změny. Nasazeno přes FTP plugin (`forpsi-ftp`) s automatickou zálohou původního souboru a ověřeno naživo (desktop i úzký displej).
