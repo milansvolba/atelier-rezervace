@@ -1473,13 +1473,36 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     loadVouchers();
   }
 
+  type DokladItem = { id: string; kind: "kurz" | "poukaz"; description: string; amountCzk: number; baseCzk: number; vatCzk: number; paidAt: string; billing: { name: string; email: string; address: { line1?: string; line2?: string; city?: string; postalCode?: string; country?: string }; taxIds: { type: string; value: string }[] } | null; invoiceNumber?: string; correctionNeeded: boolean; refundedCzk: number; overdue: boolean };
+  const [doklady, setDoklady] = useState<{ open: DokladItem[]; done: DokladItem[] }>({ open: [], done: [] });
+
+  async function loadDoklady() {
+    const res = await fetch("/api/admin/doklady");
+    if (res.ok) setDoklady(await res.json());
+  }
+
+  async function dokladAction(id: string, action: "issued" | "reopen" | "correction_done") {
+    let number: string | undefined;
+    if (action === "issued") {
+      const n = window.prompt("Číslo vystaveného dokladu (nepovinné):", "");
+      if (n === null) return;
+      number = n;
+    }
+    await fetch("/api/admin/doklady/" + id, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, number }),
+    });
+    loadDoklady();
+  }
+
   async function loadTiers() {
     const res = await fetch("/api/discount-tiers");
     if (res.ok) setTiers(await res.json());
   }
 
   useEffect(() => {
-    if (isAdmin) loadVouchers();
+    if (isAdmin) { loadVouchers(); loadDoklady(); }
   }, [isAdmin]);
 
   function updateTierField(id: string, field: "minFillPercent" | "discountPercent", value: number) {
@@ -1859,6 +1882,58 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
         </div>
       )}
 
+
+      {isAdmin && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="font-medium mb-1">Doklad k vystavení{doklady.open.length > 0 ? " (" + doklady.open.length + ")" : ""}</p>
+          <p className="text-xs text-gray-500 mb-3">
+            Zaplacené kurzy a poukazy, u kterých ještě není vystavený daňový doklad v Caflou. Datum uskutečnění plnění = datum přijetí platby. Po vystavení klikni na „Vystaveno“.
+          </p>
+          {doklady.open.length === 0 && <p className="text-sm text-gray-400">Vše vystaveno.</p>}
+          <div className="space-y-2">
+            {doklady.open.map((d) => {
+              const a = d.billing?.address;
+              const addr = a ? [a.line1, a.line2, [a.postalCode, a.city].filter(Boolean).join(" "), a.country].filter(Boolean).join(", ") : "";
+              return (
+                <div key={d.id} className={"border rounded-md p-3 text-sm flex items-start justify-between gap-3 flex-wrap " + (d.overdue ? "border-red-300 bg-red-50" : "border-gray-100")}>
+                  <div>
+                    <p className="font-medium">
+                      {d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ")} Kč
+                      {d.correctionNeeded && <span className="text-red-700"> · vratka: vystavit opravný doklad (vráceno {d.refundedCzk} Kč)</span>}
+                      {d.overdue && !d.correctionNeeded && <span className="text-red-700"> · po lhůtě</span>}
+                    </p>
+                    <p className="text-xs text-gray-500">{d.description}</p>
+                    <p className="text-xs text-gray-500">
+                      Zaplaceno {new Date(d.paidAt).toLocaleDateString("cs-CZ")} · základ {d.baseCzk.toLocaleString("cs-CZ")} Kč + DPH 21 % {d.vatCzk.toLocaleString("cs-CZ")} Kč
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {d.billing?.email}{addr ? " · " + addr : ""}{d.billing && d.billing.taxIds.length > 0 ? " · " + d.billing.taxIds.map((t) => t.type + " " + t.value).join(", ") : ""}
+                    </p>
+                  </div>
+                  {d.correctionNeeded ? (
+                    <button onClick={() => dokladAction(d.id, "correction_done")} className="h-8 px-3 rounded-md border border-gray-300 text-xs shrink-0">Opravný doklad vystaven</button>
+                  ) : (
+                    <button onClick={() => dokladAction(d.id, "issued")} className="h-8 px-3 rounded-md bg-green-700 text-white text-xs shrink-0">Vystaveno</button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {doklady.done.length > 0 && (
+            <details className="mt-3 text-xs text-gray-500">
+              <summary className="cursor-pointer">Naposledy vystavené ({doklady.done.length})</summary>
+              <div className="mt-2 space-y-1">
+                {doklady.done.map((d) => (
+                  <div key={d.id} className="flex items-center justify-between gap-3">
+                    <span>{d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ")} Kč · {d.invoiceNumber || "bez čísla"}</span>
+                    <button onClick={() => dokladAction(d.id, "reopen")} className="underline shrink-0">Vrátit do fronty</button>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
+      )}
 
       {isAdmin && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">

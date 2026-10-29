@@ -5,7 +5,8 @@ import { CourseSignup } from "@/lib/types";
 import { verifyStripeSignature, paymentStore } from "@/lib/stripe";
 import { handleMembershipEvent } from "@/lib/membership";
 import { handleVoucherPaid } from "@/lib/vouchers";
-import { sendAdminNewSignupEmail, sendSignupDecisionEmail, sendVoucherEmail, sendAdminNewVoucherEmail } from "@/lib/email";
+import { invoiceStore, billingFromSession } from "@/lib/invoices";
+import { sendAdminNewSignupEmail, sendSignupDecisionEmail, sendVoucherEmail, sendAdminNewVoucherEmail, sendAdminInvoiceBasisEmail, sendDokladNoteEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
         sendVoucherEmail(result.voucher, result.booking),
         sendAdminNewVoucherEmail(result.voucher, { booking: result.booking, overbooked: result.overbooked, signupFailed: result.signupFailed }),
       ]);
+      await queueInvoice(sessionId, obj, "poukaz", "Dárkový poukaz " + result.voucher.code + " – " + result.voucher.courseTitle);
     }
     return NextResponse.json({ received: true });
   }
@@ -89,6 +91,8 @@ export async function POST(req: NextRequest) {
           console.error("[stripe] Nepodařilo se spojit platbu " + sessionId + " s přihláškou:", e);
         }
         await Promise.all([sendAdminNewSignupEmail(booking, signup), sendSignupDecisionEmail(booking, signup, true)]);
+        if (contact.includes("@")) await sendDokladNoteEmail(contact, signup.id, booking.id);
+        await queueInvoice(sessionId, obj, "kurz", "Kurz " + booking.title + " " + booking.date + ", " + people + " os.");
       } else {
         console.error("[stripe] Zaplacená session " + sessionId + ": kurz " + bookingId + " už neexistuje.");
       }
@@ -96,4 +100,20 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+// Uloží podklady pro daňový doklad a pošle je adminům. Chyba tady nesmí shodit webhook
+// (přihláška/poukaz už vznikly, Stripe by událost zbytečně opakoval).
+async function queueInvoice(sessionId: string, obj: Record<string, unknown>, kind: "kurz" | "poukaz", description: string) {
+  try {
+    const item = await invoiceStore.record(sessionId, {
+      kind,
+      description,
+      amountCzk: Number(obj.amount_total ?? 0) / 100,
+      billing: billingFromSession(obj),
+    });
+    if (item) await sendAdminInvoiceBasisEmail(item);
+  } catch (e) {
+    console.error("[stripe] Podklady pro doklad k " + sessionId + " se nepodařilo uložit:", e);
+  }
 }

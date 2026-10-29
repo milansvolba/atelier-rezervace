@@ -4,6 +4,7 @@ import { getTemplate, renderTemplate } from "./emailTemplates";
 import { logEmail } from "./emailLog";
 import type { Voucher } from "./vouchers";
 import { castingText } from "./voucherConfig";
+import type { InvoiceItem } from "./invoices";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Atelier na Pobřeží <rezervace@ateliernapobrezi.cz>";
@@ -319,7 +320,8 @@ export async function sendVoucherEmail(v: Voucher, booking?: Booking) {
       `<p style="font-size:22px;letter-spacing:2px;"><strong>${esc(v.code)}</strong></p>` +
       voucherSummaryHtml(v, booking) +
       msg +
-      redeem
+      redeem +
+      DOKLAD_NOTE
   );
   await send(v.buyerEmail, "Váš dárkový poukaz " + v.code, html, { type: "voucher_buyer", bookingId: booking?.id });
 }
@@ -361,4 +363,32 @@ export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, si
     send(signup.contact, "Poukaz uplatněn, vaše místo je potvrzené", html, { type: "voucher_redeemed", bookingId: booking.id, signupId: signup.id }),
     send(ADMIN_EMAILS, "Uplatněn poukaz " + v.code, adminHtml, { type: "voucher_redeemed_admin", bookingId: booking.id, signupId: signup.id }),
   ]);
+}
+
+// --- Doklady k platbám ---
+const DOKLAD_NOTE = `<p style="font-size:13px;color:#555;">Potvrzení o platbě ze Stripe není daňový doklad. Daňový doklad (fakturu) vám zašleme samostatně.</p>`;
+
+// Zákazníkovi po zaplacení kurzu: upozornění, že daňový doklad přijde zvlášť.
+export async function sendDokladNoteEmail(to: string, signupId?: string, bookingId?: string) {
+  await send(to, "Doklad k vaší platbě", wrap(`<p>Dobrý den,</p><p>děkujeme za platbu.</p>${DOKLAD_NOTE}`), { type: "doklad_note", signupId, bookingId });
+}
+
+function fmtCzk(n: number) {
+  return n.toLocaleString("cs-CZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Kč";
+}
+
+// Adminům po zaplacení: podklady pro vystavení daňového dokladu v Caflou.
+export async function sendAdminInvoiceBasisEmail(item: InvoiceItem) {
+  const b = item.billing;
+  const a = b?.address;
+  const addr = a ? [a.line1, a.line2, [a.postalCode, a.city].filter(Boolean).join(" "), a.country].filter(Boolean).join(", ") : "";
+  const ids = (b?.taxIds ?? []).map((t) => esc(t.type) + ": " + esc(t.value)).join("; ");
+  const paid = item.paidAt ? fmtDate(item.paidAt.slice(0, 10)) : "";
+  const html = wrap(
+    `<p><strong>Vystavte daňový doklad v Caflou.</strong></p>` +
+      `<p>Odběratel: ${esc(b?.name || "—")}<br>E-mail: ${esc(b?.email || "—")}<br>Adresa: ${esc(addr || "—")}<br>IČO/DIČ: ${ids || "neuvedeno (fyzická osoba)"}</p>` +
+      `<p>Položka: ${esc(item.description)}<br>Celkem vč. DPH 21 %: <strong>${fmtCzk(item.amountCzk)}</strong><br>Základ: ${fmtCzk(item.baseCzk)} · DPH: ${fmtCzk(item.vatCzk)}<br>Datum přijetí platby (DUZP): <strong>${paid}</strong><br>Stripe: ${esc(item.id)}</p>` +
+      `<p>Doklad je už zaplacený (kartou, Stripe). Po vystavení ho v adminu odškrtněte: <a href="${APP_URL}/admin">Otevřít admin</a></p>`
+  );
+  await send(ADMIN_EMAILS, "Doklad k vystavení: " + (b?.name || item.description) + ", " + fmtCzk(item.amountCzk), html, { type: "invoice_basis" });
 }

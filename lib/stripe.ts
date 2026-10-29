@@ -37,6 +37,10 @@ export async function createCheckoutSession(input: CheckoutInput): Promise<{ id:
     cancel_url: input.cancelUrl,
     expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
     customer_email: input.customerEmail,
+    // Fakturační údaje pro daňový doklad (vystavuje se v Caflou): adresa povinně, IČO/DIČ volitelně.
+    // Stripe fakturu nevystavuje (invoice_creation záměrně vypnuté).
+    billing_address_collection: "required",
+    "tax_id_collection[enabled]": "true",
     "line_items[0][quantity]": 1,
     "line_items[0][price_data][currency]": "czk",
     "line_items[0][price_data][unit_amount]": Math.round(input.amountCzk * 100),
@@ -128,7 +132,8 @@ export const paymentStore = {
 
   async addRefunded(sessionId: string, czk: number): Promise<void> {
     await ensureSchema();
-    await sql`UPDATE payments SET refunded_czk = refunded_czk + ${Math.round(czk)} WHERE id = ${sessionId}`;
+    // Vratka = je potřeba vystavit opravný doklad (fronta v adminu, viz lib/invoices.ts).
+    await sql`UPDATE payments SET refunded_czk = refunded_czk + ${Math.round(czk)}, correction_needed = true WHERE id = ${sessionId}`;
   },
 
   async markExpired(sessionId: string): Promise<void> {

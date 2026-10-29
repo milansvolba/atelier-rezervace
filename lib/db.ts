@@ -92,6 +92,15 @@ await sql`
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS amount_czk integer`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS signup_id text`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS refunded_czk integer NOT NULL DEFAULT 0`;
+      // Podklady pro daňový doklad (vystavuje se ručně v Caflou, viz lib/invoices.ts).
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS kind text`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS description text`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS billing text`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS paid_at timestamptz`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS invoice_status text`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS invoice_number text`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS invoice_issued_at timestamptz`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS correction_needed boolean NOT NULL DEFAULT false`;
       // Dárkové poukazy na kurzy (kód, platnost 1 rok, stav active/redeemed)
       await sql`
         CREATE TABLE IF NOT EXISTS vouchers (
