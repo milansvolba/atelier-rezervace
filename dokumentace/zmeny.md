@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-29 — E-maily o změně a zrušení termínu kurzu mají vlastní šablony (rezervace)
+
+Po testu dorazil účastníkovi kurzu e-mail se starým textem „administrátor upravil termín vašeho kurzu“ a s interním názvem místnosti „Celý ateliér / kurz“. Pro kurzy jsou teď dvě nové šablony (editovatelné v adminu): `course_changed` („Změna termínu kurzu …“, původní a nový termín, omluva, místo zůstává potvrzené, nabídka jiného řešení) a `course_cancelled` („Zrušení termínu kurzu …“, náhradní termín nebo vratka). Šablony `booking_changed` a `booking_cancelled` zůstávají pro pronájmy a rezervace míst. Texty jsou psané podle `DESIGN.md` (vykání, vstřícně, s alternativou) a jsou NÁVRH ke schválení Milanem. Kontakt v textu je `rezervace@ateliernapobrezi.cz`, ověřit, že schránka funguje.
+
+---
+
 ## 2026-10-29 — Kontakt na obdarovaného u poukazu s pevným termínem; změny termínu jdou přihlášeným (rezervace)
 
 U poukazu s pevným termínem je po zaplacení rovnou potvrzená přihláška, ale kontakt u ní byl jen kupující. Nově: formulář poukazu (`/poukazy`) po výběru termínu ukáže blok „Kontakty pro případ změny termínu“ – telefon kupujícího je povinný, e-mail a telefon obdarovaného nepovinné (kontrola `cleanPhone`/`validEmail` v `lib/signupContact.ts`, server v `/api/vouchers/checkout`). Údaje se ukládají k poukazu (`vouchers.buyer_phone`, `recipient_email`, `recipient_phone`) i k přihlášce (`course_signups.phone` = obdarovaný, jinak kupující; `notify_email` = e-mail obdarovaného). Kupující může kontakt doplnit nebo změnit později přes odkaz v e-mailu s poukazem: stránka `/poukazy/kontakt?t=TOKEN` a API `/api/vouchers/contact` (GET/POST). Odkaz používá tajný token poukazu (`vouchers.manage_token`), ne kód poukazu, protože kód se předává obdarovanému; po uložení se aktualizuje přihláška a adminům přijde e-mail „Doplněn kontakt na obdarovaného“. E-mail s kódem poukazu s pevným termínem ukazuje, jaký kontakt máme, a tlačítko „Doplnit/Změnit kontakt na obdarovaného“. E-mail s kódem poukazu bez termínu má tlačítko „Použít kód poukazu“, které vede na `/kurzy?poukaz=KÓD`; stránka kurzů kód předvyplní, otevře pole poukazu a ukáže hlášku `kurzy.voucher.fromLink`.

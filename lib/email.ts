@@ -199,6 +199,24 @@ export async function sendRequesterDecisionEmail(booking: Booking, approved: boo
 // --- Rezervistovi: admin změnil termín/místo existující rezervace nebo kurzu ---
 export async function sendBookingChangedEmail(contact: string, before: Booking, after: Booking) {
   const isCourse = after.category === "kurz" || before.category === "kurz";
+  if (isCourse) {
+    // Kurz: vlastní šablona s názvem kurzu (bez interního názvu místnosti typu "Celý ateliér / kurz").
+    await sendFromTemplate(
+      "course_changed",
+      contact,
+      {
+        courseTitle: after.title,
+        beforeDate: fmtDate(before.date),
+        beforeStart: before.startTime,
+        beforeEnd: before.endTime,
+        afterDate: fmtDate(after.date),
+        afterStart: after.startTime,
+        afterEnd: after.endTime,
+      },
+      { bookingId: after.id }
+    );
+    return;
+  }
   await sendFromTemplate(
     "booking_changed",
     contact,
@@ -240,6 +258,15 @@ export async function notifyCourseSignups(
 // --- Rezervistovi: admin zrušil rezervaci nebo termín kurzu ---
 export async function sendBookingCancelledEmail(contact: string, booking: Booking) {
   const isCourse = booking.category === "kurz";
+  if (isCourse) {
+    await sendFromTemplate(
+      "course_cancelled",
+      contact,
+      { courseTitle: booking.title, date: fmtDate(booking.date), startTime: booking.startTime, endTime: booking.endTime },
+      { bookingId: booking.id }
+    );
+    return;
+  }
   await sendFromTemplate(
     "booking_cancelled",
     contact,
