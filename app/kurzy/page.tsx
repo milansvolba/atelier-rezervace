@@ -586,7 +586,22 @@ export default function KurzyPage() {
                   </div>
                 )}
                 {!voucherInfo && signupPeople >= 6 && (selectedCourse.spotsLeft === null || selectedCourse.spotsLeft > 6) && (
-                  <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2">{t("kurzy.step2.maxSeats", { max: "6" })}</p>
+                  <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3">
+                    <p className="min-w-0 flex-1">{t("kurzy.step2.maxSeats", { max: "6" })}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomNote((n) => (n ? n : `Téma: ${selectedCourse.title}`));
+                        setShowCustomForm(true);
+                        requestAnimationFrame(() => {
+                          document.getElementById("custom-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        });
+                      }}
+                      className="h-9 px-4 rounded-md border border-amber-300 bg-white text-gray-900 text-sm shrink-0"
+                    >
+                      {t("kurzy.step2.maxSeatsButton")}
+                    </button>
+                  </div>
                 )}
                 {selectedCourse.spotsLeft !== null && !voucherInfo && (
                   <p className="text-xs text-gray-500">{t("kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft), ...spotsPhrase(selectedCourse.spotsLeft) })}</p>
