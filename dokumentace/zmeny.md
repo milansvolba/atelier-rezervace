@@ -8,7 +8,7 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ## 2026-10-29 — E-maily o změně a zrušení termínu kurzu mají vlastní šablony (rezervace)
 
-Po testu dorazil účastníkovi kurzu e-mail se starým textem „administrátor upravil termín vašeho kurzu“ a s interním názvem místnosti „Celý ateliér / kurz“. Pro kurzy jsou teď dvě nové šablony (editovatelné v adminu): `course_changed` („Změna termínu kurzu …“, původní a nový termín, omluva, místo zůstává potvrzené, nabídka jiného řešení) a `course_cancelled` („Zrušení termínu kurzu …“, náhradní termín nebo vratka). Šablony `booking_changed` a `booking_cancelled` zůstávají pro pronájmy a rezervace míst. Texty jsou psané podle `DESIGN.md` (vykání, vstřícně, s alternativou) a jsou NÁVRH ke schválení Milanem. Kontakt v textu je `rezervace@ateliernapobrezi.cz`, ověřit, že schránka funguje.
+Po testu dorazil účastníkovi kurzu e-mail se starým textem „administrátor upravil termín vašeho kurzu“ a s interním názvem místnosti „Celý ateliér / kurz“. Pro kurzy jsou teď dvě nové šablony (editovatelné v adminu): `course_changed` („Změna termínu kurzu …“, původní a nový termín, omluva, místo zůstává potvrzené, nabídka jiného řešení) a `course_cancelled` („Zrušení termínu kurzu …“, nejdřív náhradní termín s omluvou a drobnou pozorností, vratka platby jen když náhradní termín nevyhovuje; druh pozornosti, například sleva na odlitek, Milan teprve určí a doplní do šablony). Šablony `booking_changed` a `booking_cancelled` zůstávají pro pronájmy a rezervace míst. Texty jsou psané podle `DESIGN.md` (vykání, vstřícně, s alternativou) a jsou NÁVRH ke schválení Milanem. Kontakt v textu je `rezervace@ateliernapobrezi.cz`, ověřit, že schránka funguje.
 
 ---
 

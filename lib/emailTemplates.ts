@@ -151,7 +151,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     subject: "Zrušení termínu kurzu {{courseTitle}}: {{date}}",
     body: `<p>Dobrý den,</p>
 <p>termín kurzu <strong>{{courseTitle}}</strong> ({{date}}, {{startTime}}–{{endTime}}) bohužel musíme zrušit. Moc nás to mrzí.</p>
-<p>Ozveme se vám s nabídkou náhradního termínu, nebo s vrácením platby, pokud jste už platili. Kdybyste nám chtěli napsat dřív, pište na <a href="mailto:rezervace@ateliernapobrezi.cz">rezervace@ateliernapobrezi.cz</a>.</p>`,
+<p>Ozveme se vám s nabídkou náhradního termínu a jako omluvu vám přidáme drobnou pozornost. Pokud vám náhradní termín nevyhovuje, vrátíme vám platbu. Kdybyste nám chtěli napsat dřív, pište na <a href="mailto:rezervace@ateliernapobrezi.cz">rezervace@ateliernapobrezi.cz</a>.</p>`,
   },
   admin_new_signup: {
     label: "Admin: nová přihláška na kurz",
