@@ -95,6 +95,8 @@ await sql`
       // Podklady pro daňový doklad (vystavuje se ručně v Caflou, viz lib/invoices.ts).
       // Fakturační údaje zadané zákazníkem ve formuláři před platbou (JSON, viz lib/billingInput.ts).
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS billing_input text`;
+      // Kdo platbu zahájil (e-mail malými písmeny): jeho dřívější nedokončený pokus se při dalším pokusu uvolní.
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS hold_key text`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS kind text`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS description text`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS billing text`;

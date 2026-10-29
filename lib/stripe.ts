@@ -86,9 +86,25 @@ export function verifyStripeSignature(rawBody: string, header: string | null, se
 // Evidence plateb — drží místa během platby a zajišťuje idempotenci webhooku.
 // Hold trvá 35 minut (Checkout Session vyprší dřív, za ~31 minut).
 export const paymentStore = {
-  async addAwaiting(sessionId: string, bookingId: string, people: number, billing?: BillingInput | null): Promise<void> {
+  async addAwaiting(sessionId: string, bookingId: string, people: number, billing?: BillingInput | null, holdKey?: string): Promise<void> {
     await ensureSchema();
-    await sql`INSERT INTO payments (id, booking_id, people, status, billing_input) VALUES (${sessionId}, ${bookingId}, ${people}, 'awaiting', ${billing ? JSON.stringify(billing) : null}) ON CONFLICT (id) DO NOTHING`;
+    await sql`INSERT INTO payments (id, booking_id, people, status, billing_input, hold_key) VALUES (${sessionId}, ${bookingId}, ${people}, 'awaiting', ${billing ? JSON.stringify(billing) : null}, ${holdKey ?? null}) ON CONFLICT (id) DO NOTHING`;
+  },
+
+  // Uvolní místa držená dřívějšími nedokončenými pokusy téhož zákazníka (stejný e-mail) na tomto termínu:
+  // platební stránku ve Stripe předčasně ukončí a platbu označí jako vypršelou. Dokončenou platbu nikdy nezruší.
+  async releaseHolds(bookingId: string, holdKey: string): Promise<number> {
+    await ensureSchema();
+    const rows = await sql`SELECT id FROM payments WHERE booking_id = ${bookingId} AND hold_key = ${holdKey} AND status = 'awaiting'`;
+    let released = 0;
+    for (const r of rows) {
+      const id = r.id as string;
+      if (await expireStripeSession(id)) {
+        await sql`UPDATE payments SET status = 'expired' WHERE id = ${id} AND status = 'awaiting'`;
+        released++;
+      }
+    }
+    return released;
   },
 
   // Počet míst, která jsou právě držená rozpracovanou platbou.
@@ -142,6 +158,24 @@ export const paymentStore = {
   },
 };
 
+
+// Předčasně ukončí otevřenou platební stránku. true = stránka už neexistuje (ukončena teď, nebo dřív vypršela);
+// false = nepodařilo se (např. už je zaplacená, nebo Stripe neodpovídá), místa se pak neuvolňují.
+export async function expireStripeSession(sessionId: string): Promise<boolean> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return false;
+  try {
+    const res = await fetch(STRIPE_API + "/checkout/sessions/" + encodeURIComponent(sessionId) + "/expire", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + key },
+    });
+    if (res.ok) return true;
+    const data = await res.json().catch(() => ({}));
+    return /expired/i.test(String(data?.error?.message ?? "")) && !/complete/i.test(String(data?.error?.message ?? ""));
+  } catch {
+    return false;
+  }
+}
 
 // Vrácení části nebo celé platby přes Stripe Refunds API (částka v Kč).
 export async function createRefund(paymentIntent: string, amountCzk: number): Promise<{ id: string }> {
