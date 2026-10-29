@@ -4,6 +4,7 @@ import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
 import { computeOrder, castingPriceFor, clampCastings } from "@/lib/pricing";
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
+import { parseBillingInput } from "@/lib/billingInput";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ function seatsWord(n: number) {
 // (course_signups) vznikne až po zaplacení ve webhooku /api/stripe/webhook.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { bookingId, name, contact, people, note, honeypot, casting, heardAbout } = body;
+  const { bookingId, name, contact, people, note, honeypot, casting, heardAbout, billing } = body;
 
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
@@ -61,6 +62,8 @@ export async function POST(req: NextRequest) {
   const castingPrice = castingPriceFor(booking.title);
   const castings = castingPrice !== null ? clampCastings(casting, seats) : 0;
   const price = computeOrder(booking.price, seats, castings, castingPrice ?? 0);
+  const billingCheck = parseBillingInput(billing, price.total);
+  if (!billingCheck.ok) return NextResponse.json({ error: billingCheck.error }, { status: 400 });
   const contactStr = String(contact).trim();
   const email = contactStr.includes("@") ? contactStr : undefined;
 
@@ -82,7 +85,7 @@ export async function POST(req: NextRequest) {
       successUrl: APP_URL + "/kurzy?platba=ok",
       cancelUrl: APP_URL + "/kurzy?platba=zrusena",
     });
-    await paymentStore.addAwaiting(session.id, booking.id, seats);
+    await paymentStore.addAwaiting(session.id, booking.id, seats, billingCheck.value);
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("[stripe] Vytvoření platby selhalo:", err);

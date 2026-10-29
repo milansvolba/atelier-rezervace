@@ -4,6 +4,7 @@ import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
 import { computeOrder, voucherCourse, clampCastings } from "@/lib/pricing";
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
+import { parseBillingInput } from "@/lib/billingInput";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ function peopleWord(n: number) {
 // bookingId je volitelný pevný termín; bez něj si obdarovaný termín vybere sám později.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { topic, people, casting, bookingId, buyerName, buyerEmail, recipientName, message, heardAbout, honeypot } = body;
+  const { topic, people, casting, bookingId, buyerName, buyerEmail, recipientName, message, heardAbout, honeypot, billing } = body;
 
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
@@ -79,6 +80,9 @@ export async function POST(req: NextRequest) {
   const castings = clampCastings(casting, seats);
   const price = computeOrder(course.pricePerPerson, seats, castings, course.castingPrice);
 
+  const billingCheck = parseBillingInput(billing, price.total);
+  if (!billingCheck.ok) return NextResponse.json({ error: billingCheck.error }, { status: 400 });
+
   try {
     const session = await createCheckoutSession({
       amountCzk: price.courseAfter,
@@ -103,7 +107,7 @@ export async function POST(req: NextRequest) {
       cancelUrl: APP_URL + "/poukazy?platba=zrusena",
     });
     // U pevného termínu se místa po dobu platby drží; bez termínu jde jen o záznam platby (idempotence webhooku).
-    await paymentStore.addAwaiting(session.id, booking ? booking.id : "voucher", seats);
+    await paymentStore.addAwaiting(session.id, booking ? booking.id : "voucher", seats, billingCheck.value);
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("[stripe] Vytvoření platby poukazu selhalo:", err);

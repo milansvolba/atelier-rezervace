@@ -93,6 +93,8 @@ await sql`
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS signup_id text`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS refunded_czk integer NOT NULL DEFAULT 0`;
       // Podklady pro daňový doklad (vystavuje se ručně v Caflou, viz lib/invoices.ts).
+      // Fakturační údaje zadané zákazníkem ve formuláři před platbou (JSON, viz lib/billingInput.ts).
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS billing_input text`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS kind text`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS description text`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS billing text`;

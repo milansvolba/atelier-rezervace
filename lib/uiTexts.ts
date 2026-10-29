@@ -39,6 +39,13 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     vars: ["spots", "remaining", "places"],
     text: "{{remaining}} {{spots}} {{places}}. Čím víc vás přijde, tím větší sleva.",
   },
+  "kurzy.step2.maxSeats": {
+    group: "Objednávka kurzu",
+    label: "Krok 2: upozornění na limit míst online",
+    description: "Zobrazí se pod počtem míst, když zákazník dosáhne největšího počtu, který jde zaplatit online, a termín má volných míst víc. Proměnná max = nejvyšší počet míst online.",
+    vars: ["max"],
+    text: "Online lze zaplatit nejvýše {{max}} míst. Pro větší skupinu zvolte „Pro skupinu — domluvit termín“ a pošlete nám poptávku, termín společně domluvíme.",
+  },
   "kurzy.step2.nudge": {
     group: "Objednávka kurzu",
     label: "Krok 2: nabídka přidat další místo",

@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { sql, ensureSchema } from "./db";
+import type { BillingInput } from "./billingInput";
 
 // Stripe přes REST API (fetch) — záměrně bez npm balíčku "stripe", aby šlo appku
 // upravovat jen přes web GitHubu bez aktualizace package-lock.json.
@@ -37,17 +38,9 @@ export async function createCheckoutSession(input: CheckoutInput): Promise<{ id:
     cancel_url: input.cancelUrl,
     expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
     customer_email: input.customerEmail,
-    // Fakturační údaje pro daňový doklad (vystavuje se v Caflou): adresa povinně, IČO/DIČ volitelně.
-    // Stripe fakturu nevystavuje (invoice_creation záměrně vypnuté).
-    billing_address_collection: "required",
-    "tax_id_collection[enabled]": "true",
-    // Stripe pro Česko nabízí jen DIČ; IČO sbíráme jako nepovinné vlastní pole (klíč "ico", čte lib/invoices.ts).
-    "custom_fields[0][key]": "ico",
-    "custom_fields[0][label][type]": "custom",
-    "custom_fields[0][label][custom]": "IČO (jen pro firmy, nepovinné)",
-    "custom_fields[0][type]": "text",
-    "custom_fields[0][optional]": "true",
-    "custom_fields[0][text][maximum_length]": 12,
+    // Fakturační údaje (firma, IČO, DIČ, adresa) sbíráme už v našem formuláři a ukládáme v tabulce payments (billing_input).
+    // Stripe si od zákazníka řekne jen to, co potřebuje karta; fakturu Stripe nevystavuje (invoice_creation se nepoužívá).
+    billing_address_collection: "auto",
     "line_items[0][quantity]": 1,
     "line_items[0][price_data][currency]": "czk",
     "line_items[0][price_data][unit_amount]": Math.round(input.amountCzk * 100),
@@ -93,9 +86,9 @@ export function verifyStripeSignature(rawBody: string, header: string | null, se
 // Evidence plateb — drží místa během platby a zajišťuje idempotenci webhooku.
 // Hold trvá 35 minut (Checkout Session vyprší dřív, za ~31 minut).
 export const paymentStore = {
-  async addAwaiting(sessionId: string, bookingId: string, people: number): Promise<void> {
+  async addAwaiting(sessionId: string, bookingId: string, people: number, billing?: BillingInput | null): Promise<void> {
     await ensureSchema();
-    await sql`INSERT INTO payments (id, booking_id, people, status) VALUES (${sessionId}, ${bookingId}, ${people}, 'awaiting') ON CONFLICT (id) DO NOTHING`;
+    await sql`INSERT INTO payments (id, booking_id, people, status, billing_input) VALUES (${sessionId}, ${bookingId}, ${people}, 'awaiting', ${billing ? JSON.stringify(billing) : null}) ON CONFLICT (id) DO NOTHING`;
   },
 
   // Počet míst, která jsou právě držená rozpracovanou platbou.

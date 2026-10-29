@@ -7,6 +7,8 @@ import { groupDiscountPercent } from "@/lib/pricing";
 import { resolveHeardAbout } from "@/lib/types";
 import { HeardAboutField } from "@/components/HeardAboutField";
 import { spotsPhrase } from "@/lib/invoiceFormat";
+import BillingFields from "@/components/BillingFields";
+import { BillingInput, emptyBilling, needsPrivateAddress } from "@/lib/billingInput";
 
 interface CourseCard {
   id: string;
@@ -48,6 +50,7 @@ export default function KurzyPage() {
   const [payResult, setPayResult] = useState<null | "ok" | "cancel">(null);
   const [step, setStep] = useState(2);
   const [signupPhone, setSignupPhone] = useState("");
+  const [billing, setBilling] = useState<BillingInput>(emptyBilling);
   // Sdílené pro krokový formulář přihlášky/platby i pro poptávku na míru níže (nikdy se nepoužívají zároveň).
   const [heardAbout, setHeardAbout] = useState("");
   const [heardAboutOther, setHeardAboutOther] = useState("");
@@ -321,6 +324,7 @@ export default function KurzyPage() {
       honeypot,
       casting: Math.min(castings, signupPeople),
       heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
+      billing: selectedCourse.price ? billing : undefined,
     });
     try {
       if (selectedCourse.price) {
@@ -581,6 +585,9 @@ export default function KurzyPage() {
                     )}
                   </div>
                 )}
+                {!voucherInfo && signupPeople >= 6 && (selectedCourse.spotsLeft === null || selectedCourse.spotsLeft > 6) && (
+                  <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2">{t("kurzy.step2.maxSeats", { max: "6" })}</p>
+                )}
                 {selectedCourse.spotsLeft !== null && !voucherInfo && (
                   <p className="text-xs text-gray-500">{t("kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft), ...spotsPhrase(selectedCourse.spotsLeft) })}</p>
                 )}
@@ -664,6 +671,7 @@ export default function KurzyPage() {
                     onChange={(e) => setSignupNote(e.target.value)}
                   />
                 </label>
+                {quote && <BillingFields value={billing} onChange={setBilling} needAddress={needsPrivateAddress(quote.grand)} />}
                 <HeardAboutField
                   value={heardAbout}
                   onChange={setHeardAbout}
@@ -704,6 +712,17 @@ export default function KurzyPage() {
                     <div className="flex justify-between gap-4">
                       <dt className="text-gray-500">Poznámka</dt>
                       <dd>{signupNote}</dd>
+                    </div>
+                  )}
+                  {quote && billing.isCompany && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-gray-500">Doklad na firmu</dt>
+                      <dd className="text-right">
+                        {billing.company}, IČO {billing.ico}
+                        {billing.dic ? ", DIČ " + billing.dic : ""}
+                        <br />
+                        {billing.street}, {billing.zip} {billing.city}
+                      </dd>
                     </div>
                   )}
                 </dl>

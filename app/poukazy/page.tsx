@@ -5,6 +5,8 @@ import { VOUCHER_COURSES, computeOrder } from "@/lib/pricing";
 import { VOUCHER_VALID_MONTHS } from "@/lib/voucherConfig";
 import { resolveHeardAbout } from "@/lib/types";
 import { HeardAboutField } from "@/components/HeardAboutField";
+import BillingFields from "@/components/BillingFields";
+import { BillingInput, emptyBilling, needsPrivateAddress } from "@/lib/billingInput";
 
 interface Term {
   id: string;
@@ -35,6 +37,7 @@ export default function PoukazyPage() {
   const [heardAbout, setHeardAbout] = useState("");
   const [heardAboutOther, setHeardAboutOther] = useState("");
   const [honeypot, setHoneypot] = useState("");
+  const [billing, setBilling] = useState<BillingInput>(emptyBilling);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<null | "ok" | "cancel">(null);
@@ -74,6 +77,7 @@ export default function PoukazyPage() {
           message,
           heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
           honeypot,
+          billing,
         }),
       });
       const data = await r.json().catch(() => ({}));
@@ -133,6 +137,11 @@ export default function PoukazyPage() {
             <button type="button" aria-label="Více osob" disabled={people >= 6} onClick={() => { setPeople(people + 1); setBookingId(""); }} className="h-10 w-10 rounded-md border border-gray-300 text-lg disabled:opacity-40">+</button>
           </div>
           <p className="text-xs text-gray-500 mt-1">Čím víc osob, tím větší skupinová sleva (od 2 osob).</p>
+          {people >= 6 && (
+            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2 mt-2">
+              Online lze zaplatit poukaz nejvýše pro 6 osob. Pro větší skupinu nám prosím napište a domluvíme se.
+            </p>
+          )}
         </div>
 
         {people === 1 ? (
@@ -171,6 +180,7 @@ export default function PoukazyPage() {
           Vzkaz na poukaz (nepovinné)
           <input className={input} maxLength={300} value={message} onChange={(e) => setMessage(e.target.value)} />
         </label>
+        <BillingFields value={billing} onChange={setBilling} needAddress={needsPrivateAddress(price.total)} />
         <HeardAboutField
           value={heardAbout}
           onChange={setHeardAbout}
