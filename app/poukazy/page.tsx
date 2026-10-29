@@ -137,6 +137,11 @@ export default function PoukazyPage() {
             <button type="button" aria-label="Více osob" disabled={people >= 6} onClick={() => { setPeople(people + 1); setBookingId(""); }} className="h-10 w-10 rounded-md border border-gray-300 text-lg disabled:opacity-40">+</button>
           </div>
           <p className="text-xs text-gray-500 mt-1">Čím víc osob, tím větší skupinová sleva (od 2 osob).</p>
+          {people >= 6 && (
+            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2 mt-2">
+              Online lze zaplatit poukaz nejvýše pro 6 osob. Pro větší skupinu nám prosím napište a domluvíme se.
+            </p>
+          )}
         </div>
 
         {people === 1 ? (

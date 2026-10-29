@@ -585,6 +585,9 @@ export default function KurzyPage() {
                     )}
                   </div>
                 )}
+                {!voucherInfo && signupPeople >= 6 && (selectedCourse.spotsLeft === null || selectedCourse.spotsLeft > 6) && (
+                  <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2">{t("kurzy.step2.maxSeats", { max: "6" })}</p>
+                )}
                 {selectedCourse.spotsLeft !== null && !voucherInfo && (
                   <p className="text-xs text-gray-500">{t("kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft), ...spotsPhrase(selectedCourse.spotsLeft) })}</p>
                 )}
