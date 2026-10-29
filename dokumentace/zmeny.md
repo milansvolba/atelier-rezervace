@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-29 — Drobnosti e-mailů: odkaz na mapu u adresy, věta u kontaktu (rezervace)
+
+Adresa ateliéru v e-mailech (blok „Kde nás najdete“ u poukazu s termínem a v potvrzení uplatnění poukazu, výchozí text šablony „Kurz potvrzen“) je teď vlastní odkaz na Mapy.com (`STUDIO_MAP_URL` v `lib/email.ts`). Gmail si dřív adresu převáděl na odkaz sám a špatně ho ohraničil (odkaz začínal až od „pobřeží“). Věta u kontaktu na obdarovaného končí „ozveme se na tento kontakt“. Pozor: pokud byla šablona „Kurz potvrzen“ upravená v adminu, uložený text se změnou výchozího nepřepíše.
+
+---
+
 ## 2026-10-29 — Kontakt na obdarovaného u poukazu s pevným termínem; změny termínu jdou přihlášeným (rezervace)
 
 U poukazu s pevným termínem je po zaplacení rovnou potvrzená přihláška, ale kontakt u ní byl jen kupující. Nově: formulář poukazu (`/poukazy`) po výběru termínu ukáže blok „Kontakty pro případ změny termínu“ – telefon kupujícího je povinný, e-mail a telefon obdarovaného nepovinné (kontrola `cleanPhone`/`validEmail` v `lib/signupContact.ts`, server v `/api/vouchers/checkout`). Údaje se ukládají k poukazu (`vouchers.buyer_phone`, `recipient_email`, `recipient_phone`) i k přihlášce (`course_signups.phone` = obdarovaný, jinak kupující; `notify_email` = e-mail obdarovaného). Kupující může kontakt doplnit nebo změnit později přes odkaz v e-mailu s poukazem: stránka `/poukazy/kontakt?t=TOKEN` a API `/api/vouchers/contact` (GET/POST). Odkaz používá tajný token poukazu (`vouchers.manage_token`), ne kód poukazu, protože kód se předává obdarovanému; po uložení se aktualizuje přihláška a adminům přijde e-mail „Doplněn kontakt na obdarovaného“. E-mail s kódem poukazu s pevným termínem ukazuje, jaký kontakt máme, a tlačítko „Doplnit/Změnit kontakt na obdarovaného“. E-mail s kódem poukazu bez termínu má tlačítko „Použít kód poukazu“, které vede na `/kurzy?poukaz=KÓD`; stránka kurzů kód předvyplní, otevře pole poukazu a ukáže hlášku `kurzy.voucher.fromLink`.
