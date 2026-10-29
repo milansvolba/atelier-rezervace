@@ -49,3 +49,8 @@ export function spotsPhrase(n: number): { remaining: string; places: string } {
   if (n >= 2 && n <= 4) return { remaining: "Zbývají", places: "volná místa" };
   return { remaining: "Zbývá", places: "volných míst" };
 }
+
+// Zákazník zaškrtl „Nakupuji na firmu“ (název firmy nebo DIČ), ale IČO nevyplnil.
+export function icoMissing(b: BillingLike | null | undefined): boolean {
+  return !!b && (!!b.company || b.taxIds.length > 0) && !b.ico;
+}

@@ -19,7 +19,7 @@ import {
   startOfWeekMon,
 } from "@/lib/calendar";
 import { windowsOnDate, restrictedInWindow } from "@/lib/prep";
-import { addressLine, idsLine } from "@/lib/invoiceFormat";
+import { addressLine, idsLine, icoMissing } from "@/lib/invoiceFormat";
 
 type ViewMode = "day" | "week" | "month" | "quarter" | "year";
 type Role = "admin" | "member";
@@ -1909,6 +1909,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                     <p className="text-xs text-gray-500">
                       {d.billing?.company && d.billing?.name ? d.billing.name + " · " : ""}{d.billing?.email}{addr ? " · " + addr : ""}{idsLine(d.billing) ? " · " + idsLine(d.billing) : ""}
                     </p>
+                    {icoMissing(d.billing) && <p className="text-xs text-amber-700">Chybí IČO: zákazník nakupuje na firmu. Dohledej ho v ARES (Caflou).</p>}
                   </div>
                   {d.correctionNeeded ? (
                     <button onClick={() => dokladAction(d.id, "correction_done")} className="h-8 px-3 rounded-md border border-gray-300 text-xs shrink-0">Opravný doklad vystaven</button>

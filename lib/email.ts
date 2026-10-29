@@ -5,7 +5,7 @@ import { logEmail } from "./emailLog";
 import type { Voucher } from "./vouchers";
 import { castingText } from "./voucherConfig";
 import type { InvoiceItem } from "./invoices";
-import { addressLine, idsLine } from "./invoiceFormat";
+import { addressLine, idsLine, icoMissing } from "./invoiceFormat";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Atelier na Pobřeží <rezervace@ateliernapobrezi.cz>";
@@ -393,6 +393,7 @@ export async function sendAdminInvoiceBasisEmail(item: InvoiceItem) {
   const html = wrap(
     `<p><strong>Vystavte daňový doklad v Caflou.</strong></p>` +
       `<p>Odběratel: ${esc(b?.company || b?.name || "—")}${b?.company && b?.name ? `<br>Kontaktní osoba: ${esc(b.name)}` : ""}<br>E-mail: ${esc(b?.email || "—")}<br>Adresa: ${esc(addr || "—")}<br>${ids ? esc(ids) : "IČO/DIČ: neuvedeno (nejspíš fyzická osoba)"}</p>` +
+      (icoMissing(b) ? `<p style="background:#fff4d6;padding:8px;"><strong>Pozor: chybí IČO.</strong> Zákazník nakupuje na firmu, ale IČO nevyplnil. Dohledejte ho v ARES (Caflou ho umí načíst podle názvu nebo DIČ).</p>` : "") +
       `<p>Položka: ${esc(item.description)}<br>Celkem vč. DPH 21 %: <strong>${fmtCzk(item.amountCzk)}</strong><br>Základ: ${fmtCzk(item.baseCzk)} · DPH: ${fmtCzk(item.vatCzk)}<br>Datum přijetí platby (DUZP): <strong>${paid}</strong><br>Stripe: ${esc(item.id)}</p>` +
       `<p>Doklad je už zaplacený (kartou, Stripe). Po vystavení ho v adminu odškrtněte: <a href="${APP_URL}/admin">Otevřít admin</a></p>`
   );
