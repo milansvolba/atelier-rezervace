@@ -44,7 +44,14 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     label: "Krok 2: upozornění na limit míst online",
     description: "Zobrazí se pod počtem míst, když zákazník dosáhne největšího počtu, který jde zaplatit online, a termín má volných míst víc. Proměnná max = nejvyšší počet míst online.",
     vars: ["max"],
-    text: "Online lze zaplatit nejvýše {{max}} míst. Pro větší skupinu zvolte „Pro skupinu — domluvit termín“ a pošlete nám poptávku, termín společně domluvíme.",
+    text: "Online lze zaplatit nejvýše {{max}} míst. Pro větší skupinu nebo firmu domluvíme termín na míru.",
+  },
+  "kurzy.step2.maxSeatsButton": {
+    group: "Objednávka kurzu",
+    label: "Krok 2: tlačítko v upozornění na limit míst",
+    description: "Tlačítko v žlutém upozornění na limit míst online. Přesune zákazníka k poptávce kurzu na míru pro skupinu.",
+    vars: [],
+    text: "Domluvit termín pro skupinu",
   },
   "kurzy.step2.nudge": {
     group: "Objednávka kurzu",
