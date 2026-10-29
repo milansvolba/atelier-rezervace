@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-29 — Poukaz po zaplacení: tlačítko „Zpátky na web“ (rezervace)
+
+Děkovací stránka `/poukazy?platba=ok` má v bílé kartě černé tlačítko „Zpátky na web“ (vede na `https://ateliernapobrezi.cz`), aby zákazník po zaplacení nezůstal bez další cesty. Dosud tam byl jen malý šedý odkaz „← Zpět na web ateliéru“ nad logem. Změna je v `app/poukazy/page.tsx`. Stránka po zrušené platbě tlačítko nemá, protože tam zůstává formulář.
+
+---
+
 ## 2026-10-29 — Dárkové poukazy: tlačítka přímo v kartách kurzů, bez referencí (web)
 
 Na `/darkove-poukazy` se z pravého sloupce odstranily reference („Co říkají lidé, kteří kurz zkusili“) a celá spodní sekce „Koupit dárkový poukaz“. Tlačítka „Koupit poukaz“ jsou teď přímo v kartách kurzů (Modelování hlavy, Modelování reliéfu) nad odkazem „Co je v ceně a víc o kurzu“ a vedou na `rezervace.ateliernapobrezi.cz/poukazy?kurz=hlava` / `?kurz=relief`. Texty tlačítek zůstávají editovatelné (`poukazy_cta_hlava`, `poukazy_cta_relief`). Věta „Nevíte, který kurz vybrat…“ je pod kartami, kotva `#poptavka` je na sekci „Který kurz darujete“ (funguje tlačítko v hero). Sekce FAQ změnila pozadí na bílé, aby se střídaly pruhy. Nepoužité klíče (`poukazy_reference_*`, `poukazy_form_heading`, `poukazy_form_lead`) zůstávají v `content.json`. Ověřeno živě na desktopu i v šířce 390 px.

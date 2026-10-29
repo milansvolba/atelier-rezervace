@@ -103,6 +103,12 @@ export default function PoukazyPage() {
         <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
           <h1 className="text-xl font-semibold">Děkujeme, poukaz je zaplacený</h1>
           <p className="text-sm text-gray-700">Kód poukazu a návod, jak ho uplatnit, vám právě posíláme e-mailem. Pokud nic nedorazí do pár minut, mrkněte do nevyžádané pošty.</p>
+          <a
+            href="https://ateliernapobrezi.cz"
+            className="block text-center bg-black text-white rounded-md py-3 font-semibold hover:bg-gray-800"
+          >
+            Zpátky na web
+          </a>
         </div>
       </main>
     );
