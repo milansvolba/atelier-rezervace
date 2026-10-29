@@ -5,6 +5,8 @@ import { VOUCHER_COURSES, computeOrder } from "@/lib/pricing";
 import { VOUCHER_VALID_MONTHS } from "@/lib/voucherConfig";
 import { resolveHeardAbout } from "@/lib/types";
 import { HeardAboutField } from "@/components/HeardAboutField";
+import BillingFields from "@/components/BillingFields";
+import { BillingInput, emptyBilling, needsPrivateAddress } from "@/lib/billingInput";
 
 interface Term {
   id: string;
@@ -35,6 +37,7 @@ export default function PoukazyPage() {
   const [heardAbout, setHeardAbout] = useState("");
   const [heardAboutOther, setHeardAboutOther] = useState("");
   const [honeypot, setHoneypot] = useState("");
+  const [billing, setBilling] = useState<BillingInput>(emptyBilling);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<null | "ok" | "cancel">(null);
@@ -74,6 +77,7 @@ export default function PoukazyPage() {
           message,
           heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
           honeypot,
+          billing,
         }),
       });
       const data = await r.json().catch(() => ({}));
@@ -171,6 +175,7 @@ export default function PoukazyPage() {
           Vzkaz na poukaz (nepovinné)
           <input className={input} maxLength={300} value={message} onChange={(e) => setMessage(e.target.value)} />
         </label>
+        <BillingFields value={billing} onChange={setBilling} needAddress={needsPrivateAddress(price.total)} />
         <HeardAboutField
           value={heardAbout}
           onChange={setHeardAbout}

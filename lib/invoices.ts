@@ -1,4 +1,5 @@
 import { sql, ensureSchema } from "./db";
+import type { BillingInput } from "./billingInput";
 
 // Podklady pro daňové doklady. Doklad vystavuje Milan ručně v Caflou; aplikace po zaplacení uloží
 // fakturační údaje ze Stripe Checkout a hlídá, co ještě není vystavené. Data jsou v tabulce `payments`
@@ -75,6 +76,23 @@ export function billingFromSession(obj: Record<string, unknown>): BillingDetails
   };
 }
 
+// Údaje ze formuláře (BillingInput) mají přednost před tím, co o zákazníkovi ví Stripe; Stripe slouží jako záloha.
+export function mergeBilling(stripe: BillingDetails, input: BillingInput | null, contactName?: string): BillingDetails {
+  if (!input) return contactName ? { ...stripe, name: contactName } : stripe;
+  const address = { line1: input.street, city: input.city, postalCode: input.zip, country: "CZ" };
+  if (input.isCompany) {
+    return {
+      ...stripe,
+      name: contactName || stripe.name,
+      company: input.company,
+      ico: input.ico,
+      address,
+      taxIds: input.dic ? [{ type: "eu_vat", value: input.dic }] : [],
+    };
+  }
+  return { ...stripe, name: contactName || stripe.name, company: undefined, ico: undefined, address, taxIds: [] };
+}
+
 function rowToItem(r: Record<string, unknown>): InvoiceItem {
   const amountCzk = Number(r.amount_czk ?? 0);
   const { base, vat } = vatBreakdown(amountCzk);
@@ -107,8 +125,16 @@ function rowToItem(r: Record<string, unknown>): InvoiceItem {
 
 export const invoiceStore = {
   // Po zaplacení: uloží údaje k řádku payments (ten už vytvořil markPaid) a vrátí hotovou položku.
-  async record(sessionId: string, d: { kind: InvoiceKind; description: string; amountCzk: number; billing: BillingDetails }): Promise<InvoiceItem | null> {
+  async record(sessionId: string, d: { kind: InvoiceKind; description: string; amountCzk: number; billing: BillingDetails; contactName?: string }): Promise<InvoiceItem | null> {
     await ensureSchema();
+    const pre = await sql`SELECT billing_input FROM payments WHERE id = ${sessionId}`;
+    let input: BillingInput | null = null;
+    try {
+      input = pre[0]?.billing_input ? (JSON.parse(pre[0].billing_input as string) as BillingInput) : null;
+    } catch {
+      input = null;
+    }
+    d = { ...d, billing: mergeBilling(d.billing, input, d.contactName) };
     const rows = await sql`
       UPDATE payments SET kind = ${d.kind}, description = ${d.description}, billing = ${JSON.stringify(d.billing)},
         amount_czk = ${Math.round(d.amountCzk)}, paid_at = COALESCE(paid_at, now()), invoice_status = COALESCE(invoice_status, 'pending')

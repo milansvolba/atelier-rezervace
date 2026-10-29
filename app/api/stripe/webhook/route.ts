@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         sendVoucherEmail(result.voucher, result.booking),
         sendAdminNewVoucherEmail(result.voucher, { booking: result.booking, overbooked: result.overbooked, signupFailed: result.signupFailed }),
       ]);
-      await queueInvoice(sessionId, obj, "poukaz", "Dárkový poukaz " + result.voucher.code + " – " + result.voucher.courseTitle);
+      await queueInvoice(sessionId, obj, meta.buyerName, "poukaz", "Dárkový poukaz " + result.voucher.code + " – " + result.voucher.courseTitle);
     }
     return NextResponse.json({ received: true });
   }
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         }
         await Promise.all([sendAdminNewSignupEmail(booking, signup), sendSignupDecisionEmail(booking, signup, true)]);
         if (contact.includes("@")) await sendDokladNoteEmail(contact, signup.id, booking.id);
-        await queueInvoice(sessionId, obj, "kurz", "Kurz " + booking.title + " " + czDate(booking.date) + ", " + people + " os.");
+        await queueInvoice(sessionId, obj, meta.name, "kurz", "Kurz " + booking.title + " " + czDate(booking.date) + ", " + people + " os.");
       } else {
         console.error("[stripe] Zaplacená session " + sessionId + ": kurz " + bookingId + " už neexistuje.");
       }
@@ -105,13 +105,14 @@ export async function POST(req: NextRequest) {
 
 // Uloží podklady pro daňový doklad a pošle je adminům. Chyba tady nesmí shodit webhook
 // (přihláška/poukaz už vznikly, Stripe by událost zbytečně opakoval).
-async function queueInvoice(sessionId: string, obj: Record<string, unknown>, kind: "kurz" | "poukaz", description: string) {
+async function queueInvoice(sessionId: string, obj: Record<string, unknown>, contactName: string | undefined, kind: "kurz" | "poukaz", description: string) {
   try {
     const item = await invoiceStore.record(sessionId, {
       kind,
       description,
       amountCzk: Number(obj.amount_total ?? 0) / 100,
       billing: billingFromSession(obj),
+      contactName: contactName?.trim() || undefined,
     });
     if (item) await sendAdminInvoiceBasisEmail(item);
   } catch (e) {
