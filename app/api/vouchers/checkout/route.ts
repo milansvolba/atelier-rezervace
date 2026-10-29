@@ -67,6 +67,8 @@ export async function POST(req: NextRequest) {
     if (await courseFlags.isCorporate(booking.id)) {
       return NextResponse.json({ error: "Na tuto akci se nelze veřejně přihlásit." }, { status: 403 });
     }
+    // Dřívější nedokončený pokus téhož kupujícího (stejný e-mail) nesmí blokovat místa pro další pokus.
+    await paymentStore.releaseHolds(booking.id, email.toLowerCase()).catch(() => 0);
     if (booking.capacity) {
       const confirmed = await signupStore.confirmedPeopleForBooking(booking.id);
       const held = await paymentStore.heldPeople(booking.id);
@@ -107,7 +109,7 @@ export async function POST(req: NextRequest) {
       cancelUrl: APP_URL + "/poukazy?platba=zrusena",
     });
     // U pevného termínu se místa po dobu platby drží; bez termínu jde jen o záznam platby (idempotence webhooku).
-    await paymentStore.addAwaiting(session.id, booking ? booking.id : "voucher", seats, billingCheck.value);
+    await paymentStore.addAwaiting(session.id, booking ? booking.id : "voucher", seats, billingCheck.value, email.toLowerCase());
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("[stripe] Vytvoření platby poukazu selhalo:", err);

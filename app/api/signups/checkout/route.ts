@@ -50,6 +50,10 @@ export async function POST(req: NextRequest) {
   }
   if (!booking.price) return NextResponse.json({ error: "Tento termín nelze zaplatit online." }, { status: 400 });
 
+  // Dřívější nedokončený pokus téhož zákazníka (stejný e-mail) nesmí blokovat místa pro další pokus.
+  const holdKey = String(contact).trim().toLowerCase();
+  await paymentStore.releaseHolds(booking.id, holdKey).catch(() => 0);
+
   if (booking.capacity) {
     const confirmed = await signupStore.confirmedPeopleForBooking(booking.id);
     const held = await paymentStore.heldPeople(booking.id);
@@ -85,7 +89,7 @@ export async function POST(req: NextRequest) {
       successUrl: APP_URL + "/kurzy?platba=ok",
       cancelUrl: APP_URL + "/kurzy?platba=zrusena",
     });
-    await paymentStore.addAwaiting(session.id, booking.id, seats, billingCheck.value);
+    await paymentStore.addAwaiting(session.id, booking.id, seats, billingCheck.value, holdKey);
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("[stripe] Vytvoření platby selhalo:", err);
