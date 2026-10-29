@@ -35,9 +35,9 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
   "kurzy.step2.hint": {
     group: "Objednávka kurzu",
     label: "Krok 2: nápověda pod počtem míst",
-    description: "Drobný text pod výběrem počtu míst. Proměnná spots = počet volných míst.",
-    vars: ["spots"],
-    text: "Zbývá {{spots}} volných míst. Čím víc vás přijde, tím větší sleva.",
+    description: "Drobný text pod výběrem počtu míst. Proměnné: spots = počet volných míst, remaining = „Zbývá“/„Zbývají“, places = správně vyskloňované „volné místo/volná místa/volných míst“.",
+    vars: ["spots", "remaining", "places"],
+    text: "{{remaining}} {{spots}} {{places}}. Čím víc vás přijde, tím větší sleva.",
   },
   "kurzy.step2.nudge": {
     group: "Objednávka kurzu",
@@ -101,6 +101,13 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     description: "Hlavní tlačítko v kroku 4. total = celková cena v Kč.",
     vars: ["total"],
     text: "Zaplatit {{total}} Kč",
+  },
+  "kurzy.signup.busy": {
+    group: "Objednávka kurzu",
+    label: "Tlačítko přihlášky: čekání",
+    description: "Text tlačítka během odesílání přihlášky na termín bez ceny (bez platby).",
+    vars: [],
+    text: "Odesílám…",
   },
   "kurzy.pay.busy": {
     group: "Objednávka kurzu",

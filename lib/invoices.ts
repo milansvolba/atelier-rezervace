@@ -8,7 +8,9 @@ export const VAT_RATE = 21; // % — ceny jsou vč. DPH
 export const INVOICE_OVERDUE_DAYS = 5; // po kolika dnech se nevystavený doklad zvýrazní (upřesní účetní)
 
 export interface BillingDetails {
-  name: string;
+  name: string; // jméno z platby (držitel karty / kontaktní osoba)
+  company?: string; // název firmy, když zákazník zaškrtl „Nakupuji na firmu“
+  ico?: string; // z nepovinného pole IČO v Checkoutu
   email: string;
   phone?: string;
   address: { line1?: string; line2?: string; city?: string; postalCode?: string; country?: string };
@@ -45,14 +47,21 @@ export function vatBreakdown(amountCzk: number, rate = VAT_RATE): { base: number
 export function billingFromSession(obj: Record<string, unknown>): BillingDetails {
   const d = (obj.customer_details ?? {}) as {
     name?: string | null;
+    business_name?: string | null;
+    individual_name?: string | null;
     email?: string | null;
     phone?: string | null;
     address?: { line1?: string | null; line2?: string | null; city?: string | null; postal_code?: string | null; country?: string | null } | null;
     tax_ids?: { type?: string; value?: string }[] | null;
   };
   const a = d.address ?? {};
+  const fields = (obj.custom_fields ?? []) as { key?: string; text?: { value?: string | null } | null }[];
+  const ico = fields.find((f) => f.key === "ico")?.text?.value?.replace(/\s+/g, "") || undefined;
+  const company = d.business_name?.trim() || undefined;
   return {
-    name: d.name ?? "",
+    name: (company ? d.individual_name || d.name : d.name) ?? "",
+    company,
+    ico,
     email: d.email ?? "",
     phone: d.phone ?? undefined,
     address: {

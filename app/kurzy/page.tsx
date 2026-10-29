@@ -6,6 +6,7 @@ import { DEFAULT_UI_TEXTS, fillText } from "@/lib/uiTexts";
 import { groupDiscountPercent } from "@/lib/pricing";
 import { resolveHeardAbout } from "@/lib/types";
 import { HeardAboutField } from "@/components/HeardAboutField";
+import { spotsPhrase } from "@/lib/invoiceFormat";
 
 interface CourseCard {
   id: string;
@@ -581,7 +582,7 @@ export default function KurzyPage() {
                   </div>
                 )}
                 {selectedCourse.spotsLeft !== null && !voucherInfo && (
-                  <p className="text-xs text-gray-500">{t("kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft) })}</p>
+                  <p className="text-xs text-gray-500">{t("kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft), ...spotsPhrase(selectedCourse.spotsLeft) })}</p>
                 )}
                 <div className="flex gap-2 flex-wrap pt-1">
                   <button
@@ -747,7 +748,7 @@ export default function KurzyPage() {
                     disabled={payBusy}
                     className="h-10 px-5 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60"
                   >
-                    {voucherInfo ? (payBusy ? t("kurzy.voucher.busy") : t("kurzy.voucher.button")) : payBusy ? t("kurzy.pay.busy") : quote ? t("kurzy.pay.button", { total: String(quote.grand) }) : "Odeslat přihlášku"}
+                    {voucherInfo ? (payBusy ? t("kurzy.voucher.busy") : t("kurzy.voucher.button")) : payBusy ? t(selectedCourse.price ? "kurzy.pay.busy" : "kurzy.signup.busy") : quote ? t("kurzy.pay.button", { total: String(quote.grand) }) : "Odeslat přihlášku"}
                   </button>
                 </div>
                 {quote && <p className="text-xs text-gray-500">{t("kurzy.pay.hint")}</p>}

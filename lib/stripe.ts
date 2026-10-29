@@ -41,6 +41,13 @@ export async function createCheckoutSession(input: CheckoutInput): Promise<{ id:
     // Stripe fakturu nevystavuje (invoice_creation záměrně vypnuté).
     billing_address_collection: "required",
     "tax_id_collection[enabled]": "true",
+    // Stripe pro Česko nabízí jen DIČ; IČO sbíráme jako nepovinné vlastní pole (klíč "ico", čte lib/invoices.ts).
+    "custom_fields[0][key]": "ico",
+    "custom_fields[0][label][type]": "custom",
+    "custom_fields[0][label][custom]": "IČO (jen pro firmy, nepovinné)",
+    "custom_fields[0][type]": "text",
+    "custom_fields[0][optional]": "true",
+    "custom_fields[0][text][maximum_length]": 12,
     "line_items[0][quantity]": 1,
     "line_items[0][price_data][currency]": "czk",
     "line_items[0][price_data][unit_amount]": Math.round(input.amountCzk * 100),
