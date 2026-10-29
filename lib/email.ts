@@ -6,6 +6,7 @@ import type { Voucher } from "./vouchers";
 import { castingText } from "./voucherConfig";
 import type { InvoiceItem } from "./invoices";
 import { addressLine, idsLine, icoMissing } from "./invoiceFormat";
+import { signupNotifyTo } from "./signupContact";
 import { SIMPLIFIED_LIMIT_CZK } from "./billingInput";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
@@ -216,6 +217,26 @@ export async function sendBookingChangedEmail(contact: string, before: Booking, 
   );
 }
 
+// --- Přihlášeným na kurz: admin změnil / zrušil termín (e-mail dostane obdarovaný, když ho známe, jinak kupující) ---
+// Vrací počet odeslaných e-mailů. Adresy se nedublují (víc přihlášek stejného člověka dostane jeden e-mail).
+export async function notifyCourseSignups(
+  signups: CourseSignup[],
+  send: (to: string) => Promise<void>,
+  alreadyNotified: string[] = []
+): Promise<number> {
+  const seen = new Set(alreadyNotified.map((a) => a.toLowerCase()));
+  let n = 0;
+  for (const s of signups) {
+    if (s.status !== "confirmed") continue;
+    const to = signupNotifyTo(s);
+    if (!to || seen.has(to.toLowerCase())) continue;
+    seen.add(to.toLowerCase());
+    await send(to);
+    n++;
+  }
+  return n;
+}
+
 // --- Rezervistovi: admin zrušil rezervaci nebo termín kurzu ---
 export async function sendBookingCancelledEmail(contact: string, booking: Booking) {
   const isCourse = booking.category === "kurz";
@@ -277,9 +298,11 @@ export async function sendSignupCancelledEmail(booking: Booking, signup: CourseS
     ? `<p>Vrátíme vám <strong>${refundCzk} Kč</strong> na kartu, kterou jste platili. Penize obvykle dorazí do 5–10 pracovních dnů.</p>`
     : "";
   const html = wrap(
-    `<p>Dobrý den, ${signup.name},</p><p>vaše přihláška na kurz <strong>${booking.title}</strong> (${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}) byla stornována.</p>${refundLine}<p>V případě dotazů nám napšete odpovědí na tento e-mail.</p>`
+    `<p>Dobrý den,</p><p>vaše přihláška na kurz <strong>${booking.title}</strong> (${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}) byla stornována.</p>${refundLine}<p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`
   );
-  await send(signup.contact, "Storno přihlášky na kurz", html, { type: "signup_cancelled", bookingId: booking.id, signupId: signup.id });
+  const to = signupNotifyTo(signup);
+  if (!to) return;
+  await send(to, "Storno přihlášky na kurz", html, { type: "signup_cancelled", bookingId: booking.id, signupId: signup.id });
 }
 
 export async function sendSignupDecisionEmail(booking: Booking, signup: CourseSignup, approved: boolean) {
@@ -313,6 +336,10 @@ const STUDIO_INFO_HTML =
   `<p><strong>Kde nás najdete:</strong> Ateliér na pobřeží, Na pobřeží 67, Kolín (areál bývalé továrny Kolinea).</p>` +
   `<p><strong>Co s sebou:</strong> pohodlné oblečení, které může být od hlíny. Materiál a pomůcky zajišťujeme.</p>`;
 
+function emailButton(href: string, label: string) {
+  return `<p style="margin:18px 0;"><a href="${href}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">${esc(label)}</a></p>`;
+}
+
 function voucherSummaryHtml(v: Voucher, booking?: Booking) {
   const people = v.people + " " + (v.people === 1 ? "osoba" : v.people <= 4 ? "osoby" : "osob");
   return (
@@ -324,11 +351,24 @@ function voucherSummaryHtml(v: Voucher, booking?: Booking) {
   );
 }
 
+// U poukazu s pevným termínem: komu se ozveme při změně termínu + odkaz na doplnění kontaktu na obdarovaného.
+function voucherContactBlock(v: Voucher) {
+  const got = [v.recipientEmail, v.recipientPhone].filter(Boolean).map((x) => esc(x as string));
+  const text = got.length
+    ? `<p><strong>Kontakt na obdarovaného:</strong> ${got.join(", ")}. Kdyby bylo potřeba termín změnit nebo někoho zastihnout, ozveme se tam.</p>`
+    : `<p><strong>Kontakt na obdarovaného zatím nemáme.</strong> Kdyby bylo potřeba termín změnit, ozveme se vám${v.buyerPhone ? " (tel. " + esc(v.buyerPhone) + ")" : ""}. Pokud nám dáte e-mail nebo telefon obdarovaného, dozví se o změně rovnou.</p>`;
+  const btn = v.manageToken ? emailButton(`${APP_URL}/poukazy/kontakt?t=${encodeURIComponent(v.manageToken)}`, got.length ? "Změnit kontakt na obdarovaného" : "Doplnit kontakt na obdarovaného") : "";
+  return text + btn;
+}
+
 // Kupujícímu po zaplacení: kód poukazu a jak ho uplatnit.
 export async function sendVoucherEmail(v: Voucher, booking?: Booking) {
   const redeem = booking
-    ? `<p>Obdarovaný už má na uvedený termín <strong>potvrzené místo</strong>, nemusí nic dalšího řešit. Při příchodu stačí zmínit kód poukazu.</p>` + STUDIO_INFO_HTML
-    : `<p>Termín zatím není zvolený. Obdarovaný si ho vybere sám na <a href="${APP_URL}/kurzy">${APP_URL}/kurzy</a>: u vybraného termínu zvolí „Mám dárkový poukaz“ a zadá kód <strong>${esc(v.code)}</strong>. Místo bude hned potvrzené.</p>`;
+    ? `<p>Obdarovaný už má na uvedený termín <strong>potvrzené místo</strong>, nemusí nic dalšího řešit. Při příchodu stačí zmínit kód poukazu.</p>` +
+      STUDIO_INFO_HTML +
+      voucherContactBlock(v)
+    : `<p>Termín zatím není zvolený. Obdarovaný si ho vybere sám na <a href="${APP_URL}/kurzy?poukaz=${encodeURIComponent(v.code)}">${APP_URL}/kurzy</a>: u vybraného termínu zvolí „Mám dárkový poukaz“ a zadá kód <strong>${esc(v.code)}</strong>. Místo bude hned potvrzené.</p>` +
+      emailButton(`${APP_URL}/kurzy?poukaz=${encodeURIComponent(v.code)}`, "Použít kód poukazu");
   const msg = v.message ? `<p>Vzkaz od kupujícího:<br><em>${esc(v.message)}</em></p>` : "";
   const html = wrap(
     `<p>Dobrý den,</p>` +
@@ -354,12 +394,23 @@ export async function sendAdminNewVoucherEmail(
   const html = wrap(
     `<p>Byl zaplacen nový dárkový poukaz <strong>${esc(v.code)}</strong> (${fmtKc(v.amountCzk)}).</p>` +
       voucherSummaryHtml(v, opts.booking) +
-      `<p>Kupující: ${esc(v.buyerName)}, ${esc(v.buyerEmail)}</p>` +
+      `<p>Kupující: ${esc(v.buyerName)}, ${esc(v.buyerEmail)}${v.buyerPhone ? ", tel. " + esc(v.buyerPhone) : ""}</p>` +
+      (v.recipientEmail || v.recipientPhone ? `<p>Obdarovaný: ${[v.recipientName, v.recipientEmail, v.recipientPhone].filter(Boolean).map((x) => esc(x as string)).join(", ")}</p>` : "") +
       (v.message ? `<p>Vzkaz: ${esc(v.message)}</p>` : "") +
       warn +
       `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
   );
   await send(ADMIN_EMAILS, "Nový dárkový poukaz " + v.code, html, { type: "voucher_admin", bookingId: opts.booking?.id });
+}
+
+// Adminům: kupující doplnil nebo změnil kontakt na obdarovaného.
+export async function sendAdminVoucherContactEmail(v: Voucher, booking?: Booking) {
+  const html = wrap(
+    `<p>U poukazu <strong>${esc(v.code)}</strong>${booking ? " (termín " + fmtDate(booking.date) + ", " + booking.startTime + "–" + booking.endTime + ")" : ""} byl doplněn kontakt na obdarovaného.</p>` +
+      `<p>${[v.recipientName, v.recipientEmail, v.recipientPhone].filter(Boolean).map((x) => esc(x as string)).join(", ")}</p>` +
+      `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
+  );
+  await send(ADMIN_EMAILS, "Doplněn kontakt na obdarovaného: " + v.code, html, { type: "voucher_contact_admin", bookingId: booking?.id });
 }
 
 // Uplatnění poukazu v aplikaci: potvrzení obdarovanému + upozornění adminům.

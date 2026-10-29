@@ -33,6 +33,9 @@ export default function PoukazyPage() {
   const [buyerName, setBuyerName] = useState("");
   const [buyerEmail, setBuyerEmail] = useState("");
   const [recipientName, setRecipientName] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
   const [message, setMessage] = useState("");
   const [heardAbout, setHeardAbout] = useState("");
   const [heardAboutOther, setHeardAboutOther] = useState("");
@@ -76,7 +79,10 @@ export default function PoukazyPage() {
           bookingId: bookingId || undefined,
           buyerName,
           buyerEmail,
+          buyerPhone: bookingId ? buyerPhone : undefined,
           recipientName,
+          recipientEmail: bookingId ? recipientEmail : undefined,
+          recipientPhone: bookingId ? recipientPhone : undefined,
           message,
           heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
           honeypot,
@@ -185,6 +191,30 @@ export default function PoukazyPage() {
           <label className="text-sm">Váš e-mail (pošleme na něj poukaz)<input required type="email" className={input} autoComplete="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} /></label>
           <label className="text-sm">Jméno obdarovaného (nepovinné)<input className={input} value={recipientName} onChange={(e) => setRecipientName(e.target.value)} /></label>
         </div>
+        {bookingId && (
+          <div className="rounded-md border border-gray-200 bg-gray-50 p-3 space-y-3">
+            <p className="text-sm font-medium">Kontakty pro případ změny termínu</p>
+            <p className="text-xs text-gray-600">
+              Místo je na vybraný termín rezervované hned. Kdyby bylo potřeba termín posunout nebo někoho na kurzu zastihnout, ozveme se vám.
+              Obdarovanému nic neposíláme, jen když nám dáte jeho kontakt, aby se o změně dozvěděl rovnou.
+            </p>
+            <label className="block text-sm">
+              Váš telefon (povinné)
+              <input required type="tel" className={input} autoComplete="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} />
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="text-sm">
+                E-mail obdarovaného (nepovinné)
+                <input type="email" className={input} value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} />
+              </label>
+              <label className="text-sm">
+                Telefon obdarovaného (nepovinné)
+                <input type="tel" className={input} value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} />
+              </label>
+            </div>
+            <p className="text-xs text-gray-500">Kontakt na obdarovaného můžete doplnit i později, odkaz najdete v e-mailu s poukazem.</p>
+          </div>
+        )}
         <label className="block text-sm">
           Vzkaz na poukaz (nepovinné)
           <input className={input} maxLength={300} value={message} onChange={(e) => setMessage(e.target.value)} />

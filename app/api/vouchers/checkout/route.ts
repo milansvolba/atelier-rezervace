@@ -5,6 +5,7 @@ import { courseFlags } from "@/lib/courseFlags";
 import { computeOrder, voucherCourse, clampCastings } from "@/lib/pricing";
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
 import { parseBillingInput } from "@/lib/billingInput";
+import { cleanPhone, validEmail } from "@/lib/signupContact";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ function peopleWord(n: number) {
 // bookingId je volitelný pevný termín; bez něj si obdarovaný termín vybere sám později.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { topic, people, casting, bookingId, buyerName, buyerEmail, recipientName, message, heardAbout, honeypot, billing } = body;
+  const { topic, people, casting, bookingId, buyerName, buyerEmail, buyerPhone, recipientName, recipientEmail, recipientPhone, message, heardAbout, honeypot, billing } = body;
 
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
@@ -41,6 +42,20 @@ export async function POST(req: NextRequest) {
   if (!name) return NextResponse.json({ error: "Vyplňte prosím jméno kupujícího." }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: "Vyplňte prosím platný e-mail, pošleme na něj poukaz." }, { status: 400 });
+  }
+
+  // Telefon kupujícího je u pevného termínu povinný (komu volat); kontakt na obdarovaného je nepovinný.
+  const phone = cleanPhone(buyerPhone);
+  const rEmailRaw = String(recipientEmail ?? "").trim();
+  const rPhoneRaw = String(recipientPhone ?? "").trim();
+  if (bookingId && !phone) {
+    return NextResponse.json({ error: "Vyplňte prosím svůj telefon (u poukazu s pevným termínem), ať vás zastihneme, kdyby bylo potřeba termín změnit." }, { status: 400 });
+  }
+  if (bookingId && rEmailRaw && !validEmail(rEmailRaw)) {
+    return NextResponse.json({ error: "E-mail obdarovaného nevypadá správně." }, { status: 400 });
+  }
+  if (bookingId && rPhoneRaw && !cleanPhone(rPhoneRaw)) {
+    return NextResponse.json({ error: "Telefon obdarovaného nevypadá správně." }, { status: 400 });
   }
 
   const seats = Math.floor(Number(people) || 1);
@@ -102,6 +117,9 @@ export async function POST(req: NextRequest) {
         buyerName: name.slice(0, 200),
         buyerEmail: email.slice(0, 200),
         recipientName: String(recipientName ?? "").trim().slice(0, 100),
+        buyerPhone: bookingId ? phone ?? "" : "",
+        recipientEmail: bookingId && validEmail(rEmailRaw) ? rEmailRaw.slice(0, 200) : "",
+        recipientPhone: bookingId ? cleanPhone(rPhoneRaw) ?? "" : "",
         message: String(message ?? "").trim().slice(0, 300),
         heardAbout: String(heardAbout ?? "").trim().slice(0, 200),
       },
