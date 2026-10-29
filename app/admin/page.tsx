@@ -574,7 +574,7 @@ function CourseParticipants({ bookingId }: { bookingId: string }) {
       const d = await res.json();
       setInfo(d);
       setRefund(String(d.suggested));
-      setNotify(s.contact.includes("@"));
+      setNotify(s.contact.includes("@") || (s.notifyEmail ?? "").includes("@"));
     } else {
       setMsg("Nepodařilo se načíst údaje o platbě.");
     }
@@ -609,6 +609,8 @@ function CourseParticipants({ bookingId }: { bookingId: string }) {
           <div className="flex items-center justify-between gap-2">
             <span>
               {s.name} · {s.people} os. · <span className="text-gray-500">{s.contact}</span>
+              {s.phone && <span className="text-gray-500"> · tel. {s.phone}</span>}
+              {s.notifyEmail && <span className="text-gray-500"> · obdarovaný: {s.notifyEmail}</span>}
             </span>
             {cancelId !== s.id && (
               <button onClick={() => openCancel(s)} className="h-7 px-2 rounded-md border border-red-300 text-red-700 text-xs shrink-0">
@@ -637,7 +639,7 @@ function CourseParticipants({ bookingId }: { bookingId: string }) {
                     <p>Přihláška nemá online platbu — vratka se neodesílá, jen se uvolní místa.</p>
                   )}
                   <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} disabled={!s.contact.includes("@")} />
+                    <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} disabled={!(s.contact.includes("@") || (s.notifyEmail ?? "").includes("@"))} />
                     Poslat účastníkovi e-mail o stornu
                   </label>
                   <div className="flex justify-end gap-2">
@@ -709,7 +711,9 @@ function BookingDetailModal({
     }
   }
   const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
-  const hasContact = !!(booking.requesterContact || form.requesterContact);
+  const isCourseBooking = booking.category === "kurz";
+  // U kurzu se informují i přihlášení účastníci (e-mail obdarovaného, jinak kupujícího), takže se dá zaškrtnout i bez kontaktu u rezervace.
+  const hasContact = isCourseBooking || !!(booking.requesterContact || form.requesterContact);
 
   async function saveEdit(e: React.FormEvent) {
     e.preventDefault();
@@ -932,7 +936,7 @@ function BookingDetailModal({
                 checked={notify}
                 onChange={(e) => setNotify(e.target.checked)}
               />
-              Informovat rezervistu o změně termínu
+              {isCourseBooking ? "Informovat přihlášené o změně termínu (e-mail dostane obdarovaný, jinak kupující)" : "Informovat rezervistu o změně termínu"}
               {!hasContact && <span className="text-xs text-gray-400">(chybí kontakt)</span>}
             </label>
             {error && <p className="text-sm text-red-600">{error}</p>}
@@ -959,7 +963,7 @@ function BookingDetailModal({
                 checked={notify}
                 onChange={(e) => setNotify(e.target.checked)}
               />
-              Informovat rezervistu o zrušení
+              {isCourseBooking ? "Informovat přihlášené o zrušení termínu (vratky řešte u každé přihlášky zvlášť)" : "Informovat rezervistu o zrušení"}
               {!hasContact && <span className="text-xs text-gray-400">(chybí kontakt)</span>}
             </label>
             {error && <p className="text-sm text-red-600">{error}</p>}
@@ -1458,7 +1462,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     if (res.ok) setSignups(await res.json());
   }
 
-  const [vouchers, setVouchers] = useState<{ id: string; code: string; courseTitle: string; people: number; castingCount: number; amountCzk: number; buyerName: string; buyerEmail: string; recipientName?: string; bookingId?: string; status: "active" | "redeemed"; expiresAt: string }[]>([]);
+  const [vouchers, setVouchers] = useState<{ id: string; code: string; courseTitle: string; people: number; castingCount: number; amountCzk: number; buyerName: string; buyerEmail: string; buyerPhone?: string; recipientName?: string; recipientEmail?: string; recipientPhone?: string; bookingId?: string; status: "active" | "redeemed"; expiresAt: string }[]>([]);
 
   async function loadVouchers() {
     const res = await fetch("/api/vouchers");
@@ -1834,7 +1838,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                       {signupBookingTitle(s.bookingId)} · {signupBookingDate(s.bookingId)}
                     </p>
                     <p className="text-xs text-blue-800/70">
-                      {s.name} · {s.contact} · {s.people} {s.people === 1 ? "osoba" : "osoby/osob"}
+                      {s.name} · {s.contact}{s.phone ? " · tel. " + s.phone : ""} · {s.people} {s.people === 1 ? "osoba" : "osoby/osob"}
                       {s.note ? ` · ${s.note}` : ""}
                     </p>
                   </div>
@@ -1954,8 +1958,13 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                     {v.courseTitle} · {v.people} os.{v.castingCount > 0 ? " · odlitky: " + v.castingCount : ""} · {v.amountCzk} Kč · platí do {new Date(v.expiresAt).toLocaleDateString("cs-CZ")}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Kupující: {v.buyerName}, {v.buyerEmail}{v.recipientName ? " · pro: " + v.recipientName : ""}{v.bookingId ? " · pevný termín" : ""}
+                    Kupující: {v.buyerName}, {v.buyerEmail}{v.buyerPhone ? ", tel. " + v.buyerPhone : ""}{v.recipientName ? " · pro: " + v.recipientName : ""}{v.bookingId ? " · pevný termín" : ""}
                   </p>
+                  {v.bookingId && (
+                    <p className="text-xs text-gray-500">
+                      Kontakt na obdarovaného: {[v.recipientEmail, v.recipientPhone].filter(Boolean).join(", ") || "zatím nemáme (změny půjdou kupujícímu)"}
+                    </p>
+                  )}
                 </div>
                 <button onClick={() => setVoucherStatus(v.id, v.status === "active" ? "redeemed" : "active")} className="h-8 px-3 rounded-md border border-gray-300 text-xs shrink-0">
                   {v.status === "active" ? "Označit jako uplatněný" : "Vrátit mezi aktivní"}

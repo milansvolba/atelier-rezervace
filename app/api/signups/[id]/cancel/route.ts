@@ -1,3 +1,4 @@
+import { signupNotifyTo } from "@/lib/signupContact";
 import { NextRequest, NextResponse } from "next/server";
 import { signupStore } from "@/lib/signups";
 import { store } from "@/lib/data";
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const updated = await signupStore.updateStatus(params.id, "cancelled");
   const booking = (await store.all()).find((b) => b.id === signup.bookingId);
-  if (body.notify && booking && updated && updated.contact.includes("@")) {
+  if (body.notify && booking && updated && signupNotifyTo(updated)) {
     await sendSignupCancelledEmail(booking, updated, refunded);
   }
   return NextResponse.json({ ok: true, refunded });

@@ -13,6 +13,8 @@ function rowToSignup(r: Record<string, unknown>): CourseSignup {
     status: r.status as SignupStatus,
     createdAt: typeof created === "string" ? created : created.toISOString(),
     heardAbout: (r.heard_about as string) ?? undefined,
+    phone: (r.phone as string) ?? undefined,
+    notifyEmail: (r.notify_email as string) ?? undefined,
   };
 }
 
@@ -42,8 +44,8 @@ export const signupStore = {
   async add(s: CourseSignup): Promise<CourseSignup> {
     await ensureSchema();
     await sql`
-      INSERT INTO course_signups (id, booking_id, name, contact, people, note, status, created_at, heard_about)
-      VALUES (${s.id}, ${s.bookingId}, ${s.name}, ${s.contact}, ${s.people}, ${s.note ?? null}, ${s.status}, ${s.createdAt}, ${s.heardAbout ?? null})
+      INSERT INTO course_signups (id, booking_id, name, contact, people, note, status, created_at, heard_about, phone, notify_email)
+      VALUES (${s.id}, ${s.bookingId}, ${s.name}, ${s.contact}, ${s.people}, ${s.note ?? null}, ${s.status}, ${s.createdAt}, ${s.heardAbout ?? null}, ${s.phone ?? null}, ${s.notifyEmail ?? null})
     `;
     return s;
   },
@@ -53,6 +55,12 @@ export const signupStore = {
     await sql`UPDATE course_signups SET status = ${status} WHERE id = ${id}`;
     const rows = await sql`SELECT * FROM course_signups WHERE id = ${id}`;
     return rows[0] ? rowToSignup(rows[0]) : null;
+  },
+
+  // Doplnění kontaktu u přihlášky z poukazu (obdarovaný dodá e-mail/telefon později).
+  async updateContact(id: string, c: { phone?: string; notifyEmail?: string }): Promise<void> {
+    await ensureSchema();
+    await sql`UPDATE course_signups SET phone = ${c.phone ?? null}, notify_email = ${c.notifyEmail ?? null} WHERE id = ${id}`;
   },
 
   async byId(id: string): Promise<CourseSignup | null> {
