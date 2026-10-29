@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-29 — Dárkové poukazy: tlačítka přímo v kartách kurzů, bez referencí (web)
+
+Na `/darkove-poukazy` se z pravého sloupce odstranily reference („Co říkají lidé, kteří kurz zkusili“) a celá spodní sekce „Koupit dárkový poukaz“. Tlačítka „Koupit poukaz“ jsou teď přímo v kartách kurzů (Modelování hlavy, Modelování reliéfu) nad odkazem „Co je v ceně a víc o kurzu“ a vedou na `rezervace.ateliernapobrezi.cz/poukazy?kurz=hlava` / `?kurz=relief`. Texty tlačítek zůstávají editovatelné (`poukazy_cta_hlava`, `poukazy_cta_relief`). Věta „Nevíte, který kurz vybrat…“ je pod kartami, kotva `#poptavka` je na sekci „Který kurz darujete“ (funguje tlačítko v hero). Sekce FAQ změnila pozadí na bílé, aby se střídaly pruhy. Nepoužité klíče (`poukazy_reference_*`, `poukazy_form_heading`, `poukazy_form_lead`) zůstávají v `content.json`. Ověřeno živě na desktopu i v šířce 390 px.
+
+---
+
 ## 2026-10-29 — Nedokončená platba neblokuje místa tomu samému zákazníkovi (rezervace)
 
 Při kliknutí na „Zaplatit“ se místa na termínu drží 35 minut. Když se zákazník ze stránky Stripe vrátil a zkusil to znovu, jeho předchozí pokus pořád držel místa a ukázalo se „Na tomto termínu už není dost volných míst“, i když seznam termínů ukazoval volno (seznam držená místa nepočítá). Nově se u platby ukládá, kdo ji zahájil (`payments.hold_key` = e-mail malými písmeny), a před kontrolou kapacity v `/api/signups/checkout` i `/api/vouchers/checkout` se dřívější nedokončené pokusy téhož e-mailu na stejném termínu uvolní: otevřená platební stránka se ve Stripe ukončí (`expireStripeSession`) a platba se označí jako vypršelá. Dokončená platba se nikdy neruší, a když ukončení ve Stripe selže, držení zůstane jako dřív (vyprší samo). Cizí nedokončené platby místa nadále drží celých 35 minut.
