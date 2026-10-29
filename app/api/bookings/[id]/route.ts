@@ -56,7 +56,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   });
 
   const contact = requesterContact || existing.requesterContact;
-  if (notify && contact && updated) {
+  // Oznámení o změně termínu jen když se opravdu změnilo místo nebo čas (změna ceny či kapacity zákazníka neposílá).
+  const moved = updated && (existing.resource !== updated.resource || existing.date !== updated.date || existing.startTime !== updated.startTime || existing.endTime !== updated.endTime);
+  if (notify && contact && updated && moved) {
     await sendBookingChangedEmail(contact, existing, updated);
   }
 

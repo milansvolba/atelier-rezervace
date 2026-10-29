@@ -19,6 +19,7 @@ import {
   startOfWeekMon,
 } from "@/lib/calendar";
 import { windowsOnDate, restrictedInWindow } from "@/lib/prep";
+import { addressLine, idsLine } from "@/lib/invoiceFormat";
 
 type ViewMode = "day" | "week" | "month" | "quarter" | "year";
 type Role = "admin" | "member";
@@ -931,7 +932,7 @@ function BookingDetailModal({
                 checked={notify}
                 onChange={(e) => setNotify(e.target.checked)}
               />
-              Informovat rezervistu o změně
+              Informovat rezervistu o změně termínu
               {!hasContact && <span className="text-xs text-gray-400">(chybí kontakt)</span>}
             </label>
             {error && <p className="text-sm text-red-600">{error}</p>}
@@ -1473,7 +1474,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     loadVouchers();
   }
 
-  type DokladItem = { id: string; kind: "kurz" | "poukaz"; description: string; amountCzk: number; baseCzk: number; vatCzk: number; paidAt: string; billing: { name: string; email: string; address: { line1?: string; line2?: string; city?: string; postalCode?: string; country?: string }; taxIds: { type: string; value: string }[] } | null; invoiceNumber?: string; correctionNeeded: boolean; refundedCzk: number; overdue: boolean };
+  type DokladItem = { id: string; kind: "kurz" | "poukaz"; description: string; amountCzk: number; baseCzk: number; vatCzk: number; paidAt: string; billing: { name: string; company?: string; ico?: string; email: string; address: { line1?: string; line2?: string; city?: string; postalCode?: string; country?: string }; taxIds: { type: string; value: string }[] } | null; invoiceNumber?: string; correctionNeeded: boolean; refundedCzk: number; overdue: boolean };
   const [doklady, setDoklady] = useState<{ open: DokladItem[]; done: DokladItem[] }>({ open: [], done: [] });
 
   async function loadDoklady() {
@@ -1892,13 +1893,12 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           {doklady.open.length === 0 && <p className="text-sm text-gray-400">Vše vystaveno.</p>}
           <div className="space-y-2">
             {doklady.open.map((d) => {
-              const a = d.billing?.address;
-              const addr = a ? [a.line1, a.line2, [a.postalCode, a.city].filter(Boolean).join(" "), a.country].filter(Boolean).join(", ") : "";
+              const addr = addressLine(d.billing?.address);
               return (
                 <div key={d.id} className={"border rounded-md p-3 text-sm flex items-start justify-between gap-3 flex-wrap " + (d.overdue ? "border-red-300 bg-red-50" : "border-gray-100")}>
                   <div>
                     <p className="font-medium">
-                      {d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ")} Kč
+                      {d.billing?.company || d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ")} Kč
                       {d.correctionNeeded && <span className="text-red-700"> · vratka: vystavit opravný doklad (vráceno {d.refundedCzk} Kč)</span>}
                       {d.overdue && !d.correctionNeeded && <span className="text-red-700"> · po lhůtě</span>}
                     </p>
@@ -1907,7 +1907,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                       Zaplaceno {new Date(d.paidAt).toLocaleDateString("cs-CZ")} · základ {d.baseCzk.toLocaleString("cs-CZ")} Kč + DPH 21 % {d.vatCzk.toLocaleString("cs-CZ")} Kč
                     </p>
                     <p className="text-xs text-gray-500">
-                      {d.billing?.email}{addr ? " · " + addr : ""}{d.billing && d.billing.taxIds.length > 0 ? " · " + d.billing.taxIds.map((t) => t.type + " " + t.value).join(", ") : ""}
+                      {d.billing?.company && d.billing?.name ? d.billing.name + " · " : ""}{d.billing?.email}{addr ? " · " + addr : ""}{idsLine(d.billing) ? " · " + idsLine(d.billing) : ""}
                     </p>
                   </div>
                   {d.correctionNeeded ? (
@@ -1925,7 +1925,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
               <div className="mt-2 space-y-1">
                 {doklady.done.map((d) => (
                   <div key={d.id} className="flex items-center justify-between gap-3">
-                    <span>{d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ")} Kč · {d.invoiceNumber || "bez čísla"}</span>
+                    <span>{d.billing?.company || d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ")} Kč · {d.invoiceNumber || "bez čísla"}</span>
                     <button onClick={() => dokladAction(d.id, "reopen")} className="underline shrink-0">Vrátit do fronty</button>
                   </div>
                 ))}

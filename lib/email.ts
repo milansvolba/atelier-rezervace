@@ -5,11 +5,17 @@ import { logEmail } from "./emailLog";
 import type { Voucher } from "./vouchers";
 import { castingText } from "./voucherConfig";
 import type { InvoiceItem } from "./invoices";
+import { addressLine, idsLine } from "./invoiceFormat";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Atelier na Pobřeží <rezervace@ateliernapobrezi.cz>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://rezervace.ateliernapobrezi.cz";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "milan.svolba@gmail.com,petr.svolba@gmail.com")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+// Podklady k dokladům jdou jen na tyto adresy (proměnná INVOICE_EMAILS, čárkou oddělené); výchozí je Milan.
+const INVOICE_EMAILS = (process.env.INVOICE_EMAILS || "milan.svolba@gmail.com")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
@@ -380,15 +386,15 @@ function fmtCzk(n: number) {
 // Adminům po zaplacení: podklady pro vystavení daňového dokladu v Caflou.
 export async function sendAdminInvoiceBasisEmail(item: InvoiceItem) {
   const b = item.billing;
-  const a = b?.address;
-  const addr = a ? [a.line1, a.line2, [a.postalCode, a.city].filter(Boolean).join(" "), a.country].filter(Boolean).join(", ") : "";
-  const ids = (b?.taxIds ?? []).map((t) => esc(t.type) + ": " + esc(t.value)).join("; ");
+  const addr = addressLine(b?.address);
+  const ids = idsLine(b);
   const paid = item.paidAt ? fmtDate(item.paidAt.slice(0, 10)) : "";
+  const who = b?.company || b?.name || item.description;
   const html = wrap(
     `<p><strong>Vystavte daňový doklad v Caflou.</strong></p>` +
-      `<p>Odběratel: ${esc(b?.name || "—")}<br>E-mail: ${esc(b?.email || "—")}<br>Adresa: ${esc(addr || "—")}<br>IČO/DIČ: ${ids || "neuvedeno (fyzická osoba)"}</p>` +
+      `<p>Odběratel: ${esc(b?.company || b?.name || "—")}${b?.company && b?.name ? `<br>Kontaktní osoba: ${esc(b.name)}` : ""}<br>E-mail: ${esc(b?.email || "—")}<br>Adresa: ${esc(addr || "—")}<br>${ids ? esc(ids) : "IČO/DIČ: neuvedeno (nejspíš fyzická osoba)"}</p>` +
       `<p>Položka: ${esc(item.description)}<br>Celkem vč. DPH 21 %: <strong>${fmtCzk(item.amountCzk)}</strong><br>Základ: ${fmtCzk(item.baseCzk)} · DPH: ${fmtCzk(item.vatCzk)}<br>Datum přijetí platby (DUZP): <strong>${paid}</strong><br>Stripe: ${esc(item.id)}</p>` +
       `<p>Doklad je už zaplacený (kartou, Stripe). Po vystavení ho v adminu odškrtněte: <a href="${APP_URL}/admin">Otevřít admin</a></p>`
   );
-  await send(ADMIN_EMAILS, "Doklad k vystavení: " + (b?.name || item.description) + ", " + fmtCzk(item.amountCzk), html, { type: "invoice_basis" });
+  await send(INVOICE_EMAILS, "Doklad k vystavení: " + who + ", " + fmtCzk(item.amountCzk), html, { type: "invoice_basis" });
 }
