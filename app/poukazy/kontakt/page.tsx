@@ -68,7 +68,7 @@ export default function KontaktObdarovanehoPage() {
           <p className="text-sm text-gray-500">Načítám…</p>
         ) : done ? (
           <>
-            <p className="text-sm text-gray-700">Děkujeme, kontakt je uložený. Když bude potřeba termín změnit nebo někoho zastihnout, ozveme se tam.</p>
+            <p className="text-sm text-gray-700">Děkujeme, kontakt je uložený. Když bude potřeba termín změnit nebo někoho zastihnout, ozveme se na tento kontakt.</p>
             <a href="https://ateliernapobrezi.cz" className="block text-center bg-black text-white rounded-md py-3 font-semibold hover:bg-gray-800">
               Zpátky na web
             </a>
