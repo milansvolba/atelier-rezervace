@@ -49,8 +49,12 @@ export default function KurzyPage() {
   const [payError, setPayError] = useState("");
   const [payResult, setPayResult] = useState<null | "ok" | "cancel">(null);
   const [step, setStep] = useState(2);
+  // Stará chybová hláška (např. z neúspěšného pokusu o platbu) se po změně kroku nebo údajů nesmí ukazovat dál.
   const [signupPhone, setSignupPhone] = useState("");
   const [billing, setBilling] = useState<BillingInput>(emptyBilling);
+  useEffect(() => {
+    setPayError("");
+  }, [step, billing, signupPeople]);
   // Sdílené pro krokový formulář přihlášky/platby i pro poptávku na míru níže (nikdy se nepoužívají zároveň).
   const [heardAbout, setHeardAbout] = useState("");
   const [heardAboutOther, setHeardAboutOther] = useState("");

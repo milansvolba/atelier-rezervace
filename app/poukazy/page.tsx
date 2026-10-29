@@ -38,6 +38,9 @@ export default function PoukazyPage() {
   const [heardAboutOther, setHeardAboutOther] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [billing, setBilling] = useState<BillingInput>(emptyBilling);
+  useEffect(() => {
+    setError("");
+  }, [billing, people, topic, buyerEmail]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<null | "ok" | "cancel">(null);
