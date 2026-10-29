@@ -82,6 +82,8 @@ export interface CourseSignup {
   status: SignupStatus;
   createdAt: string;
   heardAbout?: string; // nepovinné, z veřejné přihlášky / nákupu — viz REFERRAL_OPTIONS níže
+  phone?: string; // komu volat (u poukazu obdarovaný, jinak kupující)
+  notifyEmail?: string; // e-mail pro změny termínu, když se liší od `contact` (obdarovaný u poukazu)
 }
 
 // "Odkud o nás víte?" — nepovinné pole na veřejných formulářích (žádost o pronájem/kurz,

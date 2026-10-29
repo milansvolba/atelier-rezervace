@@ -66,6 +66,9 @@ export function ensureSchema() {
       await sql`CREATE INDEX IF NOT EXISTS course_signups_booking_idx ON course_signups (booking_id);`;
       // "Odkud o nás víte?" u veřejné přihlášky / platby (nepovinné) — viz lib/types.ts REFERRAL_OPTIONS.
       await sql`ALTER TABLE course_signups ADD COLUMN IF NOT EXISTS heard_about text;`;
+      // Telefon (komu volat) a e-mail pro změny termínu, když se liší od kontaktu v přihlášce (obdarovaný u poukazu).
+      await sql`ALTER TABLE course_signups ADD COLUMN IF NOT EXISTS phone text;`;
+      await sql`ALTER TABLE course_signups ADD COLUMN IF NOT EXISTS notify_email text;`;
 
       // Online platby přes Stripe Checkout (viz lib/stripe.ts). id = ID Stripe Checkout Session.
 // Slouží k dočasnému držení míst během platby a k idempotenci webhooku.
@@ -131,6 +134,14 @@ await sql`
       await sql`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS casting_count integer NOT NULL DEFAULT 0`;
       // "Odkud o nás víte?" u nákupu poukazu (nepovinné) — viz lib/types.ts REFERRAL_OPTIONS.
       await sql`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS heard_about text`;
+      // Kontakty u poukazu s pevným termínem: telefon kupujícího, e-mail a telefon obdarovaného (pro změny a volání),
+      // tajný token pro doplnění kontaktu bez přihlášení a vazba na vytvořenou přihlášku.
+      await sql`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS buyer_phone text`;
+      await sql`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS recipient_email text`;
+      await sql`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS recipient_phone text`;
+      await sql`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS manage_token text`;
+      await sql`ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS signup_id text`;
+      await sql`CREATE UNIQUE INDEX IF NOT EXISTS vouchers_manage_token_idx ON vouchers (manage_token)`;
       // Jeden poukaz na jednu platbu — idempotence webhooku (NULL stripe_session se neomezuje).
       await sql`CREATE UNIQUE INDEX IF NOT EXISTS vouchers_stripe_session_idx ON vouchers (stripe_session)`;
       // Příznaky termínů kurzů (zatím jen: firemní akce, která se neukazuje veřejně na /kurzy).

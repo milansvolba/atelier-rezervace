@@ -65,6 +65,17 @@ export default function KurzyPage() {
   const [voucherInfo, setVoucherInfo] = useState<null | { code: string; people: number; castingCount: number }>(null);
   const [voucherErr, setVoucherErr] = useState("");
   const [voucherDone, setVoucherDone] = useState(false);
+  const [voucherFromLink, setVoucherFromLink] = useState(false);
+
+  // Odkaz z e-mailu s poukazem (/kurzy?poukaz=ATL-XXXX-XXXX): kód se předvyplní a pole poukazu se otevře.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("poukaz");
+    if (code && /^[A-Za-z0-9 -]{6,20}$/.test(code)) {
+      setVoucherCode(code.toUpperCase());
+      setVoucherOpen(true);
+      setVoucherFromLink(true);
+    }
+  }, []);
 
   // Návrat ze Stripe Checkout (success_url / cancel_url vedou na /kurzy?platba=...).
   useEffect(() => {
@@ -392,6 +403,11 @@ export default function KurzyPage() {
       {payResult === "cancel" && (
         <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-4">
           {t("kurzy.pay.cancel")}
+        </p>
+      )}
+      {voucherFromLink && !voucherDone && (
+        <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4">
+          {t("kurzy.voucher.fromLink")}
         </p>
       )}
       <div>

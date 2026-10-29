@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { store, findConflict, findPrepConflictFor } from "@/lib/data";
 import { prepMessage, PrepRole } from "@/lib/prep";
 import { requireUser } from "@/lib/auth";
-import { sendBookingChangedEmail, sendBookingCancelledEmail } from "@/lib/email";
+import { sendBookingChangedEmail, sendBookingCancelledEmail, notifyCourseSignups } from "@/lib/email";
+import { signupStore } from "@/lib/signups";
 
 // Admin smí zasahovat do čehokoli, člen jen do rezervací, které sám založil.
 function canManage(session: { id: string; role: string }, existing: { userId?: string }) {
@@ -58,8 +59,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const contact = requesterContact || existing.requesterContact;
   // Oznámení o změně termínu jen když se opravdu změnilo místo nebo čas (změna ceny či kapacity zákazníka neposílá).
   const moved = updated && (existing.resource !== updated.resource || existing.date !== updated.date || existing.startTime !== updated.startTime || existing.endTime !== updated.endTime);
-  if (notify && contact && updated && moved) {
-    await sendBookingChangedEmail(contact, existing, updated);
+  if (notify && updated && moved) {
+    if (contact) await sendBookingChangedEmail(contact, existing, updated);
+    // U termínu kurzu se o změně dozví i přihlášení účastníci (obdarovaný, jinak kupující), ne jen kontakt u rezervace.
+    if (existing.category === "kurz" || updated.category === "kurz") {
+      const signups = await signupStore.byBooking(existing.id);
+      await notifyCourseSignups(signups, (to) => sendBookingChangedEmail(to, existing, updated), contact ? [contact] : []);
+    }
   }
 
   return NextResponse.json(updated);
@@ -85,10 +91,16 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     return NextResponse.json({ error: "K mazání této rezervace nemáte oprávnění." }, { status: 403 });
   }
 
+  // Přihlášky načteme před smazáním, ať víme, komu napsat.
+  const signups = existing.category === "kurz" ? await signupStore.byBooking(existing.id) : [];
+
   await store.remove(params.id);
 
-  if (notify && existing.requesterContact) {
-    await sendBookingCancelledEmail(existing.requesterContact, existing);
+  if (notify) {
+    if (existing.requesterContact) await sendBookingCancelledEmail(existing.requesterContact, existing);
+    if (signups.length > 0) {
+      await notifyCourseSignups(signups, (to) => sendBookingCancelledEmail(to, existing), existing.requesterContact ? [existing.requesterContact] : []);
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -7,6 +7,7 @@ import { paymentStore } from "./stripe";
 import { voucherCourse } from "./pricing";
 import { castingText } from "./voucherConfig";
 import { Booking, CourseSignup } from "./types";
+import { cleanPhone, validEmail } from "./signupContact";
 
 // Dárkové poukazy na kurzy. Tabulka `vouchers` je v lib/db.ts, ceny kurzů (VOUCHER_COURSES) v lib/pricing.ts.
 // Poukaz vzniká až po zaplacení (webhook /api/stripe/webhook, větev meta.kind === "voucher").
@@ -33,6 +34,11 @@ export interface Voucher {
   expiresAt: string;
   redeemedAt?: string;
   heardAbout?: string; // nepovinné, z formuláře nákupu — viz lib/types.ts REFERRAL_OPTIONS
+  buyerPhone?: string; // povinné u pevného termínu (komu volat)
+  recipientEmail?: string; // nepovinné, obdarovaný (změny termínu)
+  recipientPhone?: string; // nepovinné, obdarovaný
+  manageToken?: string; // tajný token pro doplnění kontaktu na obdarovaného bez přihlášení (jen pevný termín)
+  signupId?: string; // přihláška vytvořená pro pevný termín
 }
 
 // Platnost poukazu od zaplacení.
@@ -66,6 +72,11 @@ function rowToVoucher(r: Record<string, unknown>): Voucher {
     expiresAt: iso(r.expires_at),
     redeemedAt: r.redeemed_at ? iso(r.redeemed_at) : undefined,
     heardAbout: (r.heard_about as string) ?? undefined,
+    buyerPhone: (r.buyer_phone as string) ?? undefined,
+    recipientEmail: (r.recipient_email as string) ?? undefined,
+    recipientPhone: (r.recipient_phone as string) ?? undefined,
+    manageToken: (r.manage_token as string) ?? undefined,
+    signupId: (r.signup_id as string) ?? undefined,
   };
 }
 
@@ -127,17 +138,39 @@ export const voucherStore = {
   },
 
   // Vloží poukaz s novým unikátním kódem; při kolizi kódu (UNIQUE) zkusí jiný.
-  async add(v: Omit<Voucher, "id" | "code" | "status" | "createdAt" | "redeemedAt">): Promise<Voucher> {
+  async byManageToken(token: string): Promise<Voucher | null> {
+    await ensureSchema();
+    if (!token || token.length < 16) return null;
+    const rows = await sql`SELECT * FROM vouchers WHERE manage_token = ${token} LIMIT 1`;
+    return rows[0] ? rowToVoucher(rows[0]) : null;
+  },
+
+  // Doplnění/změna kontaktu na obdarovaného (e-mail, telefon, jméno).
+  async setRecipientContact(id: string, c: { recipientName?: string; recipientEmail?: string; recipientPhone?: string }): Promise<Voucher | null> {
+    await ensureSchema();
+    await sql`UPDATE vouchers SET recipient_name = ${c.recipientName ?? null}, recipient_email = ${c.recipientEmail ?? null}, recipient_phone = ${c.recipientPhone ?? null} WHERE id = ${id}`;
+    return this.byId(id);
+  },
+
+  async setSignupId(id: string, signupId: string): Promise<void> {
+    await ensureSchema();
+    await sql`UPDATE vouchers SET signup_id = ${signupId} WHERE id = ${id}`;
+  },
+
+  async add(v: Omit<Voucher, "id" | "code" | "status" | "createdAt" | "redeemedAt" | "manageToken" | "signupId">): Promise<Voucher> {
     await ensureSchema();
     for (let attempt = 0; attempt < 5; attempt++) {
       const id = crypto.randomUUID();
       const code = generateVoucherCode();
+      const manageToken = crypto.randomBytes(18).toString("base64url");
       try {
         const rows = await sql`
           INSERT INTO vouchers (id, code, topic, course_title, booking_id, people, casting, casting_count, amount_czk,
-                                buyer_name, buyer_email, recipient_name, message, status, stripe_session, expires_at, heard_about)
+                                buyer_name, buyer_email, recipient_name, message, status, stripe_session, expires_at, heard_about,
+                                buyer_phone, recipient_email, recipient_phone, manage_token)
           VALUES (${id}, ${code}, ${v.topic}, ${v.courseTitle}, ${v.bookingId ?? null}, ${v.people}, ${v.castingCount > 0}, ${v.castingCount}, ${Math.round(v.amountCzk)},
-                  ${v.buyerName}, ${v.buyerEmail}, ${v.recipientName ?? null}, ${v.message ?? null}, 'active', ${v.stripeSession ?? null}, ${v.expiresAt}, ${v.heardAbout ?? null})
+                  ${v.buyerName}, ${v.buyerEmail}, ${v.recipientName ?? null}, ${v.message ?? null}, 'active', ${v.stripeSession ?? null}, ${v.expiresAt}, ${v.heardAbout ?? null},
+                  ${v.buyerPhone ?? null}, ${v.recipientEmail ?? null}, ${v.recipientPhone ?? null}, ${manageToken})
           RETURNING *
         `;
         return rowToVoucher(rows[0]);
@@ -187,7 +220,7 @@ function addMonths(d: Date, months: number): Date {
 
 // Zpracuje zaplacenou Stripe Checkout Session poukazu (obj = data.object události checkout.session.completed).
 // Metadata (nastavuje POST /api/vouchers/checkout): kind=voucher, topic, people, casting (počet odlitků jako text; starší "1"/"0"),
-// bookingId (volitelně), buyerName, buyerEmail, recipientName, message.
+// bookingId (volitelně), buyerName, buyerEmail, buyerPhone, recipientName, recipientEmail, recipientPhone, message.
 // Vrací null, pokud se session už zpracovala (Stripe může událost doručit opakovaně) nebo je neplatná.
 // Idempotenci zajišťuje unikátní index vouchers_stripe_session_idx: když zápis poukazu selže, Stripe událost
 // zopakuje a druhý pokus poukaz vytvoří. Záznam v payments (markPaid) se proto dělá bez ohledu na to, jestli už existuje.
@@ -231,6 +264,9 @@ export async function handleVoucherPaid(sessionId: string, obj: Record<string, u
       stripeSession: sessionId,
       expiresAt: addMonths(new Date(), VOUCHER_VALID_MONTHS).toISOString(),
       heardAbout: meta.heardAbout?.trim() || undefined,
+      buyerPhone: cleanPhone(meta.buyerPhone) ?? undefined,
+      recipientEmail: validEmail(meta.recipientEmail) ? meta.recipientEmail.trim() : undefined,
+      recipientPhone: cleanPhone(meta.recipientPhone) ?? undefined,
     });
   } catch (e) {
     if (e instanceof DuplicateVoucherSessionError) return null;
@@ -264,16 +300,25 @@ export async function handleVoucherPaid(sessionId: string, obj: Record<string, u
     people,
     note:
       "Dárkový poukaz " + voucher.code + " (zaplaceno online, " + amountCzk + " Kč" + (voucher.castingCount > 0 ? ", vč. " + castingText(voucher.castingCount) : "") + ")." +
-      (voucher.recipientName ? " Kupující: " + voucher.buyerName + "." : ""),
+      (voucher.recipientName ? " Kupující: " + voucher.buyerName + (voucher.buyerPhone ? ", tel. " + voucher.buyerPhone : "") + "." : ""),
     status: "confirmed",
     createdAt: new Date().toISOString(),
     heardAbout: voucher.heardAbout,
+    // Volat se bude obdarovanému, když má telefon, jinak kupujícímu; změny termínu jdou obdarovanému, když má e-mail.
+    phone: voucher.recipientPhone || voucher.buyerPhone,
+    notifyEmail: voucher.recipientEmail,
   };
   try {
     await signupStore.add(signup);
   } catch (e) {
     console.error("[voucher] Poukaz " + voucher.code + " vznikl, ale přihlášku na termín " + booking.id + " se nepodařilo vytvořit:", e);
     return { voucher, booking, signupFailed: true };
+  }
+  try {
+    await voucherStore.setSignupId(voucher.id, signup.id);
+    voucher.signupId = signup.id;
+  } catch (e) {
+    console.error("[voucher] Nepodařilo se spojit poukaz " + voucher.code + " s přihláškou:", e);
   }
   return { voucher, booking, signup, overbooked };
 }
