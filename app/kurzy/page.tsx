@@ -498,7 +498,7 @@ export default function KurzyPage() {
             <div>
               <p className="text-xs text-gray-400">{t("kurzy.step.label", { step: String(step) })}</p>
               <h2 className="text-lg font-semibold">
-                {step === 2 ? t("kurzy.step2.title") : step === 3 ? t("kurzy.step3.title") : t("kurzy.step4.title")}
+                {step === 2 ? t(voucherInfo ? "kurzy.step2.titleVoucher" : "kurzy.step2.title") : step === 3 ? t("kurzy.step3.title") : t("kurzy.step4.title")}
               </h2>
             </div>
 

@@ -24,7 +24,8 @@ export function taxIdLabel(t: { type: string; value: string }): string {
 }
 
 export function addressLine(a: BillingLike["address"] | undefined): string {
-  if (!a) return "";
+  // Samotná země není adresa (soukromá osoba do 10 000 Kč adresu nezadává).
+  if (!a || !(a.line1 || a.line2 || a.city || a.postalCode)) return "";
   return [a.line1, a.line2, [a.postalCode, a.city].filter(Boolean).join(" "), countryName(a.country)].filter(Boolean).join(", ");
 }
 

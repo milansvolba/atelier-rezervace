@@ -32,6 +32,13 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     vars: [],
     text: "Kolik míst chcete rezervovat?",
   },
+  "kurzy.step2.titleVoucher": {
+    group: "Objednávka kurzu",
+    label: "Krok 2: nadpis při uplatnění poukazu",
+    description: "Nadpis kroku 2, když zákazník uplatňuje dárkový poukaz (počet míst je už daný poukazem).",
+    vars: [],
+    text: "Váš poukaz je platný",
+  },
   "kurzy.step2.hint": {
     group: "Objednávka kurzu",
     label: "Krok 2: nápověda pod počtem míst",
@@ -163,7 +170,7 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     label: "Po úspěšné platbě",
     description: "Zelená hláška nahoře na stránce Kurzy po návratu ze zaplacené platby.",
     vars: [],
-    text: "Děkujeme za platbu! Vaše místo je potvrzené, potvrzení vám přijde e-mailem.",
+    text: "Máte rezervováno. Místo je vaše a nikdo vám ho nevyfoukne. Děkujeme, těšíme se na vás. Potvrzení vám přijde e-mailem.",
   },
   "kurzy.pay.cancel": {
     group: "Hlášky",
@@ -247,7 +254,7 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     label: "Poukaz uplatněn",
     description: "Zelená hláška po úspěšném uplatnění poukazu.",
     vars: [],
-    text: "Poukaz je uplatněný a vaše místo je potvrzené. Potvrzení vám přijde e-mailem.",
+    text: "Máte rezervováno. Místo je vaše a nikdo vám ho nevyfoukne. Děkujeme, těšíme se na vás. Potvrzení vám přijde e-mailem.",
   },
   "kurzy.voucher.err": {
     group: "Hlášky",

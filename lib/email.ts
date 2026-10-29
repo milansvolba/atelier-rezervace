@@ -6,6 +6,7 @@ import type { Voucher } from "./vouchers";
 import { castingText } from "./voucherConfig";
 import type { InvoiceItem } from "./invoices";
 import { addressLine, idsLine, icoMissing } from "./invoiceFormat";
+import { SIMPLIFIED_LIMIT_CZK } from "./billingInput";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Atelier na Pobřeží <rezervace@ateliernapobrezi.cz>";
@@ -303,6 +304,15 @@ function esc(t: string) {
   return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// Částka bez haléřů a s mezerou tisíců: 12 170 Kč (do e-mailů pro lidi; doklady mají fmtCzk s haléři).
+function fmtKc(n: number) {
+  return n.toLocaleString("cs-CZ", { maximumFractionDigits: 0 }).replace(/\u00a0/g, " ") + " Kč";
+}
+
+const STUDIO_INFO_HTML =
+  `<p><strong>Kde nás najdete:</strong> Ateliér na pobřeží, Na pobřeží 67, Kolín (areál bývalé továrny Kolinea).</p>` +
+  `<p><strong>Co s sebou:</strong> pohodlné oblečení, které může být od hlíny. Materiál a pomůcky zajišťujeme.</p>`;
+
 function voucherSummaryHtml(v: Voucher, booking?: Booking) {
   const people = v.people + " " + (v.people === 1 ? "osoba" : v.people <= 4 ? "osoby" : "osob");
   return (
@@ -317,16 +327,17 @@ function voucherSummaryHtml(v: Voucher, booking?: Booking) {
 // Kupujícímu po zaplacení: kód poukazu a jak ho uplatnit.
 export async function sendVoucherEmail(v: Voucher, booking?: Booking) {
   const redeem = booking
-    ? `<p>Obdarovaný už má na uvedený termín <strong>potvrzené místo</strong>, nemusí nic dalšího řešit. Při příchodu stačí zmínit kód poukazu.</p>`
-    : `<p>Termín zatím není zvolený. Obdarovaný si ho vybere sám na <a href="${APP_URL}/kurzy">${APP_URL}/kurzy</a>: u vybraného termínu zvolí „Mám dárkový poukaz“ a zadá kód <strong>${esc(v.code)}</strong>. Místo se mu hned potvrdí.</p>`;
+    ? `<p>Obdarovaný už má na uvedený termín <strong>potvrzené místo</strong>, nemusí nic dalšího řešit. Při příchodu stačí zmínit kód poukazu.</p>` + STUDIO_INFO_HTML
+    : `<p>Termín zatím není zvolený. Obdarovaný si ho vybere sám na <a href="${APP_URL}/kurzy">${APP_URL}/kurzy</a>: u vybraného termínu zvolí „Mám dárkový poukaz“ a zadá kód <strong>${esc(v.code)}</strong>. Místo bude hned potvrzené.</p>`;
   const msg = v.message ? `<p>Vzkaz od kupujícího:<br><em>${esc(v.message)}</em></p>` : "";
   const html = wrap(
-    `<p>Dobrý den, ${esc(v.buyerName)},</p>` +
-      `<p>děkujeme za objednávku, platba proběhla v pořádku. Váš dárkový poukaz:</p>` +
+    `<p>Dobrý den,</p>` +
+      `<p>děkujeme za objednávku, platba proběhla v pořádku. Váš dárkový poukaz v hodnotě <strong>${fmtKc(v.amountCzk)}</strong>:</p>` +
       `<p style="font-size:22px;letter-spacing:2px;"><strong>${esc(v.code)}</strong></p>` +
       voucherSummaryHtml(v, booking) +
       msg +
       redeem +
+      `<p>Poukaz můžete přeposlat obdarovanému: stačí mu předat tento e-mail nebo jen kód.</p>` +
       DOKLAD_NOTE
   );
   await send(v.buyerEmail, "Váš dárkový poukaz " + v.code, html, { type: "voucher_buyer", bookingId: booking?.id });
@@ -341,7 +352,7 @@ export async function sendAdminNewVoucherEmail(
     (opts.overbooked ? `<p><strong>Pozor:</strong> termín už neměl dost volných míst, přihláška přesto vznikla. Zkontrolujte kapacitu.</p>` : "") +
     (opts.signupFailed ? `<p><strong>Pozor:</strong> poukaz vznikl, ale přihlášku na zvolený termín se nepodařilo vytvořit. Doplňte ji ručně v adminu.</p>` : "");
   const html = wrap(
-    `<p>Byl zaplacen nový dárkový poukaz <strong>${esc(v.code)}</strong> (${v.amountCzk} Kč).</p>` +
+    `<p>Byl zaplacen nový dárkový poukaz <strong>${esc(v.code)}</strong> (${fmtKc(v.amountCzk)}).</p>` +
       voucherSummaryHtml(v, opts.booking) +
       `<p>Kupující: ${esc(v.buyerName)}, ${esc(v.buyerEmail)}</p>` +
       (v.message ? `<p>Vzkaz: ${esc(v.message)}</p>` : "") +
@@ -354,9 +365,10 @@ export async function sendAdminNewVoucherEmail(
 // Uplatnění poukazu v aplikaci: potvrzení obdarovanému + upozornění adminům.
 export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, signup: CourseSignup, overbooked: boolean) {
   const html = wrap(
-    `<p>Dobrý den, ${esc(signup.name)},</p>` +
+    `<p>Dobrý den,</p>` +
       `<p>poukaz <strong>${esc(v.code)}</strong> je uplatněný a vaše místo na kurzu je <strong>potvrzené</strong>.</p>` +
       `<p>Kurz: <strong>${esc(booking.title)}</strong><br>Termín: ${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}<br>Počet osob: ${signup.people}${v.castingCount > 0 ? ", včetně " + castingText(v.castingCount) : ""}</p>` +
+      STUDIO_INFO_HTML +
       `<p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`
   );
   const adminHtml = wrap(
@@ -392,7 +404,7 @@ export async function sendAdminInvoiceBasisEmail(item: InvoiceItem) {
   const who = b?.company || b?.name || item.description;
   const html = wrap(
     `<p><strong>Vystavte daňový doklad v Caflou.</strong></p>` +
-      `<p>Odběratel: ${esc(b?.company || b?.name || "—")}${b?.company && b?.name ? `<br>Kontaktní osoba: ${esc(b.name)}` : ""}<br>E-mail: ${esc(b?.email || "—")}<br>Adresa: ${esc(addr || "—")}<br>${ids ? esc(ids) : "IČO/DIČ: neuvedeno (nejspíš fyzická osoba)"}</p>` +
+      `<p>Odběratel: ${esc(b?.company || b?.name || "—")}${b?.company && b?.name ? `<br>Kontaktní osoba: ${esc(b.name)}` : ""}<br>E-mail: ${esc(b?.email || "—")}<br>Adresa: ${esc(addr || (item.amountCzk <= SIMPLIFIED_LIMIT_CZK ? `neuvedena (zjednodušený doklad do ${SIMPLIFIED_LIMIT_CZK.toLocaleString("cs-CZ").replace(/\u00a0/g, " ")} Kč)` : "—"))}<br>${ids ? esc(ids) : "IČO/DIČ: neuvedeno (nejspíš fyzická osoba)"}</p>` +
       (icoMissing(b) ? `<p style="background:#fff4d6;padding:8px;"><strong>Pozor: chybí IČO.</strong> Zákazník nakupuje na firmu, ale IČO nevyplnil. Dohledejte ho v ARES (Caflou ho umí načíst podle názvu nebo DIČ).</p>` : "") +
       `<p>Položka: ${esc(item.description)}<br>Celkem vč. DPH 21 %: <strong>${fmtCzk(item.amountCzk)}</strong><br>Základ: ${fmtCzk(item.baseCzk)} · DPH: ${fmtCzk(item.vatCzk)}<br>Datum přijetí platby (DUZP): <strong>${paid}</strong><br>Stripe: ${esc(item.id)}</p>` +
       `<p>Doklad je už zaplacený (kartou, Stripe). Po vystavení ho v adminu odškrtněte: <a href="${APP_URL}/admin">Otevřít admin</a></p>`

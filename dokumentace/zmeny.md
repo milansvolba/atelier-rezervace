@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-29 — Texty e-mailů a hlášek po testu poukazů a plateb (rezervace)
+
+Úpravy po zkušebních platbách: e-mail s kódem poukazu začíná „Dobrý den,“ (bez celého jména kupujícího), uvádí hodnotu poukazu a větu, že ho lze přeposlat obdarovanému; věta o uplatnění je rodově neutrální („Místo bude hned potvrzené“). U poukazu s pevným termínem a v potvrzení uplatnění poukazu přibyl blok „Kde nás najdete“ a „Co s sebou“ (`STUDIO_INFO_HTML` v `lib/email.ts`). Admin e-mail o novém poukazu má částku ve tvaru „12 170 Kč“ (`fmtKc`). V podkladech „Doklad k vystavení“ se u soukromé osoby bez adresy píše „neuvedena (zjednodušený doklad do 10 000 Kč)“ místo samotné „Česko“ (`addressLine` už nepovažuje samotnou zemi za adresu, platí i v adminu). V kroku 2 při uplatnění poukazu je nadpis „Váš poukaz je platný“ (`kurzy.step2.titleVoucher`) místo „Kolik míst chcete rezervovat?“. Hláška po zaplacení kurzu i po uplatnění poukazu: „Máte rezervováno. Místo je vaše a nikdo vám ho nevyfoukne. Děkujeme, těšíme se na vás. Potvrzení vám přijde e-mailem.“ (`kurzy.pay.ok`, `kurzy.voucher.ok`).
+
+---
+
 ## 2026-10-29 — Poukaz po zaplacení: tlačítko „Zpátky na web“ (rezervace)
 
 Děkovací stránka `/poukazy?platba=ok` má v bílé kartě černé tlačítko „Zpátky na web“ (vede na `https://ateliernapobrezi.cz`), aby zákazník po zaplacení nezůstal bez další cesty. Dosud tam byl jen malý šedý odkaz „← Zpět na web ateliéru“ nad logem. Změna je v `app/poukazy/page.tsx`. Stránka po zrušené platbě tlačítko nemá, protože tam zůstává formulář.
