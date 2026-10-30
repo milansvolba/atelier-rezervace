@@ -6,6 +6,20 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-30 — Opravy po testech: režim poukazu na /kurzy, texty, ceny, název ateliéru (rezervace)
+
+**Režim poukazu z e-mailu.** Tlačítko v e-mailu u poukazu bez termínu se jmenuje „Využít poukaz a vybrat termín“ a vede na `/kurzy?poukaz=KÓD`. Stránka teď kód ověří hned při načtení (nové API `POST /api/vouchers/check`, nic nezapisuje) a přepne se do režimu poukazu: hláška „Váš poukaz … platí na kurz … pro N míst“, jen termíny kurzu z poukazu s dostatkem volných míst, bez nabídky nákupu („Koupit“) a bez bloku „Kurz na míru pro skupinu“, s odkazem „Nechci využít poukaz, chci kurz koupit“. Po výběru termínu odpadá krok 2 (počet míst, odlitek a kód určuje poukaz) a rovnou následují údaje s tlačítkem „Přihlásit se na kurz“. **Opravená chyba:** dřív se kód při výběru termínu mazal (`resetVoucher()`), zákazník viděl běžný nákup a musel kód zadávat znovu. Neplatný, použitý nebo prošlý kód ukáže hlášku s odkazem na rezervace@. Běžný vstup na `/kurzy` bez kódu a ruční zadání kódu přes „Mám dárkový poukaz“ fungují jako dřív.
+
+**Telefon u uplatnění poukazu** se ukládá do pole `course_signups.phone` (povinný, kontrola `cleanPhone`), ne do poznámky; u běžných přihlášek zůstává zatím v poznámce („Tel: …“).
+
+**E-maily.** Oslovení je u všech výchozích šablon „Dobrý den,“ bez jména (dřív „Dobrý den Milan Švolba,“). Odesílatel i patička i předměty a titulky používají „Ateliér na pobřeží“ (s diakritikou, malé p). Nahoře v e-mailech je logo ateliéru (`public/logo.png`, výška 36 px). E-mail s kódem poukazu bez termínu: zkrácený odstavec („Obdarovaný si ho vybere sám, stačí kliknout na tlačítko níže. Kód se doplní automaticky…“) a záložní věta s ručním zadáním kódu; texty jsou NÁVRH schválený Milanem 2026-10-30.
+
+**Formuláře.** Popisek „Vaše jméno“ na `/poukazy` je „Jméno a příjmení“ (stejně u obdarovaného a na stránce kontaktu). Ceny ve formulářích jsou ve tvaru „8 270 Kč“ s pevnými mezerami (nový `lib/money.ts`, `kc()` a `num()`).
+
+**Ne v této změně:** typy kurzů místo párování podle názvu (`claude/zadani-typy-kurzu.md`), odlitek při uplatnění poukazu (čeká na volbu A/B/C), telefon u běžných přihlášek do vlastního pole, úprava vzhledu e-mailů podle design systému (zatím jen logo).
+
+---
+
 ## 2026-10-29 — E-maily o změně a zrušení termínu kurzu mají vlastní šablony (rezervace)
 
 Po testu dorazil účastníkovi kurzu e-mail se starým textem „administrátor upravil termín vašeho kurzu“ a s interním názvem místnosti „Celý ateliér / kurz“. Pro kurzy jsou teď dvě nové šablony (editovatelné v adminu): `course_changed` („Změna termínu kurzu …“, původní a nový termín, omluva, místo zůstává potvrzené, nabídka jiného řešení) a `course_cancelled` („Zrušení termínu kurzu …“, nejdřív náhradní termín s omluvou a drobnou pozorností, vratka platby jen když náhradní termín nevyhovuje; druh pozornosti, například sleva na odlitek, Milan teprve určí a doplní do šablony). Šablony `booking_changed` a `booking_cancelled` zůstávají pro pronájmy a rezervace míst. Texty jsou psané podle `DESIGN.md` (vykání, vstřícně, s alternativou) a jsou NÁVRH ke schválení Milanem. Kontakt v textu je `rezervace@ateliernapobrezi.cz`, ověřit, že schránka funguje.

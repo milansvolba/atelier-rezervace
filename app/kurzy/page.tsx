@@ -9,6 +9,7 @@ import { HeardAboutField } from "@/components/HeardAboutField";
 import { spotsPhrase } from "@/lib/invoiceFormat";
 import BillingFields from "@/components/BillingFields";
 import { BillingInput, emptyBilling, needsPrivateAddress } from "@/lib/billingInput";
+import { kc, num } from "@/lib/money";
 
 interface CourseCard {
   id: string;
@@ -66,6 +67,9 @@ export default function KurzyPage() {
   const [voucherErr, setVoucherErr] = useState("");
   const [voucherDone, setVoucherDone] = useState(false);
   const [voucherFromLink, setVoucherFromLink] = useState(false);
+  // Režim poukazu (přišli jsme z e-mailu a kód je ověřený): jen termíny kurzu z poukazu, bez nákupu.
+  const [voucherLinkErr, setVoucherLinkErr] = useState("");
+  const [voucherMode, setVoucherMode] = useState<null | { match: string; courseTitle: string }>(null);
 
   // Odkaz z e-mailu s poukazem (/kurzy?poukaz=ATL-XXXX-XXXX): kód se předvyplní a pole poukazu se otevře.
   useEffect(() => {
@@ -74,7 +78,27 @@ export default function KurzyPage() {
       setVoucherCode(code.toUpperCase());
       setVoucherOpen(true);
       setVoucherFromLink(true);
+      fetch("/api/vouchers/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      })
+        .then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }))
+        .then(({ ok, data }) => {
+          if (ok && data.people) {
+            setVoucherInfo({ code: String(data.code || code).toUpperCase(), people: data.people, castingCount: Number(data.castingCount) || 0 });
+            setVoucherMode({ match: String(data.match || ""), courseTitle: String(data.courseTitle || "") });
+          } else {
+            setVoucherFromLink(false);
+            setVoucherLinkErr(data.error || t("kurzy.voucher.err"));
+          }
+        })
+        .catch(() => {
+          setVoucherFromLink(false);
+          setVoucherLinkErr(t("kurzy.voucher.err"));
+        });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Návrat ze Stripe Checkout (success_url / cancel_url vedou na /kurzy?platba=...).
@@ -302,7 +326,8 @@ export default function KurzyPage() {
           bookingId: selectedCourse.id,
           name: signupName,
           contact: signupContact,
-          note: (signupPhone ? "Tel: " + signupPhone + ". " : "") + signupNote,
+          phone: signupPhone,
+          note: signupNote,
           honeypot,
         }),
       });
@@ -310,6 +335,8 @@ export default function KurzyPage() {
       if (r.ok) {
         setVoucherDone(true);
         setSignupFor(null);
+        setVoucherMode(null);
+        setVoucherFromLink(false);
         resetVoucher();
         setStep(2);
         setSignupPeople(1);
@@ -406,18 +433,39 @@ export default function KurzyPage() {
         </p>
       )}
       {voucherFromLink && !voucherDone && (
-        <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4">
-          {t("kurzy.voucher.fromLink")}
+        <div className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4 space-y-1">
+          <p>{voucherMode ? t("kurzy.voucher.fromLinkReady", { code: voucherInfo?.code ?? "", people: String(voucherInfo?.people ?? 1), seats: seatsWord(voucherInfo?.people ?? 1), course: voucherMode.courseTitle }) : t("kurzy.voucher.fromLink")}</p>
+          {voucherMode && (
+            <button
+              type="button"
+              className="text-xs underline text-green-900"
+              onClick={() => {
+                setVoucherMode(null);
+                setVoucherFromLink(false);
+                setSignupFor(null);
+                resetVoucher();
+              }}
+            >
+              {t("kurzy.voucher.leaveMode")}
+            </button>
+          )}
+        </div>
+      )}
+      {voucherLinkErr && (
+        <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl p-4">
+          {voucherLinkErr} Napište nám prosím na rezervace@ateliernapobrezi.cz, rádi pomůžeme.
         </p>
       )}
       <div>
         <h1 className="text-xl font-semibold mb-1">Kurzy</h1>
         <p className="text-sm text-gray-500">
-          Vypsané termíny sochařských kurzů. Přihlaste se na některý z nich, nebo si napište o vlastní termín pro skupinu.
+          {voucherMode
+            ? t("kurzy.voucher.intro")
+            : "Vypsané termíny sochařských kurzů. Přihlaste se na některý z nich, nebo si napište o vlastní termín pro skupinu."}
         </p>
       </div>
 
-      {topics.length > 0 && (
+      {topics.length > 0 && !voucherMode && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="font-medium mb-3">Vyberte kurz</p>
           <div className="space-y-2">
@@ -425,7 +473,7 @@ export default function KurzyPage() {
               <div key={t.title} className="flex items-center justify-between gap-3 border-t border-gray-100 pt-2 first:border-t-0 first:pt-0 flex-wrap">
                 <div>
                   <p className="text-sm font-medium">{t.title}</p>
-                  {t.price ? <p className="text-xs text-gray-500">{t.price} Kč/os.</p> : null}
+                  {t.price ? <p className="text-xs text-gray-500">{kc(t.price)}/os.</p> : null}
                 </div>
                 <button
                   type="button"
@@ -505,14 +553,14 @@ export default function KurzyPage() {
                 <p className="mt-1">
                   {signupPeople} {seatsWord(signupPeople)} ·{" "}
                   {quote.discount > 0 && <span>{t("kurzy.summary.discount", { percent: String(quote.discount) })} · </span>}
-                  <strong>{quote.grand} Kč</strong>
-                  {quote.discount > 0 && <span className="text-gray-400 line-through ml-2">{quote.total + quote.casting} Kč</span>}
+                  <strong>{kc(quote.grand)}</strong>
+                  {quote.discount > 0 && <span className="text-gray-400 line-through ml-2">{kc(quote.total + quote.casting)}</span>}
                 </p>
               )}
             </div>
 
             <div>
-              <p className="text-xs text-gray-400">{t("kurzy.step.label", { step: String(step) })}</p>
+              {!voucherMode && <p className="text-xs text-gray-400">{t("kurzy.step.label", { step: String(step) })}</p>}
               <h2 className="text-lg font-semibold">
                 {step === 2 ? t(voucherInfo ? "kurzy.step2.titleVoucher" : "kurzy.step2.title") : step === 3 ? t("kurzy.step3.title") : t("kurzy.step4.title")}
               </h2>
@@ -557,7 +605,7 @@ export default function KurzyPage() {
                     <label className="flex items-start gap-2 text-sm rounded-md border border-gray-200 p-3">
                       <input type="checkbox" className="mt-1" checked={castings > 0} onChange={(e) => setCastings(e.target.checked ? 1 : 0)} />
                       <span>
-                        Přidat odlitek do betonu (+{selectedCourse.castingPrice} Kč)
+                        Přidat odlitek do betonu (+{kc(selectedCourse.castingPrice)})
                         <br />
                         <span className="text-xs text-gray-500">Vaše dílo vám odléváme do speciálního betonu. Termín předání domluvíme na kurzu.</span>
                       </span>
@@ -631,7 +679,7 @@ export default function KurzyPage() {
                     type="button"
                     onClick={() => {
                       setSignupFor(null);
-                      resetVoucher();
+                      if (!voucherMode) resetVoucher();
                     }}
                     className="h-10 px-4 rounded-md border border-gray-300 text-sm"
                   >
@@ -652,7 +700,8 @@ export default function KurzyPage() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  setStep(4);
+                  if (voucherInfo) redeemVoucher();
+                  else setStep(4);
                 }}
                 className="space-y-3"
               >
@@ -691,6 +740,7 @@ export default function KurzyPage() {
                     {t("kurzy.field.phone")}
                     <input
                       type="tel"
+                      required={!!voucherInfo}
                       autoComplete="tel"
                       className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
                       value={signupPhone}
@@ -716,12 +766,14 @@ export default function KurzyPage() {
                 <div className="flex gap-2 flex-wrap pt-1">
                   <button
                     type="button"
-                    onClick={() => setStep(2)}
+                    onClick={() => (voucherMode ? setSignupFor(null) : setStep(2))}
                     className="h-10 px-4 rounded-md border border-gray-300 text-sm"
                   >
-                    {t("kurzy.nav.back")}
+                    {voucherMode ? t("kurzy.nav.change") : t("kurzy.nav.back")}
                   </button>
-                  <button className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm">{t("kurzy.nav.next")}</button>
+                  <button disabled={payBusy} className="h-10 px-4 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60">
+                    {voucherInfo ? (payBusy ? t("kurzy.voucher.busy") : t("kurzy.voucher.button")) : t("kurzy.nav.next")}
+                  </button>
                 </div>
               </form>
             )}
@@ -767,23 +819,23 @@ export default function KurzyPage() {
                       <span>
                         {signupPeople} × {selectedCourse.price} Kč
                       </span>
-                      <span>{quote.total} Kč</span>
+                      <span>{kc(quote.total)}</span>
                     </div>
                     {quote.discount > 0 && (
                       <div className="flex justify-between text-green-700">
                         <span>{t("kurzy.summary.discount", { percent: String(quote.discount) })}</span>
-                        <span>−{quote.total - quote.totalAfter} Kč</span>
+                        <span>−{kc(quote.total - quote.totalAfter)}</span>
                       </div>
                     )}
                     {quote.casting > 0 && (
                       <div className="flex justify-between">
                         <span>{Math.min(castings, signupPeople)} × betonový odlitek</span>
-                        <span>{quote.casting} Kč</span>
+                        <span>{kc(quote.casting)}</span>
                       </div>
                     )}
                     <div className="flex justify-between font-semibold text-base pt-1">
                       <span>Celkem</span>
-                      <span>{quote.grand} Kč</span>
+                      <span>{kc(quote.grand)}</span>
                     </div>
                   </div>
                 )}
@@ -802,7 +854,7 @@ export default function KurzyPage() {
                     disabled={payBusy}
                     className="h-10 px-5 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60"
                   >
-                    {voucherInfo ? (payBusy ? t("kurzy.voucher.busy") : t("kurzy.voucher.button")) : payBusy ? t(selectedCourse.price ? "kurzy.pay.busy" : "kurzy.signup.busy") : quote ? t("kurzy.pay.button", { total: String(quote.grand) }) : "Odeslat přihlášku"}
+                    {voucherInfo ? (payBusy ? t("kurzy.voucher.busy") : t("kurzy.voucher.button")) : payBusy ? t(selectedCourse.price ? "kurzy.pay.busy" : "kurzy.signup.busy") : quote ? t("kurzy.pay.button", { total: num(quote.grand) }) : "Odeslat přihlášku"}
                   </button>
                 </div>
                 {quote && <p className="text-xs text-gray-500">{t("kurzy.pay.hint")}</p>}
@@ -812,6 +864,7 @@ export default function KurzyPage() {
         ) : (
           courses
             .filter((c) => !topicFilter || c.title === topicFilter)
+            .filter((c) => !voucherMode || (c.title.toLowerCase().includes(voucherMode.match) && (c.spotsLeft === null || c.spotsLeft >= (voucherInfo?.people ?? 1))))
             .map((c) => (
               <div key={c.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -819,7 +872,7 @@ export default function KurzyPage() {
                     <p className="font-medium">{c.title}</p>
                     <p className="text-sm text-gray-500">
                       {fmtDate(c.date)} · {c.startTime}–{c.endTime}
-                      {c.price ? " · " + c.price + " Kč/os." : ""}
+                      {c.price ? " · " + kc(c.price) + "/os." : ""}
                     </p>
                     {c.note && <p className="text-sm text-gray-500 mt-1">{c.note}</p>}
                     {c.capacity && (
@@ -843,11 +896,12 @@ export default function KurzyPage() {
                         });
                       }
                       setSignupFor(c.id);
-                      resetVoucher();
+                      if (!voucherMode) resetVoucher();
                       setVoucherDone(false);
-                      setStep(2);
-                      setSignupPeople(1);
-                      setCastings(0);
+                      // V režimu poukazu krok 2 (počet míst, odlitek, kód) odpadá: vše je dané poukazem.
+                      setStep(voucherMode ? 3 : 2);
+                      setSignupPeople(voucherMode ? voucherInfo?.people ?? 1 : 1);
+                      setCastings(voucherMode ? voucherInfo?.castingCount ?? 0 : 0);
                       setSignupSent(null);
                       setPayError("");
                       requestAnimationFrame(() => {
@@ -865,6 +919,7 @@ export default function KurzyPage() {
         )}
       </div>
 
+      {!voucherMode && (
       <div className="bg-white border border-gray-200 rounded-xl p-5" id="custom-form">
         <p className="font-medium mb-1">Kurz na míru pro skupinu</p>
         <p className="text-sm text-gray-500 mb-4">
@@ -966,6 +1021,7 @@ export default function KurzyPage() {
         {customSent === "ok" && <p className="text-sm text-green-700 mt-3">Poptávka odeslána, ozveme se s potvrzením nebo návrhem termínu.</p>}
         {customSent === "err" && <p className="text-sm text-red-700 mt-3">Něco se nepovedlo, zkuste to prosím znovu.</p>}
       </div>
+      )}
     </main>
   );
 }

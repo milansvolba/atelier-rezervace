@@ -82,7 +82,7 @@ export default function KontaktObdarovanehoPage() {
             <p className="text-xs text-gray-600">
               Kontakt použijeme jen kdyby bylo potřeba termín změnit nebo někoho na kurzu zastihnout. Nic mu neposíláme dopředu, překvapení zůstane.
             </p>
-            <label className="block text-sm">Jméno obdarovaného<input className={input} value={name} onChange={(e) => setName(e.target.value)} /></label>
+            <label className="block text-sm">Jméno a příjmení obdarovaného<input className={input} value={name} onChange={(e) => setName(e.target.value)} /></label>
             <label className="block text-sm">E-mail<input type="email" className={input} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
             <label className="block text-sm">Telefon<input type="tel" className={input} value={phone} onChange={(e) => setPhone(e.target.value)} /></label>
             {error && <p className="text-sm text-red-700">{error}</p>}

@@ -1,7 +1,7 @@
 // Stránka členství: sem vede odkaz z uvítacího e-mailu (úvod před platbou) i návrat ze Stripe (poděkování).
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Členství — Atelier na Pobřeží" };
+export const metadata = { title: "Členství — Ateliér na pobřeží" };
 
 export default function MembershipPage({ searchParams }: { searchParams: { token?: string; platba?: string } }) {
   const token = searchParams.token;

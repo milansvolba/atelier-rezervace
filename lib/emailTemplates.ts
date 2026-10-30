@@ -39,7 +39,7 @@ export interface TemplateForAdmin extends TemplateDef {
 
 // Výchozí texty — pokud admin nic neupraví, používají se tyhle. Zástupné
 // symboly {{promenna}} se při odeslání nahradí skutečnými hodnotami (viz
-// renderTemplate). Patička s "Atelier na Pobřeží · rezervace..." se
+// renderTemplate). Patička s "Ateliér na pobřeží · rezervace..." se
 // připojuje automaticky při odeslání, není součástí šablony.
 export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
   admin_new_request_kurz: {
@@ -68,16 +68,16 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     label: "Žadatel: poptávka na kurz přijata",
     description: "Potvrzení pro zájemce hned po odeslání poptávky na skupinový kurz.",
     vars: ["name", "date", "startTime", "endTime"],
-    subject: "Přijali jsme vaši poptávku na kurz — Atelier na Pobřeží",
-    body: `<p>Dobrý den {{name}},</p>
+    subject: "Přijali jsme vaši poptávku na kurz — Ateliér na pobřeží",
+    body: `<p>Dobrý den,</p>
 <p>vaši poptávku na skupinový kurz na míru na <strong>{{date}}</strong> od {{startTime}} do {{endTime}} jsme přijali. Ozveme se co nejdřív, nejpozději následující pracovní den, s potvrzením nebo návrhem nejbližšího volného termínu.</p>`,
   },
   requester_received_pronajem: {
     label: "Žadatel: žádost o pronájem přijata",
     description: "Potvrzení pro žadatele hned po odeslání žádosti o pronájem / rezervaci místa.",
     vars: ["name", "what", "date", "startTime", "endTime"],
-    subject: "Přijali jsme vaši žádost — Atelier na Pobřeží",
-    body: `<p>Dobrý den {{name}},</p>
+    subject: "Přijali jsme vaši žádost — Ateliér na pobřeží",
+    body: `<p>Dobrý den,</p>
 <p>vaši {{what}} na <strong>{{date}}</strong> od {{startTime}} do {{endTime}} jsme přijali. Ozveme se co nejdřív, nejpozději následující pracovní den.</p>`,
   },
   requester_decision_kurz_approved: {
@@ -85,7 +85,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     description: "Pošle se, když admin schválí poptávku na skupinový kurz.",
     vars: ["name", "date", "startTime", "endTime", "noteBlock"],
     subject: "Kurz potvrzen — {{date}}",
-    body: `<p>Dobrý den {{name}},</p>
+    body: `<p>Dobrý den,</p>
 <p>váš skupinový kurz na míru je potvrzený na <strong>{{date}}</strong>, od {{startTime}} do {{endTime}}.</p>
 {{noteBlock}}
 <p><strong>Kde nás najdete:</strong> <a href="https://mapy.com/cs/zakladni?q=Na%20pob%C5%99e%C5%BE%C3%AD%2067%2C%20Kol%C3%ADn">Ateliér na pobřeží, Na pobřeží 67, Kolín</a> (areál bývalé továrny Kolinea).</p>
@@ -97,7 +97,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     description: "Pošle se, když admin zamítne poptávku na skupinový kurz.",
     vars: ["name", "date", "startTime", "endTime", "noteSuffix"],
     subject: "K vaší poptávce na kurz — {{date}}",
-    body: `<p>Dobrý den {{name}},</p>
+    body: `<p>Dobrý den,</p>
 <p>termín kurzu na <strong>{{date}}</strong> od {{startTime}} do {{endTime}} vám bohužel nemůžeme potvrdit{{noteSuffix}}.</p>
 <p>Napište nám prosím jiný termín, který by vám vyhovoval, a zkusíme ho domluvit.</p>`,
   },
@@ -106,14 +106,14 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     description: "Pošle se, když admin schválí žádost o pronájem / rezervaci místa.",
     vars: ["name", "what", "date", "startTime", "endTime", "noteBlock"],
     subject: "Vaše rezervace je potvrzená — {{date}}",
-    body: `<p>Dobrý den {{name}},</p><p>vaše žádost o {{what}} na <strong>{{date}}</strong> od {{startTime}} do {{endTime}} je potvrzená.</p>{{noteBlock}}<p>Těšíme se na vás.</p>`,
+    body: `<p>Dobrý den,</p><p>vaše žádost o {{what}} na <strong>{{date}}</strong> od {{startTime}} do {{endTime}} je potvrzená.</p>{{noteBlock}}<p>Těšíme se na vás.</p>`,
   },
   requester_decision_pronajem_rejected: {
     label: "Žadatel: pronájem nelze potvrdit",
     description: "Pošle se, když admin zamítne žádost o pronájem / rezervaci místa.",
     vars: ["name", "what", "date", "startTime", "endTime", "noteSuffix"],
     subject: "K vaší žádosti — {{date}}",
-    body: `<p>Dobrý den {{name}},</p><p>vaši žádost o {{what}} na <strong>{{date}}</strong> od {{startTime}} do {{endTime}} bohužel nemůžeme potvrdit{{noteSuffix}}.</p><p>Pokud vám vyhovuje jiný termín, napište nám znovu.</p>`,
+    body: `<p>Dobrý den,</p><p>vaši žádost o {{what}} na <strong>{{date}}</strong> od {{startTime}} do {{endTime}} bohužel nemůžeme potvrdit{{noteSuffix}}.</p><p>Pokud vám vyhovuje jiný termín, napište nám znovu.</p>`,
   },
   booking_changed: {
     label: "Rezervista: termín změněn",
@@ -168,7 +168,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     description: "Potvrzení hned po odeslání přihlášky na vypsaný termín kurzu.",
     vars: ["name", "courseTitle", "date", "startTime", "endTime"],
     subject: "Přihláška přijata — {{courseTitle}} ({{date}})",
-    body: `<p>Dobrý den {{name}},</p>
+    body: `<p>Dobrý den,</p>
 <p>děkujeme za přihlášku na kurz <strong>{{courseTitle}}</strong>, {{date}} od {{startTime}} do {{endTime}}.</p>
 <p>Ozveme se vám co nejdřív s potvrzením místa.</p>`,
   },
@@ -177,14 +177,14 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     description: "Pošle se, když admin schválí přihlášku na vypsaný termín kurzu.",
     vars: ["name", "courseTitle", "date", "startTime", "endTime"],
     subject: "Vaše místo na kurzu je potvrzené — {{date}}",
-    body: `<p>Dobrý den {{name}},</p><p>vaše místo na kurzu <strong>{{courseTitle}}</strong> ({{date}} {{startTime}}–{{endTime}}) je potvrzené. Těšíme se na vás.</p>`,
+    body: `<p>Dobrý den,</p><p>vaše místo na kurzu <strong>{{courseTitle}}</strong> ({{date}} {{startTime}}–{{endTime}}) je potvrzené. Těšíme se na vás.</p>`,
   },
   signup_decision_rejected: {
     label: "Přihlášený: místo nelze potvrdit",
     description: "Pošle se, když admin zamítne přihlášku na vypsaný termín kurzu (např. plná kapacita).",
     vars: ["name", "courseTitle", "date", "startTime", "endTime"],
     subject: "K vaší přihlášce na kurz — {{date}}",
-    body: `<p>Dobrý den {{name}},</p><p>na kurz <strong>{{courseTitle}}</strong> ({{date}} {{startTime}}–{{endTime}}) vás bohužel nemůžeme zapsat — kapacita je bohužel plná. Ozveme se s dalším možným termínem.</p>`,
+    body: `<p>Dobrý den,</p><p>na kurz <strong>{{courseTitle}}</strong> ({{date}} {{startTime}}–{{endTime}}) vás bohužel nemůžeme zapsat — kapacita je bohužel plná. Ozveme se s dalším možným termínem.</p>`,
   },
 };
 
