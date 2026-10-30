@@ -5,7 +5,7 @@ import { voucherStore, isExpired } from "@/lib/vouchers";
 export const dynamic = "force-dynamic";
 
 // POST /api/vouchers/check — ověří kód poukazu bez vybraného termínu (odkaz z e-mailu: /kurzy?poukaz=KÓD).
-// Tělo: { code }. Nic nezapisuje. Vrací počet osob, odlitky a řetězec, kterým se v názvu termínu pozná kurz poukazu.
+// Tělo: { code }. Nic nezapisuje. Vrací počet osob, odlitky a typ kurzu poukazu (klíč), podle kterého se filtrují termíny.
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const bad = (error: string, status = 400) => NextResponse.json({ error }, { status });
@@ -25,6 +25,6 @@ export async function POST(req: NextRequest) {
     people: voucher.people,
     castingCount: voucher.castingCount,
     courseTitle: voucher.courseTitle,
-    match: course.match,
+    type: course.key,
   });
 }

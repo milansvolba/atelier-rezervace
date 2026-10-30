@@ -7,6 +7,7 @@ import { handleMembershipEvent } from "@/lib/membership";
 import { handleVoucherPaid } from "@/lib/vouchers";
 import { invoiceStore, billingFromSession } from "@/lib/invoices";
 import { czDate } from "@/lib/invoiceFormat";
+import { cleanPhone } from "@/lib/signupContact";
 import { sendAdminNewSignupEmail, sendSignupDecisionEmail, sendVoucherEmail, sendAdminNewVoucherEmail, sendAdminInvoiceBasisEmail, sendDokladNoteEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
           status: "confirmed",
           createdAt: new Date().toISOString(),
           heardAbout: meta.heardAbout?.trim() || undefined,
+          phone: cleanPhone(meta.phone) ?? undefined,
         };
         await signupStore.add(signup);
         try {

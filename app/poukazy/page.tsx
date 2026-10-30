@@ -16,6 +16,7 @@ interface Term {
   startTime: string;
   endTime: string;
   spotsLeft: number | null;
+  courseType?: string;
 }
 
 function fmtDate(dateISO: string) {
@@ -62,7 +63,7 @@ export default function PoukazyPage() {
   }, []);
 
   const course = VOUCHER_COURSES.find((c) => c.key === topic) ?? VOUCHER_COURSES[0];
-  const courseTerms = terms.filter((t) => t.title.toLowerCase().includes(course.match) && (t.spotsLeft === null || t.spotsLeft >= people));
+  const courseTerms = terms.filter((t) => t.courseType === course.key && (t.spotsLeft === null || t.spotsLeft >= people));
   const price = computeOrder(course.pricePerPerson, people, Math.min(castings, people), course.castingPrice);
 
   async function submit(e: React.FormEvent) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
-import { computeOrder, voucherCourse, clampCastings } from "@/lib/pricing";
+import { computeOrder, voucherCourse, clampCastings, courseTypeKey } from "@/lib/pricing";
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
 import { parseBillingInput } from "@/lib/billingInput";
 import { cleanPhone, validEmail } from "@/lib/signupContact";
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     if (!booking || booking.status !== "confirmed" || booking.date < today) {
       return NextResponse.json({ error: "Zvolený termín už není k dispozici." }, { status: 404 });
     }
-    if (!booking.title.toLowerCase().includes(course.match)) {
+    if (courseTypeKey(booking) !== course.key) {
       return NextResponse.json({ error: "Zvolený termín nepatří k tomuto kurzu." }, { status: 400 });
     }
     if (await courseFlags.isCorporate(booking.id)) {

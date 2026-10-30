@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { store, findConflict, findPrepConflictFor } from "@/lib/data";
 import { prepMessage, PrepRole } from "@/lib/prep";
 import { requireUser } from "@/lib/auth";
+import { isValidCourseType } from "@/lib/pricing";
 import { sendBookingChangedEmail, sendBookingCancelledEmail, notifyCourseSignups } from "@/lib/email";
 import { signupStore } from "@/lib/signups";
 
@@ -16,13 +17,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { resource, date, startTime, endTime, title, requesterContact, notify, category, capacity, price } = body;
+  const { resource, date, startTime, endTime, title, requesterContact, notify, category, capacity, price, courseType } = body;
 
   const all = await store.all();
   const existing = all.find((b) => b.id === params.id);
   if (!existing) return NextResponse.json({ error: "rezervace nenalezena" }, { status: 404 });
   if (!canManage(session, existing)) {
     return NextResponse.json({ error: "K úpravě této rezervace nemáte oprávnění." }, { status: 403 });
+  }
+
+  // Typ kurzu mění jen admin a jen u kurzu; neplatná hodnota je chyba, ne tiché ignorování.
+  if (courseType !== undefined && courseType !== "") {
+    if (session.role !== "admin" || (category ?? existing.category) !== "kurz") {
+      return NextResponse.json({ error: "Typ kurzu může měnit jen administrátor u termínu kurzu." }, { status: 403 });
+    }
+    if (!isValidCourseType(courseType)) return NextResponse.json({ error: "Neznámý typ kurzu." }, { status: 400 });
   }
 
   const nextResource = resource ?? existing.resource;
@@ -54,6 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     category,
     capacity: capacity === "" || capacity === undefined ? undefined : Number(capacity),
     price: price === "" || price === undefined ? undefined : Number(price),
+    courseType: courseType === "" ? undefined : courseType,
   });
 
   const contact = requesterContact || existing.requesterContact;

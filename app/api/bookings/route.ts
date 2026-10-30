@@ -3,6 +3,7 @@ import { store, findConflict, findPrepConflictFor } from "@/lib/data";
 import { prepMessage, PrepRole } from "@/lib/prep";
 import { Booking } from "@/lib/types";
 import { requireUser } from "@/lib/auth";
+import { isValidCourseType } from "@/lib/pricing";
 import { users } from "@/lib/users";
 
 // Veřejnosti (nepřihlášeným) vracíme jen to, co potřebuje veřejný kalendář na
@@ -26,9 +27,14 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { resource, date, startTime, endTime, title, extraMonitor, requesterContact, memberUserId, category, capacity, price } = body;
+  const { resource, date, startTime, endTime, title, extraMonitor, requesterContact, memberUserId, category, capacity, price, courseType } = body;
   if (!resource || !date || !startTime || !endTime || !title) {
     return NextResponse.json({ error: "chybí povinné údaje" }, { status: 400 });
+  }
+  // Termín kurzu musí mít typ (Modelování hlavy / reliéfu / jednorázový kurz mimo web), jinak by se nepárovaly poukazy.
+  const isCourse = session.role === "admin" && category === "kurz";
+  if (isCourse && !isValidCourseType(courseType)) {
+    return NextResponse.json({ error: "U kurzu vyberte typ kurzu." }, { status: 400 });
   }
   const conflict = await findConflict(resource, date, startTime, endTime);
   if (conflict) {
@@ -74,6 +80,7 @@ export async function POST(req: NextRequest) {
     category: session.role === "admin" && category === "kurz" ? "kurz" : "pronajem",
     capacity: session.role === "admin" && capacity ? Number(capacity) : undefined,
     price: session.role === "admin" && price ? Number(price) : undefined,
+    courseType: isCourse ? courseType : undefined,
   };
   await store.add(booking);
   return NextResponse.json(booking, { status: 201 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
+import { cleanPhone } from "@/lib/signupContact";
 import { computeOrder, castingPriceFor, clampCastings } from "@/lib/pricing";
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
 import { parseBillingInput } from "@/lib/billingInput";
@@ -25,7 +26,7 @@ function seatsWord(n: number) {
 // (course_signups) vznikne až po zaplacení ve webhooku /api/stripe/webhook.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { bookingId, name, contact, people, note, honeypot, casting, heardAbout, billing } = body;
+  const { bookingId, name, contact, people, note, phone, honeypot, casting, heardAbout, billing } = body;
 
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
@@ -63,11 +64,15 @@ export async function POST(req: NextRequest) {
   }
 
   // Množstevní sleva podle počtu lidí + volitelný betonový odlitek pro každého účastníka (lib/pricing.ts).
-  const castingPrice = castingPriceFor(booking.title);
+  const castingPrice = castingPriceFor(booking);
   const castings = castingPrice !== null ? clampCastings(casting, seats) : 0;
   const price = computeOrder(booking.price, seats, castings, castingPrice ?? 0);
   const billingCheck = parseBillingInput(billing, price.total);
   if (!billingCheck.ok) return NextResponse.json({ error: billingCheck.error }, { status: 400 });
+  const cleanedPhone = cleanPhone(phone);
+  if (phone && String(phone).trim() && !cleanedPhone) {
+    return NextResponse.json({ error: "Zkontrolujte prosím telefon (9 až 15 číslic)." }, { status: 400 });
+  }
   const contactStr = String(contact).trim();
   const email = contactStr.includes("@") ? contactStr : undefined;
 
@@ -81,6 +86,7 @@ export async function POST(req: NextRequest) {
         bookingId: booking.id,
         name: String(name).slice(0, 200),
         contact: contactStr.slice(0, 200),
+        phone: cleanedPhone ?? "",
         people: String(seats),
         casting: String(castings),
         note: String(note ?? "").slice(0, 300),
