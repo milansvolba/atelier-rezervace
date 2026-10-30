@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-29 — E-maily o změně a zrušení termínu kurzu mají vlastní šablony (rezervace)
+
+Po testu dorazil účastníkovi kurzu e-mail se starým textem „administrátor upravil termín vašeho kurzu“ a s interním názvem místnosti „Celý ateliér / kurz“. Pro kurzy jsou teď dvě nové šablony (editovatelné v adminu): `course_changed` („Změna termínu kurzu …“, původní a nový termín, omluva, místo zůstává potvrzené, nabídka jiného řešení) a `course_cancelled` („Zrušení termínu kurzu …“, nejdřív náhradní termín s omluvou a drobnou pozorností, vratka platby jen když náhradní termín nevyhovuje; druh pozornosti, například sleva na odlitek, Milan teprve určí a doplní do šablony). Šablony `booking_changed` a `booking_cancelled` zůstávají pro pronájmy a rezervace míst. Texty jsou psané podle `DESIGN.md` (vykání, vstřícně, s alternativou) a jsou NÁVRH ke schválení Milanem. Kontakt v textu je `rezervace@ateliernapobrezi.cz`, ověřit, že schránka funguje.
 ## 2026-10-29 — Drobnosti e-mailů: odkaz na mapu u adresy, věta u kontaktu (rezervace)
 
 Adresa ateliéru v e-mailech (blok „Kde nás najdete“ u poukazu s termínem a v potvrzení uplatnění poukazu, výchozí text šablony „Kurz potvrzen“) je teď vlastní odkaz na Mapy.com (`STUDIO_MAP_URL` v `lib/email.ts`). Gmail si dřív adresu převáděl na odkaz sám a špatně ho ohraničil (odkaz začínal až od „pobřeží“). Věta u kontaktu na obdarovaného končí „ozveme se na tento kontakt“. Pozor: pokud byla šablona „Kurz potvrzen“ upravená v adminu, uložený text se změnou výchozího nepřepíše.

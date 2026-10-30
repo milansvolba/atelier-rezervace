@@ -14,6 +14,8 @@ export type TemplateKey =
   | "requester_decision_pronajem_rejected"
   | "booking_changed"
   | "booking_cancelled"
+  | "course_changed"
+  | "course_cancelled"
   | "admin_new_signup"
   | "signup_received"
   | "signup_decision_approved"
@@ -131,6 +133,25 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     body: `<p>Dobrý den,</p>
 <p>administrátor zrušil {{whatCancelled}} ({{resourceLabel}}, {{date}} {{startTime}}–{{endTime}}).</p>
 <p>Pokud budete chtít nový termín, napište nám.</p>`,
+  },
+  course_changed: {
+    label: "Účastník kurzu: změna termínu",
+    description: "Pošle se přihlášeným na kurz (obdarovanému, jinak kupujícímu), když admin změní čas nebo den termínu kurzu a zaškrtne „Informovat přihlášené“.",
+    vars: ["courseTitle", "beforeDate", "beforeStart", "beforeEnd", "afterDate", "afterStart", "afterEnd"],
+    subject: "Změna termínu kurzu {{courseTitle}}: {{afterDate}}",
+    body: `<p>Dobrý den,</p>
+<p>termín vašeho kurzu <strong>{{courseTitle}}</strong> se změnil. Omlouváme se za komplikace.</p>
+<p><strong>Původně:</strong> {{beforeDate}}, {{beforeStart}}–{{beforeEnd}}<br><strong>Nově:</strong> {{afterDate}}, {{afterStart}}–{{afterEnd}}</p>
+<p>Vaše místo zůstává potvrzené, nemusíte nic dělat. Pokud vám nový termín nevyhovuje, napište nám na <a href="mailto:rezervace@ateliernapobrezi.cz">rezervace@ateliernapobrezi.cz</a> a rádi najdeme jiný.</p>`,
+  },
+  course_cancelled: {
+    label: "Účastník kurzu: kurz zrušen",
+    description: "Pošle se přihlášeným na kurz (obdarovanému, jinak kupujícímu), když admin smaže termín kurzu a zaškrtne „Informovat přihlášené“.",
+    vars: ["courseTitle", "date", "startTime", "endTime"],
+    subject: "Zrušení termínu kurzu {{courseTitle}}: {{date}}",
+    body: `<p>Dobrý den,</p>
+<p>termín kurzu <strong>{{courseTitle}}</strong> ({{date}}, {{startTime}}–{{endTime}}) bohužel musíme zrušit. Moc nás to mrzí.</p>
+<p>Ozveme se vám s nabídkou náhradního termínu a jako omluvu vám přidáme drobnou pozornost. Pokud vám náhradní termín nevyhovuje, vrátíme vám platbu. Kdybyste nám chtěli napsat dřív, pište na <a href="mailto:rezervace@ateliernapobrezi.cz">rezervace@ateliernapobrezi.cz</a>.</p>`,
   },
   admin_new_signup: {
     label: "Admin: nová přihláška na kurz",
