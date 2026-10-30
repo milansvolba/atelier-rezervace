@@ -224,9 +224,30 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
   "kurzy.voucher.fromLink": {
     group: "Dárkový poukaz",
     label: "Poukaz z e-mailu: úvodní hláška",
-    description: "Zelená hláška nahoře na stránce Kurzy, když zákazník přijde z tlačítka „Použít kód poukazu“ v e-mailu. Kód je už předvyplněný.",
+    description: "Zelená hláška nahoře na stránce Kurzy, když zákazník přijde z tlačítka „Využít poukaz a vybrat termín“ v e-mailu. Kód je už předvyplněný.",
     vars: [],
     text: "Máte dárkový poukaz. Vyberte kurz a termín, kód je už předvyplněný a místo se potvrdí hned.",
+  },
+  "kurzy.voucher.fromLinkReady": {
+    group: "Dárkový poukaz",
+    label: "Poukaz z e-mailu: ověřený poukaz",
+    description: "Zelená hláška nahoře, když kód z e-mailu platí. code = kód, people = počet osob, seats = místo/místa/míst, course = název kurzu.",
+    vars: ["code", "people", "seats", "course"],
+    text: "Váš poukaz {{code}} platí na kurz {{course}} pro {{people}} {{seats}}. Vyberte termín, místo se potvrdí hned.",
+  },
+  "kurzy.voucher.intro": {
+    group: "Dárkový poukaz",
+    label: "Poukaz z e-mailu: úvodní věta stránky",
+    description: "Věta pod nadpisem Kurzy, když zákazník přišel z e-mailu s platným poukazem.",
+    vars: [],
+    text: "Vyberte termín kurzu, na který váš poukaz platí.",
+  },
+  "kurzy.voucher.leaveMode": {
+    group: "Dárkový poukaz",
+    label: "Poukaz z e-mailu: odkaz „Nechci využít poukaz“",
+    description: "Malý odkaz v zelené hlášce, kterým se zákazník vrátí k běžné nabídce kurzů a nákupu.",
+    vars: [],
+    text: "Nechci využít poukaz, chci kurz koupit",
   },
   "kurzy.voucher.applied": {
     group: "Dárkový poukaz",
@@ -245,9 +266,9 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
   "kurzy.voucher.button": {
     group: "Dárkový poukaz",
     label: "Tlačítko Uplatnit poukaz",
-    description: "Hlavní tlačítko v kroku 4 při uplatnění poukazu (místo platby).",
+    description: "Hlavní tlačítko při uplatnění poukazu (místo platby). V režimu poukazu z e-mailu je v posledním kroku s údaji.",
     vars: [],
-    text: "Uplatnit poukaz a potvrdit místo",
+    text: "Přihlásit se na kurz",
   },
   "kurzy.voucher.busy": {
     group: "Dárkový poukaz",

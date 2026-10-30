@@ -8,6 +8,7 @@ import { voucherStore, isExpired } from "@/lib/vouchers";
 import { sendVoucherRedeemedEmails } from "@/lib/email";
 import { castingText } from "@/lib/voucherConfig";
 import { CourseSignup } from "@/lib/types";
+import { cleanPhone } from "@/lib/signupContact";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export const dynamic = "force-dynamic";
 //  - jinak: poukaz atomicky označí jako uplatněný a vytvoří potvrzenou přihlášku na celý počet osob poukazu.
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const { code, bookingId, name, contact, note, dryRun, honeypot } = body;
+  const { code, bookingId, name, contact, phone, note, dryRun, honeypot } = body;
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
   const bad = (error: string, status = 400) => NextResponse.json({ error }, { status });
@@ -58,6 +59,8 @@ export async function POST(req: NextRequest) {
   const signupContact = String(contact ?? "").trim();
   if (!signupName) return bad("Vyplňte prosím jméno.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signupContact)) return bad("Vyplňte prosím platný e-mail, pošleme na něj potvrzení.");
+  const signupPhone = cleanPhone(phone);
+  if (!signupPhone) return bad("Vyplňte prosím telefon, abychom vás zastihli při změně termínu.");
 
   if (!(await voucherStore.claim(voucher.id))) return bad("Tento poukaz už byl uplatněn.", 409);
 
@@ -67,6 +70,7 @@ export async function POST(req: NextRequest) {
     name: signupName,
     contact: signupContact,
     people: voucher.people,
+    phone: signupPhone,
     note:
       "Dárkový poukaz " + voucher.code + (voucher.castingCount > 0 ? " (vč. " + castingText(voucher.castingCount) + ")" : "") + "." +
       (note ? " " + String(note).slice(0, 300) : ""),

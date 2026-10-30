@@ -22,7 +22,7 @@ variable: "--font-work-sans",
 });
 
 export const metadata: Metadata = {
-title: "Atelier na Pobřeží — rezervace",
+title: "Ateliér na pobřeží — rezervace",
 description: "Rozpis obsazenosti a rezervace klubovny s ateliérem",
 };
 

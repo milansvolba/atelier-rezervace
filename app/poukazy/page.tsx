@@ -7,6 +7,7 @@ import { resolveHeardAbout } from "@/lib/types";
 import { HeardAboutField } from "@/components/HeardAboutField";
 import BillingFields from "@/components/BillingFields";
 import { BillingInput, emptyBilling, needsPrivateAddress } from "@/lib/billingInput";
+import { kc } from "@/lib/money";
 
 interface Term {
   id: string;
@@ -139,7 +140,7 @@ export default function PoukazyPage() {
           {VOUCHER_COURSES.map((c) => (
             <label key={c.key} className="flex items-center gap-2 text-sm rounded-md border border-gray-200 p-3">
               <input type="radio" name="kurz" checked={topic === c.key} onChange={() => { setTopic(c.key); setBookingId(""); }} />
-              <span>{c.title} — {c.pricePerPerson} Kč/os.</span>
+              <span>{c.title} — {kc(c.pricePerPerson)}/os.</span>
             </label>
           ))}
         </fieldset>
@@ -162,7 +163,7 @@ export default function PoukazyPage() {
         {people === 1 ? (
           <label className="flex items-start gap-2 text-sm rounded-md border border-gray-200 p-3">
             <input type="checkbox" className="mt-1" checked={castings > 0} onChange={(e) => setCastings(e.target.checked ? 1 : 0)} />
-            <span>Přidat betonový odlitek (+{course.castingPrice} Kč)</span>
+            <span>Přidat betonový odlitek (+{kc(course.castingPrice)})</span>
           </label>
         ) : (
           <div className="text-sm rounded-md border border-gray-200 p-3 space-y-2">
@@ -187,9 +188,9 @@ export default function PoukazyPage() {
         </label>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="text-sm">Vaše jméno<input required className={input} autoComplete="name" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} /></label>
+          <label className="text-sm">Jméno a příjmení<input required className={input} autoComplete="name" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} /></label>
           <label className="text-sm">Váš e-mail (pošleme na něj poukaz)<input required type="email" className={input} autoComplete="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} /></label>
-          <label className="text-sm">Jméno obdarovaného (nepovinné)<input className={input} value={recipientName} onChange={(e) => setRecipientName(e.target.value)} /></label>
+          <label className="text-sm">Jméno a příjmení obdarovaného (nepovinné)<input className={input} value={recipientName} onChange={(e) => setRecipientName(e.target.value)} /></label>
         </div>
         {bookingId && (
           <div className="rounded-md border border-gray-200 bg-gray-50 p-3 space-y-3">
@@ -228,19 +229,19 @@ export default function PoukazyPage() {
         />
 
         <div className="border-t border-gray-100 pt-3 text-sm space-y-1">
-          <div className="flex justify-between"><span>{people} × {course.pricePerPerson} Kč</span><span>{price.courseBefore} Kč</span></div>
+          <div className="flex justify-between"><span>{people} × {kc(course.pricePerPerson)}</span><span>{kc(price.courseBefore)}</span></div>
           {price.discountPercent > 0 && (
-            <div className="flex justify-between text-green-700"><span>Skupinová sleva {price.discountPercent} %</span><span>−{price.courseBefore - price.courseAfter} Kč</span></div>
+            <div className="flex justify-between text-green-700"><span>Skupinová sleva {price.discountPercent} %</span><span>−{kc(price.courseBefore - price.courseAfter)}</span></div>
           )}
           {price.castingTotal > 0 && (
-            <div className="flex justify-between"><span>{Math.min(castings, people)} × betonový odlitek</span><span>{price.castingTotal} Kč</span></div>
+            <div className="flex justify-between"><span>{Math.min(castings, people)} × betonový odlitek</span><span>{kc(price.castingTotal)}</span></div>
           )}
-          <div className="flex justify-between font-semibold text-base pt-1"><span>Celkem</span><span>{price.total} Kč</span></div>
+          <div className="flex justify-between font-semibold text-base pt-1"><span>Celkem</span><span>{kc(price.total)}</span></div>
         </div>
 
         {error && <p className="text-sm text-red-700">{error}</p>}
         <button disabled={busy} className="h-10 px-5 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60">
-          {busy ? "Přesměrovávám na platbu…" : "Zaplatit " + price.total + " Kč"}
+          {busy ? "Přesměrovávám na platbu…" : "Zaplatit " + kc(price.total)}
         </button>
         <p className="text-xs text-gray-500">Platba proběhne na zabezpečené stránce Stripe. Poukaz vám přijde e-mailem hned po zaplacení.</p>
       </form>

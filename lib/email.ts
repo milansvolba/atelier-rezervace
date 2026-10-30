@@ -10,7 +10,7 @@ import { signupNotifyTo } from "./signupContact";
 import { SIMPLIFIED_LIMIT_CZK } from "./billingInput";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
-const FROM = "Atelier na Pobřeží <rezervace@ateliernapobrezi.cz>";
+const FROM = "Ateliér na pobřeží <rezervace@ateliernapobrezi.cz>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://rezervace.ateliernapobrezi.cz";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "milan.svolba@gmail.com,petr.svolba@gmail.com")
   .split(",")
@@ -70,7 +70,9 @@ function isWholeSpace(resource: Booking["resource"]) {
 }
 
 function wrap(bodyHtml: string) {
-  return `<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;">${bodyHtml}<p style="margin-top:24px;color:#888;font-size:12px;">Atelier na Pobřeží · rezervace.ateliernapobrezi.cz</p></div>`;
+  // Logo ateliéru nahoře (soubor public/logo.png, 705×160 px, zobrazí se zmenšené na výšku 36 px).
+  const logo = `<p style="margin:0 0 20px;"><a href="https://ateliernapobrezi.cz"><img src="${APP_URL}/logo.png" alt="Ateliér na pobřeží" width="159" height="36" style="display:block;border:0;height:36px;width:auto;"></a></p>`;
+  return `<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;">${logo}${bodyHtml}<p style="margin-top:24px;color:#888;font-size:12px;">Ateliér na pobřeží · rezervace.ateliernapobrezi.cz</p></div>`;
 }
 
 // Sestaví e-mail ze šablony (výchozí, nebo upravená adminem) a odešle ho.
@@ -89,7 +91,7 @@ async function sendFromTemplate(
 // --- Přihlašovací odkaz (magic link) pro admina/člena ---
 // Systémový e-mail, needitovatelný přes admin šablony (bezpečnostně citlivé).
 export async function sendMagicLinkEmail(user: { name: string; email: string }, link: string) {
-  const subject = "Přihlášení do rezervací — Atelier na Pobřeží";
+  const subject = "Přihlášení do rezervací — Ateliér na pobřeží";
   const html = wrap(`
     <p>Dobrý den${user.name ? ` ${user.name}` : ""},</p>
     <p>klikněte na tlačítko níže a budete přihlášeni. Odkaz platí 15 minut a jde použít jen jednou.</p>
@@ -396,8 +398,9 @@ export async function sendVoucherEmail(v: Voucher, booking?: Booking) {
     ? `<p>Obdarovaný už má na uvedený termín <strong>potvrzené místo</strong>, nemusí nic dalšího řešit. Při příchodu stačí zmínit kód poukazu.</p>` +
       STUDIO_INFO_HTML +
       voucherContactBlock(v)
-    : `<p>Termín zatím není zvolený. Obdarovaný si ho vybere sám na <a href="${APP_URL}/kurzy?poukaz=${encodeURIComponent(v.code)}">${APP_URL}/kurzy</a>: u vybraného termínu zvolí „Mám dárkový poukaz“ a zadá kód <strong>${esc(v.code)}</strong>. Místo bude hned potvrzené.</p>` +
-      emailButton(`${APP_URL}/kurzy?poukaz=${encodeURIComponent(v.code)}`, "Použít kód poukazu");
+    : `<p>Termín zatím není zvolený. Obdarovaný si ho vybere sám, stačí kliknout na tlačítko níže. Kód se doplní automaticky a místo bude hned potvrzené.</p>` +
+      emailButton(`${APP_URL}/kurzy?poukaz=${encodeURIComponent(v.code)}`, "Využít poukaz a vybrat termín") +
+      `<p style="color:#666;font-size:13px;">Kdyby tlačítko nešlo otevřít, zadá kód <strong>${esc(v.code)}</strong> ručně na <a href="${APP_URL}/kurzy">rezervace.ateliernapobrezi.cz/kurzy</a>.</p>`;
   const msg = v.message ? `<p>Vzkaz od kupujícího:<br><em>${esc(v.message)}</em></p>` : "";
   const html = wrap(
     `<p>Dobrý den,</p>` +

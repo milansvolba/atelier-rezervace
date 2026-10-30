@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
     "PRODID:-//Atelier na Pobrezi//Rezervace//CS",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:Atelier na Pobřeží – rezervace",
+    "X-WR-CALNAME:Ateliér na pobřeží – rezervace",
     "X-WR-TIMEZONE:Europe/Prague",
     ...VTIMEZONE_PRAGUE_LINES,
   ];
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
       `DTSTART;TZID=Europe/Prague:${localToICS(b.date, b.startTime)}`,
       `DTEND;TZID=Europe/Prague:${localToICS(b.date, b.endTime)}`,
       `SUMMARY:${icsEscape(b.title)}`,
-      `LOCATION:${icsEscape("Atelier na Pobřeží")}`,
+      `LOCATION:${icsEscape("Ateliér na pobřeží")}`,
       `DESCRIPTION:${icsEscape(descParts.join("\n"))}`,
       "STATUS:CONFIRMED",
       "END:VEVENT"
