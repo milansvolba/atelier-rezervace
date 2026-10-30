@@ -223,10 +223,10 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
   },
   "kurzy.voucher.fromLink": {
     group: "Dárkový poukaz",
-    label: "Poukaz z e-mailu: úvodní hláška",
-    description: "Zelená hláška nahoře na stránce Kurzy, když zákazník přijde z tlačítka „Využít poukaz a vybrat termín“ v e-mailu. Kód je už předvyplněný.",
+    label: "Poukaz z e-mailu: hláška při ověřování",
+    description: "Krátká hláška nahoře na stránce Kurzy, dokud se ověřuje kód z tlačítka „Využít poukaz a vybrat termín“ v e-mailu (1–2 sekundy). Potom ji nahradí hláška „Váš poukaz…“ nebo chyba.",
     vars: [],
-    text: "Máte dárkový poukaz. Vyberte kurz a termín, kód je už předvyplněný a místo se potvrdí hned.",
+    text: "Ověřuji váš poukaz…",
   },
   "kurzy.voucher.fromLinkReady": {
     group: "Dárkový poukaz",
