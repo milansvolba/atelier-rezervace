@@ -359,8 +359,10 @@ function fmtKc(n: number) {
   return n.toLocaleString("cs-CZ", { maximumFractionDigits: 0 }).replace(/\u00a0/g, " ") + " Kč";
 }
 
+// Odkaz na mapu je vlastní, aby si adresu Gmail nepřevedl na špatně ohraničený odkaz.
+const STUDIO_MAP_URL = "https://mapy.com/cs/zakladni?q=" + encodeURIComponent("Na pobřeží 67, Kolín");
 const STUDIO_INFO_HTML =
-  `<p><strong>Kde nás najdete:</strong> Ateliér na pobřeží, Na pobřeží 67, Kolín (areál bývalé továrny Kolinea).</p>` +
+  `<p><strong>Kde nás najdete:</strong> <a href="${STUDIO_MAP_URL}">Ateliér na pobřeží, Na pobřeží 67, Kolín</a> (areál bývalé továrny Kolinea).</p>` +
   `<p><strong>Co s sebou:</strong> pohodlné oblečení, které může být od hlíny. Materiál a pomůcky zajišťujeme.</p>`;
 
 function emailButton(href: string, label: string) {
@@ -382,7 +384,7 @@ function voucherSummaryHtml(v: Voucher, booking?: Booking) {
 function voucherContactBlock(v: Voucher) {
   const got = [v.recipientEmail, v.recipientPhone].filter(Boolean).map((x) => esc(x as string));
   const text = got.length
-    ? `<p><strong>Kontakt na obdarovaného:</strong> ${got.join(", ")}. Kdyby bylo potřeba termín změnit nebo někoho zastihnout, ozveme se tam.</p>`
+    ? `<p><strong>Kontakt na obdarovaného:</strong> ${got.join(", ")}. Kdyby bylo potřeba termín změnit nebo někoho zastihnout, ozveme se na tento kontakt.</p>`
     : `<p><strong>Kontakt na obdarovaného zatím nemáme.</strong> Kdyby bylo potřeba termín změnit, ozveme se vám${v.buyerPhone ? " (tel. " + esc(v.buyerPhone) + ")" : ""}. Pokud nám dáte e-mail nebo telefon obdarovaného, dozví se o změně rovnou.</p>`;
   const btn = v.manageToken ? emailButton(`${APP_URL}/poukazy/kontakt?t=${encodeURIComponent(v.manageToken)}`, got.length ? "Změnit kontakt na obdarovaného" : "Doplnit kontakt na obdarovaného") : "";
   return text + btn;

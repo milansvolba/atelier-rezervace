@@ -88,7 +88,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     body: `<p>Dobrý den {{name}},</p>
 <p>váš skupinový kurz na míru je potvrzený na <strong>{{date}}</strong>, od {{startTime}} do {{endTime}}.</p>
 {{noteBlock}}
-<p><strong>Kde nás najdete:</strong> Ateliér na pobřeží, Na pobřeží 67, Kolín (areál bývalé továrny Kolinea).</p>
+<p><strong>Kde nás najdete:</strong> <a href="https://mapy.com/cs/zakladni?q=Na%20pob%C5%99e%C5%BE%C3%AD%2067%2C%20Kol%C3%ADn">Ateliér na pobřeží, Na pobřeží 67, Kolín</a> (areál bývalé továrny Kolinea).</p>
 <p><strong>Co s sebou:</strong> pohodlné oblečení, které může být od hlíny — materiál a pomůcky zajišťujeme.</p>
 <p>Těšíme se na vás.</p>`,
   },
