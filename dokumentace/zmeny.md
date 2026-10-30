@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-30 — Odkaz z e-mailu s poukazem: neutrální hláška při ověřování (rezervace)
+
+Dokud se kód z odkazu `/kurzy?poukaz=KÓD` ověřuje (1–2 s), stránka ukazuje „Ověřuji váš poukaz…“. Dřív v té chvíli svítila zelená „Máte dárkový poukaz“ i u neplatného kódu. Text jde upravit v adminu (Texty webu).
+
 ## 2026-10-30 — Typy kurzů místo párování podle názvu, telefon u přihlášek (rezervace)
 
 **Typ kurzu.** Termín kurzu má v databázi nový sloupec `bookings.course_type` (klíč `hlava` / `relief` nebo `none` = jednorázový kurz mimo web). Admin ho vybírá povinně ve všech třech formulářích (rychlé přidání, úprava, denní přehled), po výběru se předvyplní název. Podle typu (ne podle slova v názvu) se párují dárkové poukazy (`/poukazy`, `/api/vouchers/check|redeem|checkout`), kontroluje se uplatnění poukazu a nabízí betonový odlitek (`/api/courses`, `/api/signups/checkout`). **Starší termíny bez typu** se rozpoznají podle názvu jako dřív (`courseTypeKey` v `lib/pricing.ts`), takže nic nepřestane fungovat. Kurz s typem „mimo web“ je vidět v objednávce kurzů, ale poukaz ani odlitek na něj nejdou. API odmítne založení kurzu bez typu a změnu typu nepovolí členovi.
