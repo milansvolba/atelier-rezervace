@@ -12,12 +12,29 @@ export function groupDiscountPercent(people: number): number {
   return m ? m.percent : 0;
 }
 
-// Cena betonového odlitku za osobu podle názvu kurzu (Kč vč. DPH); null = odlitek není v nabídce.
-export function castingPriceFor(title: string): number | null {
-  const t = title.toLowerCase();
-  if (t.includes("hlav")) return 3900;
-  if (t.includes("reli")) return 3100;
-  return null;
+// Typ kurzu termínu: klíč z VOUCHER_COURSES, nebo "none" = jednorázový kurz mimo web (bez poukazu a odlitku).
+// Starší termíny bez uloženého typu se rozpoznají podle názvu (jako dřív), nový typ má přednost.
+export const COURSE_TYPE_NONE = "none";
+
+export function courseTypeKey(b: { title: string; courseType?: string | null }): string {
+  if (b.courseType) return b.courseType;
+  const t = b.title.toLowerCase();
+  if (t.includes("hlav")) return "hlava";
+  if (t.includes("reli")) return "relief";
+  return COURSE_TYPE_NONE;
+}
+
+export function isValidCourseType(v: unknown): v is string {
+  return typeof v === "string" && (v === COURSE_TYPE_NONE || VOUCHER_COURSES.some((c) => c.key === v));
+}
+
+// Cena betonového odlitku za osobu podle typu kurzu (Kč vč. DPH); null = odlitek není v nabídce.
+export function castingPriceForType(typeKey: string): number | null {
+  return VOUCHER_COURSES.find((c) => c.key === typeKey)?.castingPrice ?? null;
+}
+
+export function castingPriceFor(b: { title: string; courseType?: string | null }): number | null {
+  return castingPriceForType(courseTypeKey(b));
 }
 
 export interface OrderPrice {
@@ -45,7 +62,7 @@ export function computeOrder(pricePerPerson: number, people: number, castings: n
 }
 
 // Kurzy, na které lze koupit dárkový poukaz: základní cena za 1 osobu (vc. DPH, bez slevy) a cena odlitku.
-// "match" je část názvu termínu kurzu v rezervačním kalendáři, podle které se termíny přiřazují.
+// "match" slouží už jen jako záloha pro starší termíny bez typu (viz courseTypeKey).
 export const VOUCHER_COURSES = [
   { key: "hlava", title: "Modelování hlavy", pricePerPerson: 8270, castingPrice: 3900, match: "hlav" },
   { key: "relief", title: "Modelování reliéfu", pricePerPerson: 6470, castingPrice: 3100, match: "reli" },

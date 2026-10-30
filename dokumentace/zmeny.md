@@ -6,6 +6,14 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-30 — Typy kurzů místo párování podle názvu, telefon u přihlášek (rezervace)
+
+**Typ kurzu.** Termín kurzu má v databázi nový sloupec `bookings.course_type` (klíč `hlava` / `relief` nebo `none` = jednorázový kurz mimo web). Admin ho vybírá povinně ve všech třech formulářích (rychlé přidání, úprava, denní přehled), po výběru se předvyplní název. Podle typu (ne podle slova v názvu) se párují dárkové poukazy (`/poukazy`, `/api/vouchers/check|redeem|checkout`), kontroluje se uplatnění poukazu a nabízí betonový odlitek (`/api/courses`, `/api/signups/checkout`). **Starší termíny bez typu** se rozpoznají podle názvu jako dřív (`courseTypeKey` v `lib/pricing.ts`), takže nic nepřestane fungovat. Kurz s typem „mimo web“ je vidět v objednávce kurzů, ale poukaz ani odlitek na něj nejdou. API odmítne založení kurzu bez typu a změnu typu nepovolí členovi.
+
+**Čekající přihlášky před změnou termínu.** E-mail o změně nebo zrušení termínu dostávají dál jen potvrzení účastníci. Když ale na termínu čekají přihlášky ke schválení a admin mění čas/místo nebo termín ruší, API vrátí kód `pending_signups` se seznamem (jméno, telefon, počet osob) a admin uvidí žlutý box: nejdřív přihlášky přijmout nebo odmítnout, nebo čekajícím zavolat a pokračovat tlačítkem „Zavolám jim, pokračovat“ (`confirmPending`).
+
+**Telefon u běžných přihlášek.** Telefon z formuláře `/kurzy` se ukládá do vlastního pole `course_signups.phone` (dřív jen text „Tel: …“ v poznámce). Platí pro přihlášku bez ceny i pro kartu (telefon jde přes metadata Stripe do webhooku). Špatný telefon vrátí chybu, prázdný je v pořádku. Telefon je v admin e-mailu „Nová přihláška na kurz“ i v seznamu přihlášek.
+
 ## 2026-10-30 — Opravy po testech: režim poukazu na /kurzy, texty, ceny, název ateliéru (rezervace)
 
 **Režim poukazu z e-mailu.** Tlačítko v e-mailu u poukazu bez termínu se jmenuje „Využít poukaz a vybrat termín“ a vede na `/kurzy?poukaz=KÓD`. Stránka teď kód ověří hned při načtení (nové API `POST /api/vouchers/check`, nic nezapisuje) a přepne se do režimu poukazu: hláška „Váš poukaz … platí na kurz … pro N míst“, jen termíny kurzu z poukazu s dostatkem volných míst, bez nabídky nákupu („Koupit“) a bez bloku „Kurz na míru pro skupinu“, s odkazem „Nechci využít poukaz, chci kurz koupit“. Po výběru termínu odpadá krok 2 (počet míst, odlitek a kód určuje poukaz) a rovnou následují údaje s tlačítkem „Přihlásit se na kurz“. **Opravená chyba:** dřív se kód při výběru termínu mazal (`resetVoucher()`), zákazník viděl běžný nákup a musel kód zadávat znovu. Neplatný, použitý nebo prošlý kód ukáže hlášku s odkazem na rezervace@. Běžný vstup na `/kurzy` bez kódu a ruční zadání kódu přes „Mám dárkový poukaz“ fungují jako dřív.

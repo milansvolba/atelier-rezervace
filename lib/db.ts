@@ -50,6 +50,8 @@ export function ensureSchema() {
       await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS price integer;`;
       // "Odkud o nás víte?" u veřejné žádosti (nepovinné) — viz lib/types.ts REFERRAL_OPTIONS.
       await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS heard_about text;`;
+      // Typ kurzu: klíč z COURSE_TYPES (lib/pricing.ts) nebo "none" (jednorázový kurz mimo web); null = starší záznam, rozpozná se podle názvu.
+      await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS course_type text;`;
 
       await sql`
         CREATE TABLE IF NOT EXISTS course_signups (

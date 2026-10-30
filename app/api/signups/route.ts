@@ -4,18 +4,24 @@ import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { CourseSignup } from "@/lib/types";
 import { requireAdmin } from "@/lib/auth";
+import { cleanPhone } from "@/lib/signupContact";
 import { sendAdminNewSignupEmail, sendSignupReceivedEmail } from "@/lib/email";
 
 // POST /api/signups — veřejný formulář přihlášky na vypsaný termín kurzu.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { bookingId, name, contact, people, note, heardAbout, honeypot } = body;
+  const { bookingId, name, contact, people, note, phone, heardAbout, honeypot } = body;
 
   // Jednoduchá anti-spam past — skryté pole, které lidský návštěvník nevyplní.
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
   if (!bookingId || !name || !contact) {
     return NextResponse.json({ error: "chybí povinné údaje" }, { status: 400 });
+  }
+  // Telefon je nepovinný, ale když ho zákazník vyplní, musí dávat smysl.
+  const cleanedPhone = cleanPhone(phone);
+  if (phone && String(phone).trim() && !cleanedPhone) {
+    return NextResponse.json({ error: "Zkontrolujte prosím telefon (9 až 15 číslic)." }, { status: 400 });
   }
   const all = await store.all();
   const booking = all.find((b) => b.id === bookingId && b.category === "kurz");
@@ -32,6 +38,7 @@ export async function POST(req: NextRequest) {
     contact,
     people: people ? Math.max(1, Number(people)) : 1,
     note,
+    phone: cleanedPhone ?? undefined,
     status: "pending",
     createdAt: new Date().toISOString(),
     heardAbout: typeof heardAbout === "string" && heardAbout.trim() ? heardAbout.trim().slice(0, 200) : undefined,

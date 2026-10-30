@@ -67,6 +67,7 @@ export interface Booking {
   capacity?: number; // kapacita kurzu (počet míst), jen category="kurz"
   price?: number; // cena kurzu za osobu v Kč, jen category="kurz"
   heardAbout?: string; // nepovinné, z veřejného formuláře žádosti — viz REFERRAL_OPTIONS níže
+  courseType?: string; // jen category="kurz": klíč typu z COURSE_TYPES, "none" = jednorázový kurz mimo web, undefined = starší záznam (rozpozná se podle názvu)
 }
 
 // Přihláška účastníka na vypsaný termín kurzu (Booking s category="kurz").

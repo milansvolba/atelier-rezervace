@@ -297,7 +297,7 @@ export async function sendAdminNewSignupEmail(booking: Booking, signup: CourseSi
       startTime: booking.startTime,
       endTime: booking.endTime,
       noteBlock: signup.note ? `<p>Poznámka: ${signup.note}</p>` : "",
-      contact: signup.contact,
+      contact: signup.phone ? `${signup.contact}, tel. ${signup.phone}` : signup.contact,
       adminUrl: `${APP_URL}/admin`,
     },
     { bookingId: booking.id, signupId: signup.id }

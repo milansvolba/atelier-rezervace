@@ -22,6 +22,7 @@ interface CourseCard {
   price: number | null;
   spotsLeft: number | null;
   castingPrice: number | null;
+  courseType?: string;
 }
 
 function fmtDate(dateISO: string) {
@@ -69,7 +70,7 @@ export default function KurzyPage() {
   const [voucherFromLink, setVoucherFromLink] = useState(false);
   // Režim poukazu (přišli jsme z e-mailu a kód je ověřený): jen termíny kurzu z poukazu, bez nákupu.
   const [voucherLinkErr, setVoucherLinkErr] = useState("");
-  const [voucherMode, setVoucherMode] = useState<null | { match: string; courseTitle: string }>(null);
+  const [voucherMode, setVoucherMode] = useState<null | { type: string; courseTitle: string }>(null);
 
   // Odkaz z e-mailu s poukazem (/kurzy?poukaz=ATL-XXXX-XXXX): kód se předvyplní a pole poukazu se otevře.
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function KurzyPage() {
         .then(({ ok, data }) => {
           if (ok && data.people) {
             setVoucherInfo({ code: String(data.code || code).toUpperCase(), people: data.people, castingCount: Number(data.castingCount) || 0 });
-            setVoucherMode({ match: String(data.match || ""), courseTitle: String(data.courseTitle || "") });
+            setVoucherMode({ type: String(data.type || ""), courseTitle: String(data.courseTitle || "") });
           } else {
             setVoucherFromLink(false);
             setVoucherLinkErr(data.error || t("kurzy.voucher.err"));
@@ -356,13 +357,13 @@ export default function KurzyPage() {
     if (!selectedCourse) return;
     setPayBusy(true);
     setPayError("");
-    const note = (signupPhone ? "Tel: " + signupPhone + ". " : "") + signupNote;
     const payload = JSON.stringify({
       bookingId: selectedCourse.id,
       name: signupName,
       contact: signupContact,
       people: signupPeople,
-      note,
+      phone: signupPhone,
+      note: signupNote,
       honeypot,
       casting: Math.min(castings, signupPeople),
       heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
@@ -864,7 +865,7 @@ export default function KurzyPage() {
         ) : (
           courses
             .filter((c) => !topicFilter || c.title === topicFilter)
-            .filter((c) => !voucherMode || (c.title.toLowerCase().includes(voucherMode.match) && (c.spotsLeft === null || c.spotsLeft >= (voucherInfo?.people ?? 1))))
+            .filter((c) => !voucherMode || (c.courseType === voucherMode.type && (c.spotsLeft === null || c.spotsLeft >= (voucherInfo?.people ?? 1))))
             .map((c) => (
               <div key={c.id} className="bg-white border border-gray-200 rounded-xl p-5">
                 <div className="flex items-start justify-between gap-4 flex-wrap">

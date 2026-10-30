@@ -19,6 +19,7 @@ import {
   startOfWeekMon,
 } from "@/lib/calendar";
 import { windowsOnDate, restrictedInWindow } from "@/lib/prep";
+import { VOUCHER_COURSES, COURSE_TYPE_NONE, courseTypeKey } from "@/lib/pricing";
 import { addressLine, idsLine, icoMissing } from "@/lib/invoiceFormat";
 
 type ViewMode = "day" | "week" | "month" | "quarter" | "year";
@@ -48,6 +49,42 @@ const MEMBERSHIP_LABEL: Record<string, string> = {
   past_due: "platba selhala",
   canceled: "členství zrušeno",
 };
+
+// Typ kurzu termínu: podle něj se párují dárkové poukazy a nabídka odlitku (ne podle názvu).
+// Po výběru typu se název předvyplní, pokud je prázdný nebo je to název jiného typu.
+function nextTitleForType(current: string, type: string): string {
+  const typeTitles: string[] = VOUCHER_COURSES.map((c) => c.title);
+  const wanted = VOUCHER_COURSES.find((c) => c.key === type)?.title;
+  if (!wanted) return current;
+  return !current.trim() || typeTitles.includes(current.trim()) ? wanted : current;
+}
+
+function CourseTypeField({ value, onPick }: { value: string; onPick: (type: string) => void }) {
+  return (
+    <label className="block text-sm">
+      Typ kurzu
+      <select
+        required
+        className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
+        value={value}
+        onChange={(e) => onPick(e.target.value)}
+      >
+        <option value="" disabled>
+          Vyberte typ kurzu
+        </option>
+        {VOUCHER_COURSES.map((c) => (
+          <option key={c.key} value={c.key}>
+            {c.title}
+          </option>
+        ))}
+        <option value={COURSE_TYPE_NONE}>Jednorázový kurz (mimo web)</option>
+      </select>
+      <span className="block text-xs text-gray-500 mt-1">
+        Podle typu se k termínu nabídnou dárkové poukazy a betonový odlitek. Jednorázový kurz je vidět v objednávce kurzů, ale poukaz na něj nejde.
+      </span>
+    </label>
+  );
+}
 
 function memberLabel(u: AppUser): string {
   if (u.membershipFree) return "člen zdarma";
@@ -292,6 +329,7 @@ function QuickAddModal({
     category: "pronajem" as "pronajem" | "kurz",
     capacity: "",
     price: "",
+    courseType: "",
   });
   // Člen (ne admin) nevyplňuje jméno ani kontakt: jméno bere z účtu, e-mail jen na požádání.
   const [wantEmail, setWantEmail] = useState(false);
@@ -377,6 +415,12 @@ function QuickAddModal({
             <option value="kurz">Kurz</option>
           </select>
         </label>
+            {form.category === "kurz" && (
+              <CourseTypeField
+                value={form.courseType}
+                onPick={(t) => setForm((f) => ({ ...f, courseType: t, title: nextTitleForType(f.title, t) }))}
+              />
+            )}
 
         <label className="block text-sm">
           Kdo / co
@@ -681,6 +725,7 @@ function BookingDetailModal({
     category: (booking.category || "pronajem") as "pronajem" | "kurz",
     capacity: booking.capacity ? String(booking.capacity) : "",
     price: booking.price ? String(booking.price) : "",
+    courseType: booking.category === "kurz" ? courseTypeKey(booking) : "",
   });
   const [notify, setNotify] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -711,18 +756,20 @@ function BookingDetailModal({
     }
   }
   const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
+  const [pendingList, setPendingList] = useState<null | { action: "edit" | "delete"; list: { name: string; contact: string; phone: string | null; people: number }[] }>(null);
   const isCourseBooking = booking.category === "kurz";
   // U kurzu se informují i přihlášení účastníci (e-mail obdarovaného, jinak kupujícího), takže se dá zaškrtnout i bez kontaktu u rezervace.
   const hasContact = isCourseBooking || !!(booking.requesterContact || form.requesterContact);
 
-  async function saveEdit(e: React.FormEvent) {
+  async function saveEdit(e: React.FormEvent, confirmPending = false) {
     e.preventDefault();
     setError(null);
+    setPendingList(null);
     setSaving(true);
     const res = await fetch(`/api/bookings/${booking.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, notify }),
+      body: JSON.stringify({ ...form, courseType: form.category === "kurz" ? form.courseType : "", notify, confirmPending }),
     });
     setSaving(false);
     if (res.ok) {
@@ -730,17 +777,22 @@ function BookingDetailModal({
       onClose();
     } else {
       const data = await res.json();
+      if (data.code === "pending_signups") {
+        setPendingList({ action: "edit", list: data.pending });
+        return;
+      }
       setError(data.error || "Nepodařilo se uložit.");
     }
   }
 
-  async function confirmDelete() {
+  async function confirmDelete(confirmPending = false) {
     setError(null);
+    setPendingList(null);
     setSaving(true);
     const res = await fetch(`/api/bookings/${booking.id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notify }),
+      body: JSON.stringify({ notify, confirmPending }),
     });
     setSaving(false);
     if (res.ok) {
@@ -748,6 +800,10 @@ function BookingDetailModal({
       onClose();
     } else {
       const data = await res.json();
+      if (data.code === "pending_signups") {
+        setPendingList({ action: "delete", list: data.pending });
+        return;
+      }
       setError(data.error || "Nepodařilo se smazat.");
     }
   }
@@ -766,6 +822,35 @@ function BookingDetailModal({
             ✕
           </button>
         </div>
+
+        {pendingList && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm space-y-2">
+            <p className="font-medium">Na tomto termínu čekají přihlášky ke schválení</p>
+            <ul className="list-disc pl-5">
+              {pendingList.list.map((p, i) => (
+                <li key={i}>
+                  {p.name} ({p.people} os.) · {p.phone ? "tel. " + p.phone : p.contact}
+                </li>
+              ))}
+            </ul>
+            <p className="text-gray-700">
+              Nejdřív je v seznamu přihlášek přijměte nebo odmítněte. E-mail o {pendingList.action === "delete" ? "zrušení" : "změně"} dostanou jen potvrzení účastníci. Čekajícím zavolejte sami.
+            </p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setPendingList(null)} className="h-9 px-3 rounded-md border border-gray-300 bg-white">
+                Zpět
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={(e) => (pendingList.action === "delete" ? confirmDelete(true) : saveEdit(e as unknown as React.FormEvent, true))}
+                className="h-9 px-3 rounded-md bg-gray-900 text-white disabled:opacity-60"
+              >
+                Zavolám jim, pokračovat
+              </button>
+            </div>
+          </div>
+        )}
 
         {mode === "view" && (
           <>
@@ -808,7 +893,7 @@ function BookingDetailModal({
         )}
 
         {mode === "edit" && (
-          <form onSubmit={saveEdit} className="space-y-3">
+          <form onSubmit={(e) => saveEdit(e)} className="space-y-3">
             <label className="block text-sm">
               Místo
               <select
@@ -834,6 +919,12 @@ function BookingDetailModal({
                 <option value="kurz">Kurz</option>
               </select>
             </label>
+            {form.category === "kurz" && (
+              <CourseTypeField
+                value={form.courseType}
+                onPick={(t) => setForm((f) => ({ ...f, courseType: t, title: nextTitleForType(f.title, t) }))}
+              />
+            )}
             <label className="block text-sm">
               Kdo / co
               <input
@@ -972,7 +1063,7 @@ function BookingDetailModal({
                 ← Zpět
               </button>
               <button
-                onClick={confirmDelete}
+                onClick={() => confirmDelete()}
                 disabled={saving}
                 className="h-10 px-4 rounded-md bg-red-600 text-white text-sm disabled:opacity-50"
               >
@@ -1436,6 +1527,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     category: "pronajem" | "kurz";
     capacity: string;
     price: string;
+    courseType: string;
   }>({
     resource: "stul1",
     startTime: "09:00",
@@ -1445,6 +1537,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     category: "pronajem",
     capacity: "",
     price: "",
+    courseType: "",
   });
   const [signups, setSignups] = useState<CourseSignup[]>([]);
   const [tiers, setTiers] = useState<{ id: string; minFillPercent: number; discountPercent: number; sortOrder: number }[]>([]);
@@ -2042,6 +2135,12 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                 <option value="kurz">Kurz</option>
               </select>
             </label>
+            {form.category === "kurz" && (
+              <CourseTypeField
+                value={form.courseType}
+                onPick={(t) => setForm((f) => ({ ...f, courseType: t, title: nextTitleForType(f.title, t) }))}
+              />
+            )}
             <div className="grid grid-cols-2 gap-3">
               <label className="text-sm">
                 Místo

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
-import { voucherCourse } from "@/lib/pricing";
+import { voucherCourse, courseTypeKey } from "@/lib/pricing";
 import { paymentStore } from "@/lib/stripe";
 import { voucherStore, isExpired } from "@/lib/vouchers";
 import { sendVoucherRedeemedEmails } from "@/lib/email";
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   if (!course || !booking || booking.status !== "confirmed" || booking.date < today) {
     return bad("Zvolený termín už není k dispozici.", 404);
   }
-  if (!booking.title.toLowerCase().includes(course.match)) {
+  if (courseTypeKey(booking) !== course.key) {
     return bad("Poukaz je na jiný kurz (" + voucher.courseTitle + "), než je zvolený termín.", 400);
   }
   if (await courseFlags.isCorporate(booking.id)) return bad("Na tuto akci se nelze veřejně přihlásit.", 403);
