@@ -405,7 +405,8 @@ export async function sendVoucherEmail(v: Voucher, booking?: Booking) {
   const html = wrap(
     `<p>Dobrý den,</p>` +
       `<p>děkujeme za objednávku, platba proběhla v pořádku. Váš dárkový poukaz v hodnotě <strong>${fmtKc(v.amountCzk)}</strong>:</p>` +
-      `<p style="font-size:22px;letter-spacing:2px;"><strong>${esc(v.code)}</strong></p>` +
+      `<p style="margin:16px 0 4px;color:#666;font-size:13px;">Kód poukazu</p>` +
+      `<p style="display:inline-block;margin:0 0 16px;padding:12px 20px;border:2px solid #111;border-radius:8px;font-size:22px;letter-spacing:2px;"><strong>${esc(v.code)}</strong></p>` +
       voucherSummaryHtml(v, booking) +
       msg +
       redeem +

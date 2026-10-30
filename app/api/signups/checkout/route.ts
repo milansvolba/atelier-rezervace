@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
         note: String(note ?? "").slice(0, 300),
         heardAbout: String(heardAbout ?? "").trim().slice(0, 200),
       },
-      successUrl: APP_URL + "/kurzy?platba=ok",
+      successUrl: APP_URL + "/dekujeme?termin=" + encodeURIComponent(booking.id),
       cancelUrl: APP_URL + "/kurzy?platba=zrusena",
     });
     await paymentStore.addAwaiting(session.id, booking.id, seats, billingCheck.value, holdKey);
