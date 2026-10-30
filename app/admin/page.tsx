@@ -756,18 +756,20 @@ function BookingDetailModal({
     }
   }
   const showQuickBlocks = form.resource === "pingpong" || form.resource === "klubovna";
+  const [pendingList, setPendingList] = useState<null | { action: "edit" | "delete"; list: { name: string; contact: string; phone: string | null; people: number }[] }>(null);
   const isCourseBooking = booking.category === "kurz";
   // U kurzu se informují i přihlášení účastníci (e-mail obdarovaného, jinak kupujícího), takže se dá zaškrtnout i bez kontaktu u rezervace.
   const hasContact = isCourseBooking || !!(booking.requesterContact || form.requesterContact);
 
-  async function saveEdit(e: React.FormEvent) {
+  async function saveEdit(e: React.FormEvent, confirmPending = false) {
     e.preventDefault();
     setError(null);
+    setPendingList(null);
     setSaving(true);
     const res = await fetch(`/api/bookings/${booking.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, courseType: form.category === "kurz" ? form.courseType : "", notify }),
+      body: JSON.stringify({ ...form, courseType: form.category === "kurz" ? form.courseType : "", notify, confirmPending }),
     });
     setSaving(false);
     if (res.ok) {
@@ -775,17 +777,22 @@ function BookingDetailModal({
       onClose();
     } else {
       const data = await res.json();
+      if (data.code === "pending_signups") {
+        setPendingList({ action: "edit", list: data.pending });
+        return;
+      }
       setError(data.error || "Nepodařilo se uložit.");
     }
   }
 
-  async function confirmDelete() {
+  async function confirmDelete(confirmPending = false) {
     setError(null);
+    setPendingList(null);
     setSaving(true);
     const res = await fetch(`/api/bookings/${booking.id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notify }),
+      body: JSON.stringify({ notify, confirmPending }),
     });
     setSaving(false);
     if (res.ok) {
@@ -793,6 +800,10 @@ function BookingDetailModal({
       onClose();
     } else {
       const data = await res.json();
+      if (data.code === "pending_signups") {
+        setPendingList({ action: "delete", list: data.pending });
+        return;
+      }
       setError(data.error || "Nepodařilo se smazat.");
     }
   }
@@ -811,6 +822,35 @@ function BookingDetailModal({
             ✕
           </button>
         </div>
+
+        {pendingList && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm space-y-2">
+            <p className="font-medium">Na tomto termínu čekají přihlášky ke schválení</p>
+            <ul className="list-disc pl-5">
+              {pendingList.list.map((p, i) => (
+                <li key={i}>
+                  {p.name} ({p.people} os.) · {p.phone ? "tel. " + p.phone : p.contact}
+                </li>
+              ))}
+            </ul>
+            <p className="text-gray-700">
+              Nejdřív je v seznamu přihlášek přijměte nebo odmítněte. E-mail o {pendingList.action === "delete" ? "zrušení" : "změně"} dostanou jen potvrzení účastníci. Čekajícím zavolejte sami.
+            </p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setPendingList(null)} className="h-9 px-3 rounded-md border border-gray-300 bg-white">
+                Zpět
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={(e) => (pendingList.action === "delete" ? confirmDelete(true) : saveEdit(e as unknown as React.FormEvent, true))}
+                className="h-9 px-3 rounded-md bg-gray-900 text-white disabled:opacity-60"
+              >
+                Zavolám jim, pokračovat
+              </button>
+            </div>
+          </div>
+        )}
 
         {mode === "view" && (
           <>
@@ -853,7 +893,7 @@ function BookingDetailModal({
         )}
 
         {mode === "edit" && (
-          <form onSubmit={saveEdit} className="space-y-3">
+          <form onSubmit={(e) => saveEdit(e)} className="space-y-3">
             <label className="block text-sm">
               Místo
               <select
@@ -1023,7 +1063,7 @@ function BookingDetailModal({
                 ← Zpět
               </button>
               <button
-                onClick={confirmDelete}
+                onClick={() => confirmDelete()}
                 disabled={saving}
                 className="h-10 px-4 rounded-md bg-red-600 text-white text-sm disabled:opacity-50"
               >
