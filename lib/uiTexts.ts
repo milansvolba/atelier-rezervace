@@ -16,7 +16,7 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     label: "Tlačítko u termínu",
     description: "Krok 1: tlačítko u každého vypsaného termínu kurzu.",
     vars: [],
-    text: "Vybrat termín",
+    text: "Chci tento termín",
   },
   "kurzy.step.label": {
     group: "Objednávka kurzu",

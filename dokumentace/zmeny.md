@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-10-30 — Poděkování po přihlášce, kód poukazu v rámečku, tlačítko „Chci tento termín“ (rezervace)
+
+- **Stránka `/dekujeme?termin=ID`** (nová): po uplatnění poukazu a po zaplacení kurzu kartou (`successUrl` ve `POST /api/signups/checkout`) se zákazník přesměruje na poděkování „Děkujeme, těšíme se na vás!“ s termínem, adresou, tlačítky **Přidat do kalendáře** (Google Kalendář a soubor .ics pro Apple/Outlook, vzniká v prohlížeči) a kontakty (WhatsApp, telefon, e-mail). Telefon vychází z `contact_phone` webu (+420 724 241 721); **WhatsApp je zatím na stejné číslo, ověřit**. Texty jsou návrh; stránku lze později přesunout na hlavní web.
+- **E-mail s poukazem:** kód je v rámečku s nadpisem „Kód poukazu“.
+- **Krok 1 objednávky:** tlačítko u termínu se jmenuje „Chci tento termín“ (text `kurzy.pick`).
+
 ## 2026-10-30 — Odkaz z e-mailu s poukazem: neutrální hláška při ověřování (rezervace)
 
 Dokud se kód z odkazu `/kurzy?poukaz=KÓD` ověřuje (1–2 s), stránka ukazuje „Ověřuji váš poukaz…“. Dřív v té chvíli svítila zelená „Máte dárkový poukaz“ i u neplatného kódu. Text jde upravit v adminu (Texty webu).

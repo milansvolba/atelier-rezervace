@@ -334,6 +334,8 @@ export default function KurzyPage() {
       });
       const data = await r.json().catch(() => ({}));
       if (r.ok) {
+        // Poděkování na samostatné stránce (kalendář, kontakty); zbytek níže zůstává jako záloha.
+        window.location.href = "/dekujeme?termin=" + encodeURIComponent(selectedCourse.id);
         setVoucherDone(true);
         setSignupFor(null);
         setVoucherMode(null);
