@@ -6,7 +6,7 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
-## 2026-11-02 — Kontaktní formulář posílá zprávy přes rezervační systém (rezervace; web čeká na nasazení) — návrh ke schválení
+## 2026-11-02 — Kontaktní formulář posílá zprávy přes rezervační systém (rezervace + web, nasazeno) — návrh ke schválení
 
 **Proč:** formulář na `/kontakt` byl `mailto:`. Chrome hlásil „Informace, které se chystáte odeslat, nejsou zabezpečené“ a zpráva nikam neodešla (jen se otevřel e-mailový program). Zprávy odeslané formulářem od spuštění webu tedy pravděpodobně nedorazily.
 
@@ -18,7 +18,7 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 - Ochrana proti spamu: skryté pole (honeypot), víc než 2 odkazy ve zprávě = tiše zahozeno, omezení na 5 zpráv za hodinu z jedné IP, 3 z jednoho e-mailu a 60 celkem. IP se neukládá, jen nevratný otisk.
 - Kontrola: `tsc` bez chyb; zkouška ověření vstupu, spamu a ošetření HTML; zkouška koncového bodu (OPTIONS 204 s CORS, cizí původ 403, honeypot 201, prázdné jméno 400). `next build` v cloudu neprošel jen proto, že nemá přístup ke Google Fonts (nesouvisí se změnou). Odeslání skutečného e-mailu a zápis do databáze se zkouší až po nasazení.
 
-**Co zbývá (web):** napojit formulář v `kontakt.php` na tento koncový bod (JavaScript `fetch`, hláška o odeslání na stránce, věta o zpracování údajů s odkazem na ochranu osobních údajů). Potřebuje přihlášení k hostingu a tvoje „nasaď“, a to až po sloučení a nasazení tohoto PR.
+**Web (nasazeno 2026-11-02 večer):** `kontakt.php` místo `mailto:` posílá formulář JavaScriptem (`fetch`) na `https://rezervace.ateliernapobrezi.cz/api/contact-message`. Hláška o odeslání je přímo na stránce (zelená / červená), skryté pole `honeypot`, pod tlačítkem věta o zpracování údajů s odkazem na `ochrana-osobnich-udaju`. Záloha původního souboru: `~/forpsi-ftp-backups/20261102-230215`. Ověřeno živě: koncový bod z webu (400 při prázdném jménu, 201 při platné zprávě), zkušební zprávy dorazily e-mailem na admina, formulář na stránce ukázal potvrzení a vyprázdnil se. Odeslání trvá několik sekund. Neověřeno: tlačítko Odpovědět v e-mailu a vzhled na mobilu.
 
 ---
 
