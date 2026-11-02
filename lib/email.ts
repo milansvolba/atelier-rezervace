@@ -8,11 +8,17 @@ import type { InvoiceItem } from "./invoices";
 import { addressLine, idsLine, icoMissing } from "./invoiceFormat";
 import { signupNotifyTo } from "./signupContact";
 import { SIMPLIFIED_LIMIT_CZK } from "./billingInput";
+import { escapeHtml } from "./html";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Ateliér na pobřeží <rezervace@ateliernapobrezi.cz>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://rezervace.ateliernapobrezi.cz";
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "milan.svolba@gmail.com,petr.svolba@gmail.com")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+// Zprávy z kontaktního formuláře na webu: výchozí příjemci jsou admini, jde změnit proměnnou CONTACT_EMAILS.
+const CONTACT_EMAILS = (process.env.CONTACT_EMAILS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
@@ -40,7 +46,8 @@ async function send(
   to: string | string[],
   subject: string,
   html: string,
-  meta: { type: string; bookingId?: string; signupId?: string }
+  meta: { type: string; bookingId?: string; signupId?: string },
+  opts?: { replyTo?: string }
 ) {
   const recipient = Array.isArray(to) ? to.join(", ") : to;
   const c = getClient();
@@ -52,7 +59,7 @@ async function send(
     return;
   }
   try {
-    await c.emails.send({ from: FROM, to, subject, html });
+    await c.emails.send({ from: FROM, to, subject, html, ...(opts?.replyTo ? { replyTo: opts.replyTo } : {}) });
     await logEmail({ ...meta, recipient, subject, status: "sent" });
   } catch (err) {
     console.error(`[email] Odeslání "${subject}" pro ${recipient} selhalo:`, err);
@@ -86,6 +93,21 @@ async function sendFromTemplate(
   const subject = renderTemplate(tpl.subject, vars);
   const html = wrap(renderTemplate(tpl.body, vars));
   await send(to, subject, html, { type: key, ...meta });
+}
+
+// --- Zpráva z kontaktního formuláře na webu ---
+// Jde adminům (nebo na CONTACT_EMAILS). Reply-To je e-mail odesílatele, takže odpověď jde rovnou jemu.
+// Systémový e-mail, pevný text v kódu. Text od návštěvníka se ošetřuje (escapeHtml).
+export async function sendContactMessageEmail(m: { name: string; email: string; message: string }) {
+  const to = CONTACT_EMAILS.length ? CONTACT_EMAILS : ADMIN_EMAILS;
+  const subject = "Zpráva z webu od " + m.name.slice(0, 60);
+  const html = wrap(`
+    <p><strong>Nová zpráva z kontaktního formuláře na webu</strong></p>
+    <p>Od: ${escapeHtml(m.name)} (<a href="mailto:${escapeHtml(m.email)}">${escapeHtml(m.email)}</a>)</p>
+    <p style="white-space:pre-wrap;border-left:3px solid #ddd;margin:16px 0;padding:4px 0 4px 14px;">${escapeHtml(m.message)}</p>
+    <p style="color:#888;font-size:13px;">Odpovědět můžete přímo na tento e-mail, odpověď půjde odesílateli.</p>
+  `);
+  await send(to, subject, html, { type: "contact_message" }, { replyTo: m.email });
 }
 
 // --- Přihlašovací odkaz (magic link) pro admina/člena ---

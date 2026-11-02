@@ -107,6 +107,7 @@ Každý pokus o odeslání (úspěch i chyba) se loguje do `email_log`, přehled
 - `AUTH_SECRET` — podepisování session a magic-link tokenů (**nutné nastavit na náhodný řetězec** v produkci).
 - `RESEND_API_KEY` — odesílání e-mailů.
 - `ADMIN_EMAILS` — nepovinné, čárkou oddělený seznam pro upozornění na nové žádosti/přihlášky.
+- `CONTACT_EMAILS` — nepovinné, čárkou oddělený seznam příjemců zpráv z kontaktního formuláře na webu. Když chybí, jdou zprávy na `ADMIN_EMAILS`. Zprávy se ukládají i do tabulky `contact_messages` (vidět jen v databázi).
 - `NEXT_PUBLIC_APP_URL` — nepovinné, výchozí `https://rezervace.ateliernapobrezi.cz`.
 - `WEBHOOK_URL` — nepovinné; pokud nastaveno, appka po každé změně rezervace notifikuje tuhle URL (viz sekce Webhook níže).
 - `WEBHOOK_SECRET` — sdílený tajný klíč pro autentizaci webhooku; stejná hodnota musí být i v `data/webhook_secret.php` na `ateliernapobrezi.cz`.
