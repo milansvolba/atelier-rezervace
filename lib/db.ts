@@ -195,6 +195,20 @@ await sql`
       `;
       await sql`CREATE INDEX IF NOT EXISTS email_log_created_idx ON email_log (created_at DESC);`;
 
+      // Zprávy z kontaktního formuláře na hlavním webu. Ukládají se dřív, než se pošle e-mail,
+      // aby zpráva nezmizela, i kdyby se odeslání e-mailu nepovedlo. IP jen jako otisk (hash) kvůli omezení spamu.
+      await sql`
+        CREATE TABLE IF NOT EXISTS contact_messages (
+          id text PRIMARY KEY,
+          name text NOT NULL,
+          email text NOT NULL,
+          message text NOT NULL,
+          ip_hash text,
+          created_at timestamptz NOT NULL DEFAULT now()
+        );
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS contact_messages_created_idx ON contact_messages (created_at DESC);`;
+
       await sql`
         CREATE TABLE IF NOT EXISTS discount_tiers (
           id text PRIMARY KEY,

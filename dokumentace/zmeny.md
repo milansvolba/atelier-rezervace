@@ -6,6 +6,22 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-02 — Kontaktní formulář posílá zprávy přes rezervační systém (rezervace; web čeká na nasazení) — návrh ke schválení
+
+**Proč:** formulář na `/kontakt` byl `mailto:`. Chrome hlásil „Informace, které se chystáte odeslat, nejsou zabezpečené“ a zpráva nikam neodešla (jen se otevřel e-mailový program). Zprávy odeslané formulářem od spuštění webu tedy pravděpodobně nedorazily.
+
+**Co je hotové v tomto PR (rezervace):**
+- Nový koncový bod `POST /api/contact-message` (`app/api/contact-message/route.ts`). Tělo: `{ name, email, message, honeypot? }`. Odpovědi: 201 `{ok:true}`, 400 chyba ve vyplnění (česká hláška), 403 cizí původ, 429 moc zpráv, 500 uložení selhalo.
+- Web je na jiné doméně, proto CORS jen pro `https://ateliernapobrezi.cz`, `https://www.ateliernapobrezi.cz` a `https://rezervace.ateliernapobrezi.cz`.
+- Zpráva se **nejdřív uloží** do nové tabulky `contact_messages` (vytvoří se sama při prvním použití, `ensureSchema()`), teprve potom se pošle e-mail. Když e-mail selže, zpráva zůstane v databázi a chyba je v `email_log`.
+- E-mail (typ `contact_message`) jde na `CONTACT_EMAILS` (nepovinná proměnná, čárkou oddělené adresy), jinak na `ADMIN_EMAILS`. Má **Reply-To** na odesílatele, takže odpověď jde rovnou jemu. Text od návštěvníka se ošetřuje proti vložení HTML (`lib/html.ts`).
+- Ochrana proti spamu: skryté pole (honeypot), víc než 2 odkazy ve zprávě = tiše zahozeno, omezení na 5 zpráv za hodinu z jedné IP, 3 z jednoho e-mailu a 60 celkem. IP se neukládá, jen nevratný otisk.
+- Kontrola: `tsc` bez chyb; zkouška ověření vstupu, spamu a ošetření HTML; zkouška koncového bodu (OPTIONS 204 s CORS, cizí původ 403, honeypot 201, prázdné jméno 400). `next build` v cloudu neprošel jen proto, že nemá přístup ke Google Fonts (nesouvisí se změnou). Odeslání skutečného e-mailu a zápis do databáze se zkouší až po nasazení.
+
+**Co zbývá (web):** napojit formulář v `kontakt.php` na tento koncový bod (JavaScript `fetch`, hláška o odeslání na stránce, věta o zpracování údajů s odkazem na ochranu osobních údajů). Potřebuje přihlášení k hostingu a tvoje „nasaď“, a to až po sloučení a nasazení tohoto PR.
+
+---
+
 ## 2026-11-02 — Kontakt: fotka v záhlaví, karty s obrázky, přidávání a odebírání boxů (web)
 
 Stránka `/kontakt` je přeskládaná. **Záhlaví:** fotka průčelí Kolinea přes celou šířku (`kontakt_hero_image`, 2000×543 px, 66 kB, oříznutá tak, aby byl vidět nápis), tmavý námořnický přechod zdola a bílý H1 a úvod vlevo dole (kontrast přes 9 : 1). Na mobilu (pod 760 px) je fotka nahoře (190 px) a text pod ní na tmavém podkladu. Třída `.hero-photo` se zapne jen tehdy, když fotka existuje; admin ji vymění tlačítkem „Nahradit obrázek“. **Kontakt:** formulář vlevo, kontaktní údaje vpravo, mapa z tohoto sloupce pryč (sloupce jsou vyrovnanější). **Jak se k nám dostat:** tři stejné karty s obrázkem 16 : 9, zaoblenými rohy (14 px) a nadpisem — mapa „Kde nás najdete“, „Cesta od nádraží“, „Vchod z ulice Na Pobřeží“ (třída `.route-card`, obrázky `kontakt_map_image`, `kontakt_route_image`, `kontakt_entrance_image`). Pod nimi tři textové boxy (Vlakem / Autem / V okolí) ze seznamu `kontakt_cesta_cards` (JSON: štítek, nadpis, text s odkazy `[text](cíl)`), v nich jsou původní texty z webu (Milan je přepíše sám); v administraci Seznamy → Kontakt se dají přidávat i odebírat (pořadí jen smazáním a přidáním znovu). Čtyři karty „Z Prahy / Pardubic / Kutné Hory / Poděbrad“ jsou sloučené do jednoho boxu; původní texty obsahují „5 minut“ vícekrát, což Milan při přepisování sjednotí. Texty z náčrtu (`kontakt_form_heading` = „Napište nám“, `kontakt_info_heading` = „Volejte nebo se stavte“, `contact_hours`) uloženy do `content.json`, v úvodu opraven překlep. Nové klíče `kontakt_cesta_map_title` a `kontakt_cesta_map_text` a nový seznam mají výchozí hodnoty v kódu; popisek cesty od nádraží používá původní klíče `kontakt_cesta_pesky_*`, vchod `kontakt_cesta_qf3_*`. Soubory: `kontakt.php`, `inc/content.php`, `admin.php`, `styles.css`, `data/content.json`, `images/uploads/kontakt_hero_image.jpg`. Ověřeno živě (desktop, šířka 390 px, anonymní pohled, administrace). Staré klíče `kontakt_cesta_qf1_*`, `qf2_*`, `praha/pardubice/kh/podebrady_*`, `auto_*`, `okoli_*` už nic nečte (v `content.json` zůstávají).
