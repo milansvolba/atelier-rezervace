@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-03 — Ověřeno: firemní akce jsou skryté na veřejných Kurzech (dokumentace)
+
+Kontrola bez změny kódu: v databázi mají "Předvánoční coworkshop" (26. 11.) i "Comp-any" (3. 12.) příznak firemní akce. Kód je skrývá v `GET /api/courses` a odmítá v přihlášce, platbě kartou i u poukazů. V `dokumentace/ukoly.md` odškrtnut úkol č. 5. Živý pohled na `/kurzy` očima zbývá.
+
 ## 2026-11-03 — O ateliéru: bio a výstavy jdou upravit přímo na stránce, správné dělení odstavců (web)
 
 **Proč:** Milan na stránce `/o-atelieru` neviděl, jak upravit texty profilů (bio Petra a Milana, seznam výstav). Pole existovala jen v administraci (Seznamy → O ateliéru), na stránce šla přes „Upravit texty“ měnit jen jména a role. Při kontrole se ukázal i druhý problém: bio je v `content.json` uložené s Windows konci řádků (`\r\n\r\n`), ale šablona dělila odstavce podle `\n\n`, takže se Petrovo bio i příběh „Jak ateliér vznikl“ zobrazovaly jako jeden odstavec.
