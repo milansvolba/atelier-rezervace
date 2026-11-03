@@ -6,6 +6,22 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-03 — O ateliéru: bio a výstavy jdou upravit přímo na stránce, správné dělení odstavců (web)
+
+**Proč:** Milan na stránce `/o-atelieru` neviděl, jak upravit texty profilů (bio Petra a Milana, seznam výstav). Pole existovala jen v administraci (Seznamy → O ateliéru), na stránce šla přes „Upravit texty“ měnit jen jména a role. Při kontrole se ukázal i druhý problém: bio je v `content.json` uložené s Windows konci řádků (`\r\n\r\n`), ale šablona dělila odstavce podle `\n\n`, takže se Petrovo bio i příběh „Jak ateliér vznikl“ zobrazovaly jako jeden odstavec.
+
+**Co se změnilo (`o-atelieru.php`):**
+- Nová pomocná funkce `oat_paras()` dělí text na odstavce podle prázdného řádku (`\R\s*\R`), funguje s `\n` i `\r\n`. Použita pro příběh ateliéru, bio Petra a bio Milana.
+- **Přihlášený admin** vidí `person_petr_bio`, `person_petr_exhibitions` a `person_milan_bio` zabalené do `t()`, takže se upravují inline (Upravit texty, Enter = nový odstavec). U výstav je pro admina krátká poznámka, že každá výstava patří na nový řádek.
+- **Návštěvník** vidí stejné odstavce a odrážky jako dřív, jen správně rozdělené.
+- Klíče a administrace beze změny (`person_*` v `content.json`, pole v `admin.php` sekce O ateliéru).
+
+**Ověřeno:** živý web jako anonymní návštěvník bez chyb PHP, bio Petra rozdělené do odstavců, příběh do tří odstavců, výstavy a Milanova karta beze změny. **Neověřeno:** samotná inline úprava po přihlášení (vyžaduje Milanovo heslo). Záloha původního souboru: `~/forpsi-ftp-backups/20261102-121756`.
+
+**Poučení:** u každého textu s odstavci, který se edituje v adminu, dělit odstavce přes `\R\s*\R`, ne přes `explode("\n\n")` (formulář v prohlížeči ukládá `\r\n`). Stejný vzor `explode("\n\n", …)` může být i na dalších stránkách (např. lektor na stránkách kurzů) — zkontrolovat.
+
+---
+
 ## 2026-11-02 — Kontaktní formulář posílá zprávy přes rezervační systém (rezervace + web, nasazeno) — návrh ke schválení
 
 **Proč:** formulář na `/kontakt` byl `mailto:`. Chrome hlásil „Informace, které se chystáte odeslat, nejsou zabezpečené“ a zpráva nikam neodešla (jen se otevřel e-mailový program). Zprávy odeslané formulářem od spuštění webu tedy pravděpodobně nedorazily.
