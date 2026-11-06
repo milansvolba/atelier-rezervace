@@ -87,6 +87,8 @@ Od 20. 8. 2026 navíc appka rezervace po každé změně rezervace/termínu (vyt
 
 Pokud u kurzu aktuálně nejsou vypsané žádné konkrétní termíny, detailní stránka zobrazí obecný odkaz na rezervační kalendář místo prázdného seznamu.
 
+**Formuláře na webu (od 2. a 6. 11. 2026):** `kontakt.php` i poptávka na `firemni-akce.php` se odesílají JavaScriptem (`fetch`, JSON) na `POST https://rezervace.ateliernapobrezi.cz/api/contact-message` (viz [rezervace-system.md](./rezervace-system.md) a [zmeny.md](./zmeny.md)). Zpráva se uloží do tabulky `contact_messages` a přijde e-mailem adminům (Reply-To na odesílatele). Koncový bod bere jen `name`, `email`, `message` a skryté pole `honeypot`; u firemních akcí web složí ostatní pole do textu zprávy (první řádek „Poptávka firemní akce“). Limity: jméno 100, zpráva 5 až 3000 znaků, víc než 2 odkazy = tiše zahozeno, 5 zpráv za hodinu z jedné IP. Žádný formulář na webu už nepoužívá `mailto:`. Nový formulář dělat stejně.
+
 ## Menu a patička
 
 Hlavní menu i patička se generují společnými funkcemi v `inc/content.php` (`render_main_nav()`, `render_footer()`); stránky jen volají `<?= render_main_nav() ?>` a `<?= render_footer() ?>`. Výjimka: skrytá `obchod.php` má pořád statické menu i patičku. Obsah menu a odkazů v patičce se upravuje v dolní liště přihlášeného admina tlačítky **Upravit menu** a **Upravit patičku**.

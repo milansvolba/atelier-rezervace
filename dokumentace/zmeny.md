@@ -6,6 +6,23 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-06 — Formulář Firemní akce přes kontaktní cestu, odstavce v referencích, překlep (web)
+
+**Proč:** Revize PHP stránek po opravě odstavců na O ateliéru ukázala, že poptávkový formulář na `/firemni-akce` pořád používá `mailto:`. Stejný problém jako dřív `/kontakt`: Chrome hlásí nezabezpečené odeslání a zpráva nikam neodejde, takže poptávky firem na vánoční workshopy se mohly ztrácet. Vedlejší nálezy: delší reference (více odstavců) se vykreslovaly jako jeden souvislý blok a v obou stránkách kurzů byl překlep „vypsáné“.
+
+**Co se změnilo (jen web, rezervační systém beze změny):**
+- `firemni-akce.php`: formulář se odesílá JavaScriptem (`fetch`) na `https://rezervace.ateliernapobrezi.cz/api/contact-message`, stejně jako `kontakt.php`. Koncový bod bere jen `{name, email, message, honeypot}`, proto web složí z polí (firma, telefon, počet lidí, aktivita, občerstvení, termín, poznámka) text zprávy, který začíná řádkem „Poptávka firemní akce“. Skryté pole (honeypot), potvrzení a chybová hláška přímo na stránce, věta o zpracování údajů s odkazem na ochranu osobních údajů. Limity polí v `maxlength` drží celou zprávu pod 3000 znaky (poznámka 1500). Pozor: víc než 2 odkazy v poznámce endpoint tiše zahodí jako spam.
+- `inc/content.php` (`render_testimonial_card()`): text reference prochází přes `nl2br(e(...), false)`, takže se zachovají odstavce (Maki, Milan K.). Týká se stránek Reference a obou detailů kurzů.
+- `kurz-modelovani-hlavy.php`, `kurz-relief.php`: „vypsáné“ → „vypsané“.
+
+**Ověřeno živě:** všechny čtyři stránky bez chyb PHP a bez chyb v konzoli; reference mají `<br>` v obou víceodstavcových textech; formulář má správnou adresu, skryté pole a čtyři zaškrtávací políčka; zkušební poptávka z webu → zelené potvrzení, formulář se vyprázdnil, e-mail dorazil na admina (odesílatel `rezervace@`, předmět „Zpráva z webu od …“, v těle celá poptávka). Neověřeno: vzhled na mobilu, tlačítko Odpovědět v e-mailu. Zálohy původních souborů: `~/forpsi-ftp-backups/20261106-0904*`.
+
+**Poučení:**
+- Velké soubory na hostingu (`inc/content.php` má 73 kB) se upravují takto: `ftp_download` do složky „Claudovo pískoviště“ na Milanově počítači, přesná náhrada textu s kontrolou počtu výskytů (python), kontrola rozdílu proti originálu, `ftp_upload` zpět. Celé soubory se nepřepisují z paměti.
+- Každý text s odstavci z administrace se vykresluje buď přes `t()` (řeší odstavce sám), nebo přes `nl2br(e(...))`, nebo děličem `\R\s*\R`. Holé `e()` odstavce zruší. Formulář v prohlížeči ukládá konce řádků jako `\r\n`.
+
+---
+
 ## 2026-11-03 — Ověřeno: firemní akce jsou skryté na veřejných Kurzech (dokumentace)
 
 Kontrola bez změny kódu: v databázi mají "Předvánoční coworkshop" (26. 11.) i "Comp-any" (3. 12.) příznak firemní akce. Kód je skrývá v `GET /api/courses` a odmítá v přihlášce, platbě kartou i u poukazů. V `dokumentace/ukoly.md` odškrtnut úkol č. 5. Živý pohled na `/kurzy` očima zbývá.
