@@ -816,7 +816,7 @@ function BookingDetailModal({
       <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-3">
         <div className="flex items-center justify-between">
           <p className="font-medium">
-            {mode === "view" ? "Detail rezervace" : mode === "edit" ? "Změnit rezervaci" : "Smazat rezervaci"}
+            {mode === "view" ? "Detail rezervace" : mode === "edit" ? (isCourseBooking ? "Změnit kurz" : "Změnit rezervaci") : isCourseBooking ? "Smazat kurz" : "Smazat rezervaci"}
           </p>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-sm">
             ✕
@@ -883,10 +883,10 @@ function BookingDetailModal({
                 onClick={() => setMode("delete")}
                 className="h-9 px-3 rounded-md border border-red-200 text-red-600 text-sm"
               >
-                Smazat
+                {isCourseBooking ? "Smazat kurz" : "Smazat rezervaci"}
               </button>
               <button onClick={() => setMode("edit")} className="h-9 px-3 rounded-md bg-gray-900 text-white text-sm">
-                Změnit
+                {isCourseBooking ? "Změnit kurz" : "Změnit rezervaci"}
               </button>
             </div>
           </>
@@ -1045,7 +1045,7 @@ function BookingDetailModal({
         {mode === "delete" && (
           <div className="space-y-3">
             <p className="text-sm text-gray-600">
-              Opravdu smazat rezervaci „{booking.title}" ({fmt(new Date(booking.date))} {booking.startTime}–{booking.endTime})?
+              Opravdu smazat {isCourseBooking ? "kurz" : "rezervaci"} „{booking.title}" ({fmt(new Date(booking.date))} {booking.startTime}–{booking.endTime})?
             </p>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -1067,7 +1067,7 @@ function BookingDetailModal({
                 disabled={saving}
                 className="h-10 px-4 rounded-md bg-red-600 text-white text-sm disabled:opacity-50"
               >
-                {saving ? "Mažu…" : "Potvrdit smazání"}
+                {saving ? "Mažu…" : isCourseBooking ? "Potvrdit smazání kurzu" : "Potvrdit smazání"}
               </button>
             </div>
           </div>
