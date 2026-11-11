@@ -468,6 +468,14 @@ export default function KurzyPage() {
         </p>
       </div>
 
+      {loading && !voucherMode && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3" aria-busy="true" aria-live="polite">
+          <p className="text-sm text-gray-500">Načítáme vypsané termíny, chvilku strpení…</p>
+          <div className="h-4 w-1/2 rounded bg-gray-100 animate-pulse" />
+          <div className="h-4 w-1/3 rounded bg-gray-100 animate-pulse" />
+        </div>
+      )}
+
       {topics.length > 0 && !voucherMode && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="font-medium mb-3">Vyberte kurz</p>
@@ -496,6 +504,7 @@ export default function KurzyPage() {
                   type="button"
                   onClick={() => {
                     setTopicFilter(buyingTopic);
+                    setBuyingTopic(null);
                     requestAnimationFrame(() => {
                       document.getElementById("course-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
                     });
@@ -521,19 +530,21 @@ export default function KurzyPage() {
             </div>
           )}
           {topicFilter && (
-            <button
-              type="button"
-              onClick={() => setTopicFilter(null)}
-              className="mt-3 text-xs text-gray-500 underline"
-            >
-              Zobrazit všechny termíny
-            </button>
+            <div className="mt-3 flex items-center justify-between gap-3 flex-wrap rounded-md bg-green-50 border border-green-200 px-3 py-2">
+              <p className="text-sm text-green-800">Zobrazujeme termíny kurzu: <strong>{topicFilter}</strong></p>
+              <button
+                type="button"
+                onClick={() => setTopicFilter(null)}
+                className="text-xs text-green-900 underline"
+              >
+                Zobrazit všechny termíny
+              </button>
+            </div>
           )}
         </div>
       )}
 
       <div className="space-y-3" id="course-list">
-        {loading && <p className="text-sm text-gray-400">Načítám termíny…</p>}
         {!loading && courses.length === 0 && (
           <p className="text-sm text-gray-500 bg-white border border-gray-200 rounded-xl p-5">
             Momentálně nemáme vypsaný žádný termín. Napište nám níže o poptávku na vlastní termín.

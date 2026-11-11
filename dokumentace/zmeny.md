@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Kurzy: rychlejší načtení a viditelná změna po „Pro jednotlivce“ (rezervace, návrh k sloučení)
+
+Hlášení od Milana: na /kurzy se první tabulky načítaly kolem 5 s (působí to jako chyba) a po kliknutí na „Pro jednotlivce“ nebyla vidět změna. Úpravy: (1) rozhraní API `/api/courses` se ptá databáze na obsazenost všech termínů jedním dotazem místo dotazu na každý termín a načítá rezervace a firemní příznaky současně; (2) nahoře je hned vidět rámeček „Načítáme vypsané termíny…“; (3) po kliknutí na „Pro jednotlivce“ se výběr zavře, objeví se zelený pruh „Zobrazujeme termíny kurzu: …“ a stránka sjede na seznam. Soubory `app/kurzy/page.tsx`, `app/api/courses/route.ts`, `lib/signups.ts`. Poznámka: čas načtení jsem z prostředí nemohl změřit, zlepšení ověřte po nasazení.
+
 ## 2026-11-11 — Doklad k vystavení: odkaz na fakturu po kliknutí na „Vystaveno“ (platby, rezervace)
 
 Po kliknutí na „Vystaveno“ se zobrazí jedno okno: „Číslo faktury nebo odkaz na ni v Caflou (nepovinné)“. Co začíná `https://`, se uloží jako odkaz (nový sloupec `payments.invoice_url`), jinak jako číslo faktury. V seznamu „Naposledy vystavené“ je u položky odkaz „Otevřít fakturu“. Server uloží jen adresy `http(s)`, žádné `javascript:`. Soubory `lib/invoices.ts`, `lib/db.ts`, `app/api/admin/doklady/[id]/route.ts`, `app/admin/page.tsx`. Pracovní pravidlo od Milana: časy se uvádějí v pražském čase (SEČ/SELČ), ne v UTC.
