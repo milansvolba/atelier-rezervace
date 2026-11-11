@@ -136,15 +136,14 @@ export default function PoukazyPage() {
       <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
         <input type="text" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Kurz</legend>
-          {VOUCHER_COURSES.map((c) => (
-            <label key={c.key} className="flex items-center gap-2 text-sm rounded-md border border-gray-200 p-3">
-              <input type="radio" name="kurz" checked={topic === c.key} onChange={() => { setTopic(c.key); setBookingId(""); }} />
-              <span>{c.title} — {kc(c.pricePerPerson)}/os.</span>
-            </label>
-          ))}
-        </fieldset>
+        <label className="block text-sm">
+          Kurz
+          <select className={input} value={topic} onChange={(e) => { setTopic(e.target.value); setBookingId(""); }}>
+            {VOUCHER_COURSES.map((c) => (
+              <option key={c.key} value={c.key}>{c.title} — {kc(c.pricePerPerson)}/os.</option>
+            ))}
+          </select>
+        </label>
 
         <div>
           <p className="text-sm font-medium mb-1">Pro kolik osob</p>
