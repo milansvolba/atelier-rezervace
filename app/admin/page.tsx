@@ -1088,10 +1088,37 @@ function MembersPanel({ onClose }: { onClose: () => void }) {
   });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  type MemberRequest = { id: string; name: string; email: string; phone: string | null; message: string | null; createdAt: string };
+  const [requests, setRequests] = useState<MemberRequest[]>([]);
+  const [busyRequest, setBusyRequest] = useState<string | null>(null);
 
   async function load() {
     const res = await fetch("/api/users");
     if (res.ok) setList(await res.json());
+    const rq = await fetch("/api/admin/membership-requests");
+    if (rq.ok) setRequests(await rq.json());
+  }
+
+  async function decideRequest(r: MemberRequest, action: "approve" | "reject") {
+    if (action === "reject" && !confirm("Opravdu zamítnout žádost od " + r.name + "?")) return;
+    setError(null);
+    setBusyRequest(r.id);
+    const res = await fetch(`/api/admin/membership-requests/${r.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    setBusyRequest(null);
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      if (action === "reject") toast("Žádost zamítnuta.");
+      else if (data.welcomeEmailSent) toast("Nový člen je v klubu a e-mail s platbou mu odešel.");
+      else setError("Člen je založený, ale e-mail se nepodařilo odeslat. Zkontrolujte přehled e-mailů.");
+      load();
+    } else {
+      setError(data.error || "Nepodařilo se vyřídit žádost.");
+      load();
+    }
   }
 
   useEffect(() => {
@@ -1109,7 +1136,11 @@ function MembersPanel({ onClose }: { onClose: () => void }) {
     });
     setSaving(false);
     if (res.ok) {
+      const created = await res.json().catch(() => ({}));
+      const who = form.name;
       setForm({ name: "", email: "", role: "member", free: false });
+      if (created.welcomeEmailSent) toast(form.role === "member" ? "Nový člen " + who + " je v klubu a dostal potvrzení e-mailem." : "Účet přidán, e-mail s přístupem odešel.");
+      else setError("Účet je přidaný, ale e-mail se nepodařilo odeslat. Zkontrolujte přehled e-mailů.");
       load();
     } else {
       const data = await res.json();
@@ -1154,6 +1185,36 @@ function MembersPanel({ onClose }: { onClose: () => void }) {
         <p className="font-medium">Účty</p>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-sm">✕</button>
       </div>
+      {requests.length > 0 && (
+        <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3">
+          <p className="text-sm font-medium">Žádosti o členství ({requests.length})</p>
+          {requests.map((r) => (
+            <div key={r.id} className="text-sm border-t border-amber-200 pt-2 first:border-t-0 first:pt-0">
+              <p>
+                {r.name} · {r.email}
+                {r.phone ? " · " + r.phone : ""}
+              </p>
+              {r.message && <p className="text-gray-600 whitespace-pre-wrap">{r.message}</p>}
+              <div className="flex gap-2 mt-1">
+                <button
+                  disabled={busyRequest === r.id}
+                  onClick={() => decideRequest(r, "approve")}
+                  className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs disabled:opacity-50"
+                >
+                  {busyRequest === r.id ? "Schvaluji…" : "Schválit a poslat platbu"}
+                </button>
+                <button
+                  disabled={busyRequest === r.id}
+                  onClick={() => decideRequest(r, "reject")}
+                  className="h-8 px-3 rounded-md border border-gray-300 text-xs hover:bg-white disabled:opacity-50"
+                >
+                  Zamítnout
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {list.length > 0 && (
         <div className="space-y-2">
           {list.map((u) => (

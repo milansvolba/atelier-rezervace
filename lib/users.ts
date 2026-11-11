@@ -107,6 +107,15 @@ export const users = {
       WHERE id = ${id}`;
   },
 
+  // Jednorázově „zabere“ právo poslat uvítací e-mail po první platbě. Vrací true jen poprvé
+  // (opakované doručení webhooku nebo druhá faktura už e-mail neposlou).
+  async claimWelcomeSent(id: string): Promise<boolean> {
+    await ensureSchema();
+    const rows = await sql`UPDATE users SET membership_welcome_sent_at = now()
+      WHERE id = ${id} AND membership_welcome_sent_at IS NULL RETURNING id`;
+    return rows.length > 0;
+  },
+
   async remove(id: string): Promise<void> {
     await ensureSchema();
     await sql`DELETE FROM users WHERE id = ${id}`;
