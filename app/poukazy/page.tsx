@@ -242,7 +242,7 @@ export default function PoukazyPage() {
 
         {error && <p className="text-sm text-red-700">{error}</p>}
         <button disabled={busy} className="h-10 px-5 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60">
-          {busy ? "Přesměrovávám na platbu…" : "Zaplatit " + kc(price.total)}
+          {busy ? "Přesměrovávám na platbu…" : "Objednat a zaplatit " + kc(price.total)}
         </button>
         <p className="text-xs text-gray-500">Platba proběhne na zabezpečené stránce Stripe. Poukaz vám přijde e-mailem hned po zaplacení.</p>
         <p className="text-xs text-gray-500">
