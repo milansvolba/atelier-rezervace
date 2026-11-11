@@ -227,7 +227,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 {{summaryBlock}}
 {{messageBlock}}
 {{redeemBlock}}
-<p>Poukaz můžete přeposlat obdarovanému: stačí mu předat tento e-mail nebo jen kód.</p>
+<p>Obdarovanému stačí předat jen kód poukazu. Pozor: pokud mu přepošlete celý tento e-mail, dozví se i cenu poukazu.</p>
 <p>Těšíme se na Vás.</p>`,
   },
   signup_cancelled: {
