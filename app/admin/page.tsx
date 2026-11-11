@@ -1571,7 +1571,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     loadVouchers();
   }
 
-  type DokladItem = { id: string; kind: "kurz" | "poukaz"; description: string; amountCzk: number; baseCzk: number; vatCzk: number; paidAt: string; billing: { name: string; company?: string; ico?: string; email: string; address: { line1?: string; line2?: string; city?: string; postalCode?: string; country?: string }; taxIds: { type: string; value: string }[] } | null; invoiceNumber?: string; correctionNeeded: boolean; refundedCzk: number; overdue: boolean };
+  type DokladItem = { id: string; kind: "kurz" | "poukaz" | "clenstvi"; description: string; amountCzk: number; baseCzk: number; vatCzk: number; paidAt: string; billing: { name: string; company?: string; ico?: string; email: string; address: { line1?: string; line2?: string; city?: string; postalCode?: string; country?: string }; taxIds: { type: string; value: string }[] } | null; invoiceNumber?: string; correctionNeeded: boolean; refundedCzk: number; overdue: boolean };
   const [doklady, setDoklady] = useState<{ open: DokladItem[]; done: DokladItem[] }>({ open: [], done: [] });
 
   async function loadDoklady() {
@@ -1985,7 +1985,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="font-medium mb-1">Doklad k vystavení{doklady.open.length > 0 ? " (" + doklady.open.length + ")" : ""}</p>
           <p className="text-xs text-gray-500 mb-3">
-            Zaplacené kurzy a poukazy, u kterých ještě není vystavený daňový doklad v Caflou. Datum uskutečnění plnění = datum přijetí platby. Po vystavení klikni na „Vystaveno“.
+            Zaplacené kurzy, poukazy a měsíční členství, u kterých ještě není vystavený daňový doklad v Caflou. Datum uskutečnění plnění = datum přijetí platby. Po vystavení klikni na „Vystaveno“.
           </p>
           {doklady.open.length === 0 && <p className="text-sm text-gray-400">Vše vystaveno.</p>}
           <div className="space-y-2">
@@ -1995,13 +1995,13 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                 <div key={d.id} className={"border rounded-md p-3 text-sm flex items-start justify-between gap-3 flex-wrap " + (d.overdue ? "border-red-300 bg-red-50" : "border-gray-100")}>
                   <div>
                     <p className="font-medium">
-                      {d.billing?.company || d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ")} Kč
+                      {d.billing?.company || d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ", { minimumFractionDigits: d.amountCzk % 1 ? 2 : 0 })} Kč
                       {d.correctionNeeded && <span className="text-red-700"> · vratka: vystavit opravný doklad (vráceno {d.refundedCzk} Kč)</span>}
                       {d.overdue && !d.correctionNeeded && <span className="text-red-700"> · po lhůtě</span>}
                     </p>
                     <p className="text-xs text-gray-500">{d.description}</p>
                     <p className="text-xs text-gray-500">
-                      Zaplaceno {new Date(d.paidAt).toLocaleDateString("cs-CZ")} · základ {d.baseCzk.toLocaleString("cs-CZ")} Kč + DPH 21 % {d.vatCzk.toLocaleString("cs-CZ")} Kč
+                      Zaplaceno {new Date(d.paidAt).toLocaleDateString("cs-CZ")} · základ {d.baseCzk.toLocaleString("cs-CZ", { minimumFractionDigits: 2 })} Kč + DPH 21 % {d.vatCzk.toLocaleString("cs-CZ", { minimumFractionDigits: 2 })} Kč
                     </p>
                     <p className="text-xs text-gray-500">
                       {d.billing?.company && d.billing?.name ? d.billing.name + " · " : ""}{d.billing?.email}{addr ? " · " + addr : ""}{idsLine(d.billing) ? " · " + idsLine(d.billing) : ""}
@@ -2023,7 +2023,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
               <div className="mt-2 space-y-1">
                 {doklady.done.map((d) => (
                   <div key={d.id} className="flex items-center justify-between gap-3">
-                    <span>{d.billing?.company || d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ")} Kč · {d.invoiceNumber || "bez čísla"}</span>
+                    <span>{d.billing?.company || d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ", { minimumFractionDigits: d.amountCzk % 1 ? 2 : 0 })} Kč · {d.invoiceNumber || "bez čísla"}</span>
                     <button onClick={() => dokladAction(d.id, "reopen")} className="underline shrink-0">Vrátit do fronty</button>
                   </div>
                 ))}
