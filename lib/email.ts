@@ -78,10 +78,10 @@ function isWholeSpace(resource: Booking["resource"]) {
   return resource === "atelier" || resource === "klubovna";
 }
 
-function wrap(bodyHtml: string) {
+function wrap(bodyHtml: string, afterFooterHtml = "") {
   // Logo ateliéru nahoře (soubor public/logo.png, 705×160 px, zobrazí se zmenšené na výšku 36 px).
   const logo = `<p style="margin:0 0 20px;"><a href="https://ateliernapobrezi.cz"><img src="${APP_URL}/logo.png" alt="Ateliér na pobřeží" width="159" height="36" style="display:block;border:0;height:36px;width:auto;"></a></p>`;
-  return `<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;">${logo}${bodyHtml}<p style="margin-top:24px;color:#888;font-size:12px;">Ateliér na pobřeží · rezervace.ateliernapobrezi.cz</p></div>`;
+  return `<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;">${logo}${bodyHtml}<p style="margin-top:24px;color:#888;font-size:12px;">Ateliér na pobřeží · rezervace.ateliernapobrezi.cz</p>${afterFooterHtml}</div>`;
 }
 
 // Sestaví e-mail ze šablony (výchozí, nebo upravená adminem) a odešle ho.
@@ -536,6 +536,48 @@ export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, si
     send(signup.contact, "Poukaz uplatněn, vaše místo je potvrzené", html, { type: "voucher_redeemed", bookingId: booking.id, signupId: signup.id }),
     send(ADMIN_EMAILS, "Uplatněn poukaz " + v.code, adminHtml, { type: "voucher_redeemed_admin", bookingId: booking.id, signupId: signup.id }),
   ]);
+}
+
+// Kurz zaplacený online: jediný e-mail zákazníkovi (potvrzení místa + platba).
+// Text schválil Milan 2026-11-11 (bez zmínky o dokladu a vracení peněz, to je v obchodních podmínkách).
+function weekdayCz(dateISO: string) {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  return ["neděle", "pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota"][new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+}
+
+function shortTime(t: string) {
+  return t.replace(/^0/, "");
+}
+
+export async function sendCoursePaidEmail(booking: Booking, signup: CourseSignup, amountCzk: number, castingCount = 0) {
+  const to = signupNotifyTo(signup);
+  if (!to) return;
+  const people = signup.people + " " + (signup.people === 1 ? "osoba" : signup.people <= 4 ? "osoby" : "osob");
+  const stamp = (date: string, time: string) => date.replace(/-/g, "") + "T" + time.replace(":", "") + "00";
+  const calUrl =
+    "https://calendar.google.com/calendar/render?" +
+    new URLSearchParams({
+      action: "TEMPLATE",
+      text: booking.title + " – Ateliér na pobřeží",
+      dates: stamp(booking.date, booking.startTime) + "/" + stamp(booking.date, booking.endTime),
+      ctz: "Europe/Prague",
+      location: "Ateliér na pobřeží, Na pobřeží 67, Kolín",
+      details: "Pohodlné oblečení, které může být od hlíny. Materiál a pomůcky zajišťujeme.",
+    }).toString();
+  const html = wrap(
+    `<p>Dobrý den,</p>` +
+      `<p>děkujeme, Vaše místo na kurzu <strong>${esc(booking.title)}</strong> je potvrzené a platba proběhla.</p>` +
+      `<p><strong>Kdy:</strong> ${weekdayCz(booking.date)} ${fmtDate(booking.date)}, ${shortTime(booking.startTime)}–${shortTime(booking.endTime)}<br>` +
+      `<strong>Kde:</strong> <a href="${STUDIO_MAP_URL}">Ateliér na pobřeží, Na pobřeží 67, Kolín</a> (5 minut pěšky od nádraží)<br>` +
+      `<strong>Zaplaceno:</strong> ${fmtKc(amountCzk)}, ${people}${castingCount > 0 ? ", včetně " + castingText(castingCount) : ""}<br>` +
+      `<strong>V ceně:</strong> materiál, vybavení, vedení lektorem a občerstvení</p>` +
+      emailButton(calUrl, "Přidat do kalendáře") +
+      `<p>Potvrzení o platbě Vám zasílá platební brána Stripe samostatně. Chcete-li kurz objednat na firmu, ozvěte se nám a vyřešíme to.</p>` +
+      `<p>Podrobné informace k samotnému kurzu včetně mapy Vám pošleme na tento e-mail včas před jeho konáním.</p>` +
+      `<p>Těšíme se na Vás.</p>`,
+    `<p style="margin:4px 0 0;color:#888;font-size:12px;">Objednáním kurzu souhlasíte s <a href="https://ateliernapobrezi.cz/obchodni-podminky" style="color:#888;">obchodními podmínkami</a>.</p>`
+  );
+  await send(to, `Potvrzeno: ${booking.title}, ${fmtDate(booking.date)}, zaplaceno ${fmtKc(amountCzk)}`, html, { type: "course_paid", bookingId: booking.id, signupId: signup.id });
 }
 
 // --- Doklady k platbám ---

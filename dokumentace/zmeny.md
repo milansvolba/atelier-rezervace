@@ -6,6 +6,11 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — E-mail po zaplacení kurzu: jeden přehledný e-mail a potvrzení od Stripe (rezervace/e-maily, návrh k sloučení)
+- Po zaplacení kurzu dostane zákazník **jeden** e-mail „Potvrzeno: <kurz>, <datum>, zaplaceno <částka>“ (kdy, kde, zaplaceno, v ceně, tlačítko Přidat do kalendáře, věta o Stripe a firmě, informace před kurzem). Dřív chodily dva (potvrzení místa + „Doklad k vaší platbě“). Text schválil Milan 2026-11-11. Bez zmínky o dokladu a vracení peněz (to patří do obchodních podmínek); pod podpisem odkaz „Objednáním kurzu souhlasíte s obchodními podmínkami“.
+- Stripe Checkout teď dostává `receipt_email`, aby zákazníkovi poslal potvrzení o platbě (platí i pro poukazy). V testovacím režimu Stripe potvrzení neposílá, ověření až v ostrém režimu.
+- Odstraněn starý e-mail `doklad_note`. Zbývá: e-mail poukazu stále slibuje fakturu (`DOKLAD_NOTE`), admin e-mail „Doklad k vystavení“ má větu „Vystavte daňový doklad“ i u soukromých osob do 10 000 Kč.
+
 ## 2026-11-11 — Kurzy: po platbě už nechodí e-mail „Doklad k vaší platbě“ (platby, e-maily)
 
 Podle Milana a účetní se po zaplacení kurzu o faktuře nemluví; do účetnictví jde platba z dávkové sestavy Stripe. Zákazník dostává jen potvrzení přihlášky z aplikace (a potvrzení ze Stripe, pokud je ve Stripe zapnuté). Odstraněn e-mail `doklad_note` (`sendDokladNoteEmail`) a jeho volání ve webhooku. Admin dál dostává „Doklad k vystavení“ do fronty. E-mail s poukazem má pořád větu o dokladu (čeká na rozhodnutí). Soubory `lib/email.ts`, `app/api/stripe/webhook/route.ts`.

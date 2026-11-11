@@ -38,6 +38,8 @@ export async function createCheckoutSession(input: CheckoutInput): Promise<{ id:
     cancel_url: input.cancelUrl,
     expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
     customer_email: input.customerEmail,
+    // Stripe pošle zákazníkovi potvrzení o platbě (v testovacím režimu Stripe e-maily neodesílá).
+    "payment_intent_data[receipt_email]": input.customerEmail,
     // Fakturační údaje (firma, IČO, DIČ, adresa) sbíráme už v našem formuláři a ukládáme v tabulce payments (billing_input).
     // Stripe si od zákazníka řekne jen to, co potřebuje karta; fakturu Stripe nevystavuje (invoice_creation se nepoužívá).
     billing_address_collection: "auto",
