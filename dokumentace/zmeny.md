@@ -10,6 +10,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 - E-mail „Potvrzeno: <kurz>, <datum>, zaplaceno <částka> 🎉“ je teď v adminu mezi šablonami (klíč `course_paid`), předmět i text jdou upravit. Tlačítko kalendáře, částka, datum a čas se dosazují automaticky. Věta „Objednáním kurzu souhlasíte s obchodními podmínkami“ pod podpisem zůstává v kódu (není v šabloně), aby se nedala omylem smazat.
 - Názvy šablon kurzových e-mailů v přehledu odpovídají předmětům, s upřesněním v závorce, komu a kdy chodí (např. „Změna termínu kurzu (účastník)“, „Zrušení termínu kurzu (účastník)“, „Nová přihláška na kurz (admin)“). Samotné předměty a texty ostatních šablon se nemění. Zápis „Milan 2026-11-11, varianta A“: ostatní šablony projdeme po testovacím kole (varianta B).
 
+## 2026-11-11 — Správa: tlačítka „Smazat kurz“ a „Změnit kurz“ (admin, návrh k sloučení)
+- V detailu kurzu v adminu se tlačítka a nadpisy jmenují „Smazat kurz“ a „Změnit kurz“ (u ostatních rezervací „Smazat rezervaci“ a „Změnit rezervaci“), potvrzení „Opravdu smazat kurz …?“ a „Potvrdit smazání kurzu“. Nápad Milana při testu 2026-11-11. Texty jsou návrh ke schválení.
+
 ## 2026-11-11 — Fronta dokladů: plně vrácená platba bez dokladu (admin, návrh k sloučení)
 - Když je platba vrácená celá a doklad nebyl vystaven, fronta „Doklady k vystavení“ píše „vráceno celé, doklad nevystavovat“ a nabízí tlačítko „Uzavřít bez dokladu“ (po potvrzení položku uzavře a do čísla dokladu zapíše „nevystaveno, vráceno celé“). Při částečné vratce a nevystaveném dokladu píše „vráceno X Kč: doklad vystavte jen na zbytek“. U už vystaveného dokladu zůstává „vratka: vystavit opravný doklad“. Postupy pro různé situace s vratkami a dobropisy: `claude/dobropisy-postup-2026-11-11.md` (návrh, čeká na účetní).
 
