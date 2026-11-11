@@ -507,7 +507,7 @@ export default function KurzyPage() {
       )}
       {voucherLinkErr && (
         <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl p-4">
-          {voucherLinkErr} Napište nám prosím na rezervace@ateliernapobrezi.cz, rádi pomůžeme.
+          {voucherLinkErr}{voucherLinkErr.includes("rezervace@") ? "" : " Napište nám prosím na rezervace@ateliernapobrezi.cz, rádi pomůžeme."}
         </p>
       )}
       <div>

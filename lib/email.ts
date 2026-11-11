@@ -520,13 +520,7 @@ export async function sendAdminVoucherContactEmail(v: Voucher, booking?: Booking
 
 // Uplatnění poukazu v aplikaci: potvrzení obdarovanému + upozornění adminům.
 export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, signup: CourseSignup, overbooked: boolean) {
-  const html = wrap(
-    `<p>Dobrý den,</p>` +
-      `<p>poukaz <strong>${esc(v.code)}</strong> je uplatněný a vaše místo na kurzu je <strong>potvrzené</strong>.</p>` +
-      `<p>Kurz: <strong>${esc(booking.title)}</strong><br>Termín: ${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}<br>Počet osob: ${signup.people}${v.castingCount > 0 ? ", včetně " + castingText(v.castingCount) : ""}</p>` +
-      STUDIO_INFO_HTML +
-      `<p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`
-  );
+  const people = signup.people + " " + (signup.people === 1 ? "osoba" : signup.people <= 4 ? "osoby" : "osob");
   const adminHtml = wrap(
     `<p>Byl uplatněn dárkový poukaz <strong>${esc(v.code)}</strong> na termín ${fmtDate(booking.date)} (${esc(booking.title)}).</p>` +
       `<p>Přihlášen: ${esc(signup.name)}, ${esc(signup.contact)}, ${signup.people} os.${v.castingCount > 0 ? ", vč. odlitků: " + v.castingCount : ""}</p>` +
@@ -534,13 +528,44 @@ export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, si
       `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
   );
   await Promise.all([
-    send(signup.contact, "Poukaz uplatněn, vaše místo je potvrzené", html, { type: "voucher_redeemed", bookingId: booking.id, signupId: signup.id }),
+    sendFromTemplate(
+      "voucher_redeemed",
+      signup.contact,
+      {
+        courseTitle: booking.title,
+        weekday: weekdayCz(booking.date),
+        date: fmtDate(booking.date),
+        startTime: shortTime(booking.startTime),
+        endTime: shortTime(booking.endTime),
+        code: esc(v.code),
+        people,
+        castingNote: v.castingCount > 0 ? ", včetně " + castingText(v.castingCount) : "",
+        calendarUrl: calendarUrlFor(booking),
+      },
+      { bookingId: booking.id, signupId: signup.id }
+    ),
     send(ADMIN_EMAILS, "Uplatněn poukaz " + v.code, adminHtml, { type: "voucher_redeemed_admin", bookingId: booking.id, signupId: signup.id }),
   ]);
 }
 
 // Kurz zaplacený online: jediný e-mail zákazníkovi (potvrzení místa + platba).
 // Text je v šablonách (admin → E-maily, klíč course_paid); schválil Milan 2026-11-11 (bez zmínky o dokladu a vracení peněz, to je v obchodních podmínkách).
+// Odkaz „Přidat do Google Kalendáře“ (&amp; kvůli vložení do HTML).
+function calendarUrlFor(booking: Booking) {
+  const stamp = (date: string, time: string) => date.replace(/-/g, "") + "T" + time.replace(":", "") + "00";
+  return (
+    "https://calendar.google.com/calendar/render?" +
+    new URLSearchParams({
+      action: "TEMPLATE",
+      text: booking.title + " – Ateliér na pobřeží",
+      dates: stamp(booking.date, booking.startTime) + "/" + stamp(booking.date, booking.endTime),
+      ctz: "Europe/Prague",
+      location: "Ateliér na pobřeží, Na pobřeží 67, Kolín",
+      details: "Pohodlné oblečení, které může být od hlíny. Materiál a pomůcky zajišťujeme.",
+    }).toString()
+  ).replace(/&/g, "&amp;");
+}
+
 function weekdayCz(dateISO: string) {
   const [y, m, d] = dateISO.split("-").map(Number);
   return ["neděle", "pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota"][new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
@@ -554,17 +579,6 @@ export async function sendCoursePaidEmail(booking: Booking, signup: CourseSignup
   const to = signupNotifyTo(signup);
   if (!to) return;
   const people = signup.people + " " + (signup.people === 1 ? "osoba" : signup.people <= 4 ? "osoby" : "osob");
-  const stamp = (date: string, time: string) => date.replace(/-/g, "") + "T" + time.replace(":", "") + "00";
-  const calUrl =
-    "https://calendar.google.com/calendar/render?" +
-    new URLSearchParams({
-      action: "TEMPLATE",
-      text: booking.title + " – Ateliér na pobřeží",
-      dates: stamp(booking.date, booking.startTime) + "/" + stamp(booking.date, booking.endTime),
-      ctz: "Europe/Prague",
-      location: "Ateliér na pobřeží, Na pobřeží 67, Kolín",
-      details: "Pohodlné oblečení, které může být od hlíny. Materiál a pomůcky zajišťujeme.",
-    }).toString();
   await sendFromTemplate(
     "course_paid",
     to,
@@ -577,7 +591,7 @@ export async function sendCoursePaidEmail(booking: Booking, signup: CourseSignup
       amount: fmtKc(amountCzk),
       people,
       castingNote: castingCount > 0 ? ", včetně " + castingText(castingCount) : "",
-      calendarUrl: calUrl.replace(/&/g, "&amp;"),
+      calendarUrl: calendarUrlFor(booking),
     },
     { bookingId: booking.id, signupId: signup.id },
     `<p style="margin:4px 0 0;color:#888;font-size:12px;">Objednáním kurzu souhlasíte s <a href="https://ateliernapobrezi.cz/obchodni-podminky" style="color:#888;">obchodními podmínkami</a>.</p>`

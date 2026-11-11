@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const voucher = body.code ? await voucherStore.byCode(String(body.code)) : null;
   // Stejná odpověď pro neexistující kód, aby se kódy nedaly zjišťovat.
   if (!voucher) return bad("Poukaz s tímto kódem jsme nenašli. Zkontrolujte prosím kód.", 404);
-  if (voucher.status !== "active") return bad("Tento poukaz už byl uplatněn.", 409);
+  if (voucher.status !== "active") return bad("Tenhle poukaz už někdo využil. Nejste si toho vědomi? Napište nám na rezervace@ateliernapobrezi.cz a společně to zkusíme vyřešit.", 409);
   if (isExpired(voucher)) return bad("Platnost poukazu vypršela.", 410);
   if (voucher.bookingId) {
     return bad("Tento poukaz už je přiřazen ke konkrétnímu termínu a místo na něm máte potvrzené.", 409);
