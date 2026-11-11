@@ -63,6 +63,18 @@ function str(v: unknown): string | undefined {
 
 const cz = (ts: number) => new Date(ts * 1000).toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" }).replace(/\u00a0/g, " ");
 
+// Uvítací e-mail s přístupem (e-mail 2) se po první zaplacené platbě pošle právě jednou. Zkouší se z obou událostí
+// Stripe (invoice.paid i checkout.session.completed), protože chodí v libovolném pořadí. Která dřív najde člena, ta e-mail pošle.
+async function sendWelcomeAfterPaymentOnce(user: AppUser | null) {
+  if (!user || user.membershipFree) return;
+  if (!(await users.claimWelcomeSent(user.id))) return;
+  try {
+    await sendMembershipAccessEmail(user, await membershipLoginLink(user.email));
+  } catch (e) {
+    console.error("[stripe] Uvítací e-mail po platbě se nepodařilo odeslat:", e);
+  }
+}
+
 // Z faktury Stripe (invoice.paid) vytvoří položku fronty dokladů. Nulové faktury (kupón, zkušební doba) se přeskočí.
 async function queueMembershipInvoice(o: Record<string, unknown>, user: AppUser | null) {
   const invoiceId = str(o.id);
@@ -104,6 +116,8 @@ export async function handleMembershipEvent(event: {
         customerId: str(o.customer),
         subscriptionId: str(o.subscription),
       });
+      // Může přijít dřív než invoice.paid i později. Uvítání po platbě se pošle jen jednou a jen když je platba hotová.
+      if (o.payment_status === "paid") await sendWelcomeAfterPaymentOnce(await users.byId(userId));
     } else {
       console.error("[stripe] Předplatné bez userId v session " + String(o.id));
     }
@@ -120,14 +134,8 @@ export async function handleMembershipEvent(event: {
     // Ruční fakturace v Caflou: každá zaplacená faktura předplatného (i první) založí podklad ve frontě
     // „Doklad k vystavení“ a pošle e-mail Milanovi. Chyba tady nesmí shodit webhook (stav členství už je uložen).
     if (event.type === "invoice.paid") {
-      // Uvítací e-mail s přístupem do ateliéru: jen po první zaplacené platbě (claimWelcomeSent projde jen jednou).
-      if (user && (await users.claimWelcomeSent(user.id))) {
-        try {
-          await sendMembershipAccessEmail(user, await membershipLoginLink(user.email));
-        } catch (e) {
-          console.error("[stripe] Uvítací e-mail po platbě se nepodařilo odeslat:", e);
-        }
-      }
+      // Uvítací e-mail s přístupem do ateliéru: jen po první zaplacené platbě (jednou).
+      await sendWelcomeAfterPaymentOnce(user);
       try {
         await queueMembershipInvoice(o, user);
       } catch (e) {
