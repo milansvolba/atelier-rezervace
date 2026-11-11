@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Podpis v e-mailech: Ateliér na pobřeží a www.ateliernapobrezi.cz (e-maily, návrh k sloučení)
+- Patička všech e-mailů z rezervací dřív ukazovala technickou adresu „rezervace.ateliernapobrezi.cz“. Teď je tam podpis „Ateliér na pobřeží“ a pod ním odkaz na hlavní web www.ateliernapobrezi.cz. Platí pro všechny e-maily (zákazník i admin). Text je návrh ke schválení. Případné doplnění podpisu o adresu nebo telefon je na Milanovi.
+
 ## 2026-11-11 — Správa: tlačítka „Smazat kurz“ a „Změnit kurz“ (admin, návrh k sloučení)
 - V detailu kurzu v adminu se tlačítka a nadpisy jmenují „Smazat kurz“ a „Změnit kurz“ (u ostatních rezervací „Smazat rezervaci“ a „Změnit rezervaci“), potvrzení „Opravdu smazat kurz …?“ a „Potvrdit smazání kurzu“. Nápad Milana při testu 2026-11-11. Texty jsou návrh ke schválení.
 
