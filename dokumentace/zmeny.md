@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Kurzy: přehledné termíny, odkaz z marketingu a rychlejší načtení (rezervace, návrh k sloučení)
+
+Důvod: stránka /kurzy nebyla intuitivní (kroky „Vyberte kurz → Koupit → Pro koho?“ před termínem, po kliknutí na „Pro jednotlivce“ nebyla vidět změna, načítání ~5 s bez zpětné vazby, odkaz z marketingového webu nepředvybral termín). Rešerše a zdroje: `claude/ux-kurzy-resers-2026-11-11.md` (NN/g, Baymard). Co se mění: (1) termíny jsou vidět hned, krok „Vyberte kurz / Koupit / Pro koho?“ je pryč; filtr podle kurzu se ukáže jen při více tématech; (2) `/kurzy?termin=<id>` rovnou otevře přihlášku na daný termín, u zaniklého nebo plného termínu se ukáže hláška; (3) každý termín ukazuje délku, místo, co je v ceně a podmínky zrušení (texty převzaté z webu a obchodních podmínek, upravitelné v `lib/uiTexts.ts`, návrh ke schválení); (4) při načítání se ukáže kostra karet; (5) `/api/courses` se ptá databáze na obsazenost jedním dotazem a čte rezervace a firemní příznaky současně (názvy polí beze změny, marketingový web se tím nerozbije). Soubory `app/kurzy/page.tsx`, `lib/uiTexts.ts`, `app/api/courses/route.ts`, `lib/signups.ts`. Nahrazuje PR č. 34. Po nasazení upravit odkazy „Přihlásit se →“ na marketingovém webu (`kurz-modelovani-hlavy.php`, `kurz-relief.php`) na `/kurzy?termin=<id>`.
 ## 2026-11-11 — Členství: texty bez slibu faktury (rezervace)
 
 Podle účetní stačí soukromým osobám potvrzení o platbě ze Stripe a záznam v měsíčních sestavách; faktura z Caflou jde firmám. Upraveny dva texty (návrh ke schválení): e-mail 1 už neslibuje „potvrzení a fakturu“, ale potvrzení a větu „Pokud potřebuješ daňový doklad, napiš Milanovi“; stránka po zaplacení `/clenstvi?platba=ok` o faktuře nemluví vůbec (jen potvrzení o platbě). Soubory `lib/email.ts`, `app/clenstvi/page.tsx`. Fronta „Doklad k vystavení“ zatím beze změny.

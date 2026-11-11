@@ -30,6 +30,18 @@ function fmtDate(dateISO: string) {
   return `${d}. ${m}. ${y}`;
 }
 
+// Délka kurzu z času začátku a konce, např. "10 hodin".
+function durationLabel(start: string, end: string) {
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const mins = eh * 60 + em - (sh * 60 + sm);
+  if (!Number.isFinite(mins) || mins <= 0) return "";
+  const h = Math.round((mins / 60) * 2) / 2;
+  const txt = String(h).replace(".", ",");
+  const word = h === 1 ? "hodina" : h > 1 && h < 5 ? "hodiny" : "hodin";
+  return `${txt}\u00a0${word}`;
+}
+
 // Veřejná stránka kurzů — záměrně oddělená od detailního kalendáře pronájmu
 // prostoru (rezervace.ateliernapobrezi.cz). Kdo chce kurz, nezajímá ho
 // obsazenost jednotlivých stolů — vidí jen vypsané termíny a jednoduchou
@@ -45,7 +57,6 @@ export default function KurzyPage() {
   const [signupSent, setSignupSent] = useState<null | "ok" | "err">(null);
   const [honeypot, setHoneypot] = useState("");
   const [tiers, setTiers] = useState<{ minFillPercent: number; discountPercent: number }[]>([]);
-  const [buyingTopic, setBuyingTopic] = useState<string | null>(null);
   const [topicFilter, setTopicFilter] = useState<string | null>(null);
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState("");
@@ -109,6 +120,8 @@ export default function KurzyPage() {
     else if (p === "zrusena") setPayResult("cancel");
   }, []);
 
+  const [terminGone, setTerminGone] = useState(false);
+  const [terminHandled, setTerminHandled] = useState(false);
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customDate, setCustomDate] = useState("");
   const [customName, setCustomName] = useState("");
@@ -254,6 +267,44 @@ export default function KurzyPage() {
   function seatsWord(n: number) {
     return n === 1 ? "místo" : n <= 4 ? "místa" : "míst";
   }
+
+  // Výběr termínu (kliknutí na kartu i odkaz z marketingového webu /kurzy?termin=ID).
+  function pickCourse(c: CourseCard) {
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", "vyber_terminu_kurzu", {
+        event_category: "rezervace",
+        kurz: c.title,
+        datum: c.date,
+      });
+    }
+    setSignupFor(c.id);
+    if (!voucherMode) resetVoucher();
+    setVoucherDone(false);
+    // V režimu poukazu krok 2 (počet míst, odlitek, kód) odpadá: vše je dané poukazem.
+    setStep(voucherMode ? 3 : 2);
+    setSignupPeople(voucherMode ? voucherInfo?.people ?? 1 : 1);
+    setCastings(voucherMode ? voucherInfo?.castingCount ?? 0 : 0);
+    setSignupSent(null);
+    setPayError("");
+    requestAnimationFrame(() => {
+      document.getElementById("course-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  // Odkaz z marketingového webu: /kurzy?termin=ID rovnou otevře přihlášku na ten termín.
+  useEffect(() => {
+    if (loading || terminHandled) return;
+    const id = new URLSearchParams(window.location.search).get("termin");
+    if (!id) {
+      setTerminHandled(true);
+      return;
+    }
+    const c = courses.find((x) => x.id === id);
+    if (c && c.spotsLeft !== 0 && !voucherFromLink) pickCourse(c);
+    else if (!voucherFromLink) setTerminGone(true);
+    setTerminHandled(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, courses, terminHandled]);
 
   const selectedCourse = signupFor ? courses.find((c) => c.id === signupFor) ?? null : null;
   const maxSeats = selectedCourse ? Math.max(1, Math.min(6, selectedCourse.spotsLeft ?? 6)) : 6;
@@ -468,72 +519,46 @@ export default function KurzyPage() {
         </p>
       </div>
 
-      {topics.length > 0 && !voucherMode && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="font-medium mb-3">Vyberte kurz</p>
-          <div className="space-y-2">
-            {topics.map((t) => (
-              <div key={t.title} className="flex items-center justify-between gap-3 border-t border-gray-100 pt-2 first:border-t-0 first:pt-0 flex-wrap">
-                <div>
-                  <p className="text-sm font-medium">{t.title}</p>
-                  {t.price ? <p className="text-xs text-gray-500">{kc(t.price)}/os.</p> : null}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setBuyingTopic(buyingTopic === t.title ? null : t.title)}
-                  className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs shrink-0"
-                >
-                  {buyingTopic === t.title ? "Zavřít" : "Koupit"}
-                </button>
-              </div>
-            ))}
-          </div>
-          {buyingTopic && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-sm font-medium mb-2">{buyingTopic} — pro koho?</p>
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTopicFilter(buyingTopic);
-                    requestAnimationFrame(() => {
-                      document.getElementById("course-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    });
-                  }}
-                  className="h-9 px-4 rounded-md border border-gray-300 text-sm"
-                >
-                  Pro jednotlivce — vybrat vypsaný termín
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCustomNote((n) => (n ? n : `Téma: ${buyingTopic}`));
-                    setShowCustomForm(true);
-                    requestAnimationFrame(() => {
-                      document.getElementById("custom-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    });
-                  }}
-                  className="h-9 px-4 rounded-md border border-gray-300 text-sm"
-                >
-                  Pro skupinu — domluvit termín
-                </button>
-              </div>
-            </div>
-          )}
-          {topicFilter && (
+      {topics.length > 1 && !voucherMode && !selectedCourse && (
+        <div className="flex gap-2 flex-wrap" role="group" aria-label="Filtr podle kurzu">
+          <button
+            type="button"
+            onClick={() => setTopicFilter(null)}
+            aria-pressed={!topicFilter}
+            className={"h-9 px-4 rounded-full border text-sm " + (!topicFilter ? "bg-gray-900 text-white border-gray-900" : "border-gray-300")}
+          >
+            Všechny kurzy
+          </button>
+          {topics.map((tp) => (
             <button
+              key={tp.title}
               type="button"
-              onClick={() => setTopicFilter(null)}
-              className="mt-3 text-xs text-gray-500 underline"
+              onClick={() => setTopicFilter(tp.title)}
+              aria-pressed={topicFilter === tp.title}
+              className={"h-9 px-4 rounded-full border text-sm " + (topicFilter === tp.title ? "bg-gray-900 text-white border-gray-900" : "border-gray-300")}
             >
-              Zobrazit všechny termíny
+              {tp.title}
             </button>
-          )}
+          ))}
         </div>
       )}
 
       <div className="space-y-3" id="course-list">
-        {loading && <p className="text-sm text-gray-400">Načítám termíny…</p>}
+        {loading && (
+          <div aria-busy="true" aria-live="polite" className="space-y-3">
+            <p className="text-sm text-gray-500">{t("kurzy.loading")}</p>
+            {[0, 1].map((i) => (
+              <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+                <div className="h-5 w-1/2 rounded bg-gray-100 animate-pulse" />
+                <div className="h-4 w-2/3 rounded bg-gray-100 animate-pulse" />
+                <div className="h-4 w-1/3 rounded bg-gray-100 animate-pulse" />
+              </div>
+            ))}
+          </div>
+        )}
+        {terminGone && !selectedCourse && (
+          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-4">{t("kurzy.termin.gone")}</p>
+        )}
         {!loading && courses.length === 0 && (
           <p className="text-sm text-gray-500 bg-white border border-gray-200 rounded-xl p-5">
             Momentálně nemáme vypsaný žádný termín. Napište nám níže o poptávku na vlastní termín.
@@ -878,6 +903,14 @@ export default function KurzyPage() {
                       {c.price ? " · " + kc(c.price) + "/os." : ""}
                     </p>
                     {c.note && <p className="text-sm text-gray-500 mt-1">{c.note}</p>}
+                    <dl className="mt-3 space-y-1 text-sm text-gray-600">
+                      {durationLabel(c.startTime, c.endTime) && (
+                        <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">Délka</dt><dd>{durationLabel(c.startTime, c.endTime)}</dd></div>
+                      )}
+                      <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">Kde</dt><dd>{t("kurzy.fact.place")}</dd></div>
+                      <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">V ceně</dt><dd>{t("kurzy.fact.included")}</dd></div>
+                      <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">Zrušení</dt><dd>{t("kurzy.fact.cancel")}</dd></div>
+                    </dl>
                     {c.capacity && (
                       <p className="text-xs text-gray-400 mt-1">
                         {c.spotsLeft !== null && c.spotsLeft > 0
@@ -888,29 +921,7 @@ export default function KurzyPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      // Jednoduchý signál záměru pro Analytics MVP (bez celého konverzního
-                      // trychtýře) — klik na konkrétní vypsaný termín kurzu.
-                      if (typeof window !== "undefined" && window.gtag) {
-                        window.gtag("event", "vyber_terminu_kurzu", {
-                          event_category: "rezervace",
-                          kurz: c.title,
-                          datum: c.date,
-                        });
-                      }
-                      setSignupFor(c.id);
-                      if (!voucherMode) resetVoucher();
-                      setVoucherDone(false);
-                      // V režimu poukazu krok 2 (počet míst, odlitek, kód) odpadá: vše je dané poukazem.
-                      setStep(voucherMode ? 3 : 2);
-                      setSignupPeople(voucherMode ? voucherInfo?.people ?? 1 : 1);
-                      setCastings(voucherMode ? voucherInfo?.castingCount ?? 0 : 0);
-                      setSignupSent(null);
-                      setPayError("");
-                      requestAnimationFrame(() => {
-                        document.getElementById("course-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                      });
-                    }}
+                    onClick={() => pickCourse(c)}
                     disabled={c.spotsLeft === 0}
                     className="h-9 px-4 rounded-md bg-gray-900 text-white text-sm disabled:opacity-40 shrink-0"
                   >
@@ -921,6 +932,20 @@ export default function KurzyPage() {
             ))
         )}
       </div>
+
+      {!voucherMode && !selectedCourse && !loading && (
+        <p className="text-sm text-gray-600">
+          Jste skupina, nebo vám žádný termín nevyhovuje?{" "}
+          <button
+            type="button"
+            className="underline"
+            onClick={() => document.getElementById("custom-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          >
+            Pošlete nám poptávku na vlastní termín
+          </button>
+          .
+        </p>
+      )}
 
       {!voucherMode && (
       <div className="bg-white border border-gray-200 rounded-xl p-5" id="custom-form">

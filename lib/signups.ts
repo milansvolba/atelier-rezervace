@@ -41,6 +41,20 @@ export const signupStore = {
     return Number(rows[0]?.total ?? 0);
   },
 
+  // Potvrzení účastníci pro více termínů najednou (jeden dotaz místo N).
+  async confirmedPeopleByBooking(bookingIds: string[]): Promise<Map<string, number>> {
+    const out = new Map<string, number>();
+    if (bookingIds.length === 0) return out;
+    await ensureSchema();
+    const rows = await sql`
+      SELECT booking_id, COALESCE(SUM(people), 0) AS total FROM course_signups
+      WHERE booking_id = ANY(${bookingIds}) AND status = 'confirmed'
+      GROUP BY booking_id
+    `;
+    rows.forEach((r) => out.set(r.booking_id as string, Number(r.total)));
+    return out;
+  },
+
   async add(s: CourseSignup): Promise<CourseSignup> {
     await ensureSchema();
     await sql`
