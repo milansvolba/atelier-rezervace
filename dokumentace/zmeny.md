@@ -16,6 +16,10 @@ Varianta B onboardingu (větev `clenstvi-zadost`, PR čeká na Milana):
 - Na `/clenstvi` se pojmenování sjednotilo: **Klub na pobřeží** = členství a platforma pro setkávání, **Ateliér na pobřeží** = prostor, kde se to odehrává (úvodní věty před platbou, po platbě i u formuláře).
 - Texty jsou **návrh ke schválení**. Poznámky: kódy ke schránce s klíči nejsou nikde v kódu ani v e-mailu. Cena 302,50 Kč je na `/clenstvi` natvrdo, stejně jako dřív.
 
+## 2026-11-11 — Rezervace: ikonka postavy u přihlášeného (rezervace, vzhled)
+
+V horní liště rezervací je před jménem přihlášeného nově malá ikonka postavy. Zbytek (jméno a role) zůstal. Soubor `app/admin/page.tsx`.
+
 ## 2026-11-11 — Stránka po zaplacení členství: text o faktuře (rezervace, text)
 
 Na stránce „Děkujeme, členství je zaplacené“ první odrážka nově zní „Faktura ti přijde e-mailem teď stejně jako každý další měsíc.“ (návrh od Milana; fakturu členům vystavuje Milan ručně v Caflou, ne Stripe). Soubor `app/clenstvi/page.tsx`.

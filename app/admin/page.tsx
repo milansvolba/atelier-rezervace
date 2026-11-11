@@ -1855,7 +1855,20 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-400">
+          <span className="flex items-center gap-1 text-xs text-gray-400">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-4 w-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" />
+            </svg>
             {session.name} · {isAdmin ? "admin" : "člen"}
           </span>
           {isAdmin && (
