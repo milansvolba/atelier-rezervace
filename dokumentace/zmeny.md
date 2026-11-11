@@ -8,7 +8,7 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ## 2026-11-11 — Členství: texty bez slibu faktury (rezervace)
 
-Podle účetní stačí soukromým osobám potvrzení o platbě ze Stripe a záznam v měsíčních sestavách; faktura z Caflou jde firmám. Upraveny dva texty (návrh ke schválení): e-mail 1 už neslibuje „potvrzení a fakturu“, ale potvrzení a větu „Pokud potřebuješ daňový doklad, napiš Milanovi“; stránka po zaplacení `/clenstvi?platba=ok` stejně. Soubory `lib/email.ts`, `app/clenstvi/page.tsx`. Fronta „Doklad k vystavení“ zatím beze změny.
+Podle účetní stačí soukromým osobám potvrzení o platbě ze Stripe a záznam v měsíčních sestavách; faktura z Caflou jde firmám. Upraveny dva texty (návrh ke schválení): e-mail 1 už neslibuje „potvrzení a fakturu“, ale potvrzení a větu „Pokud potřebuješ daňový doklad, napiš Milanovi“; stránka po zaplacení `/clenstvi?platba=ok` o faktuře nemluví vůbec (jen potvrzení o platbě). Soubory `lib/email.ts`, `app/clenstvi/page.tsx`. Fronta „Doklad k vystavení“ zatím beze změny.
 
 ## 2026-11-11 — Doklad k vystavení: odkaz na fakturu po kliknutí na „Vystaveno“ (platby, rezervace)
 
