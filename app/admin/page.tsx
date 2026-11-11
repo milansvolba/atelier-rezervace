@@ -1632,7 +1632,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     loadVouchers();
   }
 
-  type DokladItem = { id: string; kind: "kurz" | "poukaz" | "clenstvi"; description: string; amountCzk: number; baseCzk: number; vatCzk: number; paidAt: string; billing: { name: string; company?: string; ico?: string; email: string; address: { line1?: string; line2?: string; city?: string; postalCode?: string; country?: string }; taxIds: { type: string; value: string }[] } | null; invoiceNumber?: string; correctionNeeded: boolean; refundedCzk: number; overdue: boolean };
+  type DokladItem = { id: string; kind: "kurz" | "poukaz" | "clenstvi"; description: string; amountCzk: number; baseCzk: number; vatCzk: number; paidAt: string; billing: { name: string; company?: string; ico?: string; email: string; address: { line1?: string; line2?: string; city?: string; postalCode?: string; country?: string }; taxIds: { type: string; value: string }[] } | null; invoiceNumber?: string; invoiceUrl?: string; correctionNeeded: boolean; refundedCzk: number; overdue: boolean };
   const [doklady, setDoklady] = useState<{ open: DokladItem[]; done: DokladItem[] }>({ open: [], done: [] });
 
   async function loadDoklady() {
@@ -1642,15 +1642,18 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
   async function dokladAction(id: string, action: "issued" | "reopen" | "correction_done") {
     let number: string | undefined;
+    let url: string | undefined;
     if (action === "issued") {
-      const n = window.prompt("Číslo vystaveného dokladu (nepovinné):", "");
+      const n = window.prompt("Číslo faktury nebo odkaz na ni v Caflou (nepovinné). Odkaz vložte celý, začíná https://", "");
       if (n === null) return;
-      number = n;
+      const v = n.trim();
+      if (/^https?:\/\//i.test(v)) url = v;
+      else number = v;
     }
     await fetch("/api/admin/doklady/" + id, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, number }),
+      body: JSON.stringify({ action, number, url }),
     });
     loadDoklady();
   }
@@ -2107,7 +2110,14 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
               <div className="mt-2 space-y-1">
                 {doklady.done.map((d) => (
                   <div key={d.id} className="flex items-center justify-between gap-3">
-                    <span>{d.billing?.company || d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ", { minimumFractionDigits: d.amountCzk % 1 ? 2 : 0 })} Kč · {d.invoiceNumber || "bez čísla"}</span>
+                    <span>{d.billing?.company || d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ", { minimumFractionDigits: d.amountCzk % 1 ? 2 : 0 })} Kč · {d.invoiceNumber || "bez čísla"}
+                      {d.invoiceUrl && (
+                        <>
+                          {" · "}
+                          <a href={d.invoiceUrl} target="_blank" rel="noopener noreferrer" className="underline">Otevřít fakturu</a>
+                        </>
+                      )}
+                    </span>
                     <button onClick={() => dokladAction(d.id, "reopen")} className="underline shrink-0">Vrátit do fronty</button>
                   </div>
                 ))}
