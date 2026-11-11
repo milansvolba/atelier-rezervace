@@ -35,11 +35,6 @@ export function normalizeDic(v: string): string {
   return v.replace(/\s+/g, "").toUpperCase();
 }
 
-// Potřebuje soukromá osoba u této částky uvést adresu?
-export function needsPrivateAddress(totalCzk: number): boolean {
-  return totalCzk > SIMPLIFIED_LIMIT_CZK;
-}
-
 function clean(v: unknown, max = 120): string {
   return typeof v === "string" ? v.trim().slice(0, max) : "";
 }
@@ -66,8 +61,5 @@ export function parseBillingInput(raw: unknown, totalCzk: number): BillingResult
     return { ok: true, value: { isCompany: true, company, ico, dic: dic || undefined, street, zip, city } };
   }
 
-  if (needsPrivateAddress(totalCzk) && !hasAddress) {
-    return { ok: false, error: "U objednávky nad " + SIMPLIFIED_LIMIT_CZK.toLocaleString("cs-CZ") + " Kč potřebujeme pro daňový doklad vaši adresu (ulice, PSČ, město)." };
-  }
   return { ok: true, value: hasAddress ? { isCompany: false, street, zip, city } : null };
 }

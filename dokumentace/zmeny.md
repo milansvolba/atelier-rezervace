@@ -6,6 +6,11 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Objednávka: soukromá osoba už nikdy nezadává adresu (rezervace, návrh k sloučení)
+- U kurzů i poukazů zmizel text „U objednávky nad 10 000 Kč potřebujeme pro daňový doklad vaši adresu“ a s ním pole pro adresu soukromé osoby (na screenshotu Milana vypadalo, že patří pod „Nakupuji na firmu“). Server adresu u soukromé osoby také nevyžaduje.
+- Důvod: soukromé osobě (nepodnikateli) se daňový doklad nevystavuje, stačí potvrzení o platbě ze Stripe (zákon o DPH ukládá doklad osobám povinným k dani a právnickým osobám; spotřebiteli jen doklad o koupi na žádost). Pravidlo ještě potvrdí účetní Hana.
+- Zaškrtávátko se jmenuje „Nakupuji na firmu (faktura na IČO)“; po zaškrtnutí se ukáže IČO, DIČ, firma a adresa jako dřív. Text návrh ke schválení.
+
 ## 2026-11-11 — Poukaz: nová hláška u použitého kódu a e-mail o uplatnění v šablonách (rezervace, e-maily, návrh k sloučení)
 - U už uplatněného poukazu na /kurzy je červená hláška: „Tenhle poukaz už někdo využil. Nejste si toho vědomi? Napište nám na rezervace@ateliernapobrezi.cz a společně to zkusíme vyřešit.“ (text Milana 2026-11-11, návrh ke schválení). Platí na stránce i na serveru při uplatnění.
 - E-mail o uplatnění poukazu obdarovanému je v adminu mezi šablonami (klíč `voucher_redeemed`), předmět „Potvrzeno: <kurz>, <datum>, uplatněn poukaz 🎉“, s tlačítkem „Přidat do kalendáře“ (jako e-mail po platbě kurzu). E-mail pro admina o uplatnění zůstává v kódu. Poukazy a kalendář sdílejí pomocnou funkci `calendarUrlFor`.

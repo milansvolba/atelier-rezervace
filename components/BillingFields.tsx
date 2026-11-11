@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BillingInput, icoValid, normalizeIco, SIMPLIFIED_LIMIT_CZK } from "@/lib/billingInput";
+import { BillingInput, icoValid, normalizeIco } from "@/lib/billingInput";
 
 const input = "mt-1 w-full h-10 border border-gray-300 rounded-md px-2";
 
 // Fakturační údaje v krocích objednávky (kurzy, poukazy). Firma: vyplní se IČO, zbytek dohledá ARES (jde upravit).
-// Soukromá osoba: adresa jen když objednávka přesáhne limit zjednodušeného dokladu (needAddress).
-export default function BillingFields({ value, onChange, needAddress }: { value: BillingInput; onChange: (v: BillingInput) => void; needAddress: boolean }) {
+// Soukromá osoba nevyplňuje nic (daňový doklad se jí nevystavuje, stačí potvrzení ze Stripe).
+export default function BillingFields({ value, onChange }: { value: BillingInput; onChange: (v: BillingInput) => void }) {
   const [aresMsg, setAresMsg] = useState("");
   const [aresBusy, setAresBusy] = useState(false);
   const lastLooked = useRef("");
@@ -66,7 +66,7 @@ export default function BillingFields({ value, onChange, needAddress }: { value:
     <div className="space-y-3 border-t border-gray-100 pt-3">
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={value.isCompany} onChange={(e) => set({ isCompany: e.target.checked })} />
-        Nakupuji na firmu (doklad na IČO)
+        Nakupuji na firmu (faktura na IČO)
       </label>
 
       {value.isCompany && (
@@ -97,15 +97,6 @@ export default function BillingFields({ value, onChange, needAddress }: { value:
           <p className="text-xs text-gray-500">
             {aresBusy ? "Dohledávám firmu v ARES…" : aresMsg || "Stačí zadat IČO, ostatní údaje se zkusíme doplnit z rejstříku ARES."}
           </p>
-        </div>
-      )}
-
-      {!value.isCompany && needAddress && (
-        <div className="space-y-2">
-          <p className="text-xs text-gray-500">
-            U objednávky nad {SIMPLIFIED_LIMIT_CZK.toLocaleString("cs-CZ")} Kč potřebujeme pro daňový doklad vaši adresu.
-          </p>
-          {addressFields(true)}
         </div>
       )}
     </div>
