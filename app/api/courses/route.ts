@@ -12,32 +12,31 @@ export const dynamic = "force-dynamic";
 // Na rozdíl od /api/bookings tady záměrně vracíme i název a kapacitu — jde o
 // veřejnou nabídku kurzů, ne o soukromé rezervace míst.
 export async function GET() {
-  const all = await store.all();
   const today = new Date().toISOString().slice(0, 10);
   // Firemní akce (příznak v adminu) se na veřejné stránce neukazují.
-  const hidden = await courseFlags.corporateIds();
+  const [all, hidden] = await Promise.all([store.all(), courseFlags.corporateIds()]);
   const courses = all.filter(
     (b) => b.category === "kurz" && b.status === "confirmed" && b.date >= today && !hidden.has(b.id)
   );
 
-  const withCapacity = await Promise.all(
-    courses.map(async (c) => {
-      const taken = c.capacity ? await signupStore.confirmedPeopleForBooking(c.id) : 0;
-      return {
-        id: c.id,
-        title: c.title,
-        date: c.date,
-        startTime: c.startTime,
-        endTime: c.endTime,
-        note: c.note,
-        capacity: c.capacity ?? null,
-        price: c.price ?? null,
-        courseType: courseTypeKey(c),
-        castingPrice: castingPriceFor(c),
-        spotsLeft: c.capacity ? Math.max(0, c.capacity - taken) : null,
-      };
-    })
-  );
+  // Obsazenost všech termínů jedním dotazem (dřív se ptalo zvlášť na každý termín).
+  const takenById = await signupStore.confirmedPeopleByBooking(courses.map((c) => c.id));
+  const withCapacity = courses.map((c) => {
+    const taken = c.capacity ? takenById.get(c.id) ?? 0 : 0;
+    return {
+      id: c.id,
+      title: c.title,
+      date: c.date,
+      startTime: c.startTime,
+      endTime: c.endTime,
+      note: c.note,
+      capacity: c.capacity ?? null,
+      price: c.price ?? null,
+      courseType: courseTypeKey(c),
+      castingPrice: castingPriceFor(c),
+      spotsLeft: c.capacity ? Math.max(0, c.capacity - taken) : null,
+    };
+  });
 
   withCapacity.sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
   return NextResponse.json(withCapacity);

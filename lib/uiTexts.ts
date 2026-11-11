@@ -11,6 +11,41 @@ export interface UiTextDef {
 }
 
 export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
+  "kurzy.fact.place": {
+    group: "Objednávka kurzu",
+    label: "Karta termínu: místo",
+    description: "Řádek „Kde“ u každého termínu na stránce Kurzy.",
+    vars: [],
+    text: "Ateliér na pobřeží, Na pobřeží 67, Kolín (5 minut pěšky od nádraží)",
+  },
+  "kurzy.fact.included": {
+    group: "Objednávka kurzu",
+    label: "Karta termínu: co je v ceně",
+    description: "Řádek „V ceně“ u každého termínu na stránce Kurzy.",
+    vars: [],
+    text: "materiál, vybavení, vedení lektorem a občerstvení po celou dobu kurzu",
+  },
+  "kurzy.fact.cancel": {
+    group: "Objednávka kurzu",
+    label: "Karta termínu: zrušení",
+    description: "Řádek „Zrušení“ u každého termínu na stránce Kurzy (musí odpovídat obchodním podmínkám).",
+    vars: [],
+    text: "7 a více dní předem vrátíme 100 %, 3 až 6 dní předem 50 %, později platbu nevracíme",
+  },
+  "kurzy.loading": {
+    group: "Objednávka kurzu",
+    label: "Načítání termínů",
+    description: "Text nad kostrou karet, dokud se nenačtou vypsané termíny.",
+    vars: [],
+    text: "Načítáme vypsané termíny, chvilku strpení…",
+  },
+  "kurzy.termin.gone": {
+    group: "Objednávka kurzu",
+    label: "Odkaz na termín, který už není k dispozici",
+    description: "Hláška, když někdo přijde z odkazu na termín, který už neexistuje nebo je plný.",
+    vars: [],
+    text: "Tento termín už bohužel není k dispozici. Podívejte se prosím na další vypsané termíny níže.",
+  },
   "kurzy.pick": {
     group: "Objednávka kurzu",
     label: "Tlačítko u termínu",

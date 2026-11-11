@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Kurzy: přehledné termíny, odkaz z marketingu a rychlejší načtení (rezervace, návrh k sloučení)
+
+Důvod: stránka /kurzy nebyla intuitivní (kroky „Vyberte kurz → Koupit → Pro koho?“ před termínem, po kliknutí na „Pro jednotlivce“ nebyla vidět změna, načítání ~5 s bez zpětné vazby, odkaz z marketingového webu nepředvybral termín). Rešerše a zdroje: `claude/ux-kurzy-resers-2026-11-11.md` (NN/g, Baymard). Co se mění: (1) termíny jsou vidět hned, krok „Vyberte kurz / Koupit / Pro koho?“ je pryč; filtr podle kurzu se ukáže jen při více tématech; (2) `/kurzy?termin=<id>` rovnou otevře přihlášku na daný termín, u zaniklého nebo plného termínu se ukáže hláška; (3) každý termín ukazuje délku, místo, co je v ceně a podmínky zrušení (texty převzaté z webu a obchodních podmínek, upravitelné v `lib/uiTexts.ts`, návrh ke schválení); (4) při načítání se ukáže kostra karet; (5) `/api/courses` se ptá databáze na obsazenost jedním dotazem a čte rezervace a firemní příznaky současně (názvy polí beze změny, marketingový web se tím nerozbije). Soubory `app/kurzy/page.tsx`, `lib/uiTexts.ts`, `app/api/courses/route.ts`, `lib/signups.ts`. Nahrazuje PR č. 34. Po nasazení upravit odkazy „Přihlásit se →“ na marketingovém webu (`kurz-modelovani-hlavy.php`, `kurz-relief.php`) na `/kurzy?termin=<id>`.
+
 ## 2026-11-11 — Doklad k vystavení: odkaz na fakturu po kliknutí na „Vystaveno“ (platby, rezervace)
 
 Po kliknutí na „Vystaveno“ se zobrazí jedno okno: „Číslo faktury nebo odkaz na ni v Caflou (nepovinné)“. Co začíná `https://`, se uloží jako odkaz (nový sloupec `payments.invoice_url`), jinak jako číslo faktury. V seznamu „Naposledy vystavené“ je u položky odkaz „Otevřít fakturu“. Server uloží jen adresy `http(s)`, žádné `javascript:`. Soubory `lib/invoices.ts`, `lib/db.ts`, `app/api/admin/doklady/[id]/route.ts`, `app/admin/page.tsx`. Pracovní pravidlo od Milana: časy se uvádějí v pražském čase (SEČ/SELČ), ne v UTC.
