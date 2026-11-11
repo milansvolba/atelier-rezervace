@@ -19,7 +19,8 @@ export type TemplateKey =
   | "admin_new_signup"
   | "signup_received"
   | "signup_decision_approved"
-  | "signup_decision_rejected";
+  | "signup_decision_rejected"
+  | "course_paid";
 
 export interface TemplateDef {
   label: string;
@@ -135,7 +136,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 <p>Pokud budete chtít nový termín, napište nám.</p>`,
   },
   course_changed: {
-    label: "Účastník kurzu: změna termínu",
+    label: "Změna termínu kurzu (účastník)",
     description: "Pošle se přihlášeným na kurz (obdarovanému, jinak kupujícímu), když admin změní čas nebo den termínu kurzu a zaškrtne „Informovat přihlášené“.",
     vars: ["courseTitle", "beforeDate", "beforeStart", "beforeEnd", "afterDate", "afterStart", "afterEnd"],
     subject: "Změna termínu kurzu {{courseTitle}}: {{afterDate}}",
@@ -145,7 +146,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 <p>Vaše místo zůstává potvrzené, nemusíte nic dělat. Pokud vám nový termín nevyhovuje, napište nám na <a href="mailto:rezervace@ateliernapobrezi.cz">rezervace@ateliernapobrezi.cz</a> a rádi najdeme jiný.</p>`,
   },
   course_cancelled: {
-    label: "Účastník kurzu: kurz zrušen",
+    label: "Zrušení termínu kurzu (účastník)",
     description: "Pošle se přihlášeným na kurz (obdarovanému, jinak kupujícímu), když admin smaže termín kurzu a zaškrtne „Informovat přihlášené“.",
     vars: ["courseTitle", "date", "startTime", "endTime"],
     subject: "Zrušení termínu kurzu {{courseTitle}}: {{date}}",
@@ -154,7 +155,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 <p>Ozveme se vám s nabídkou náhradního termínu a jako omluvu vám přidáme drobnou pozornost. Pokud vám náhradní termín nevyhovuje, vrátíme vám platbu. Kdybyste nám chtěli napsat dřív, pište na <a href="mailto:rezervace@ateliernapobrezi.cz">rezervace@ateliernapobrezi.cz</a>.</p>`,
   },
   admin_new_signup: {
-    label: "Admin: nová přihláška na kurz",
+    label: "Nová přihláška na kurz (admin)",
     description: "Pošle se adminům, když se někdo přihlásí na vypsaný termín kurzu na /kurzy.",
     vars: ["name", "people", "peopleWord", "courseTitle", "date", "startTime", "endTime", "noteBlock", "contact", "adminUrl"],
     subject: "Nová přihláška na kurz — {{courseTitle}} ({{date}})",
@@ -164,7 +165,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 <p style="margin-top:16px;"><a href="{{adminUrl}}" style="background:#111;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Zobrazit a rozhodnout</a></p>`,
   },
   signup_received: {
-    label: "Přihlášený: přihláška přijata",
+    label: "Přihláška přijata (zákazník, termín bez platby)",
     description: "Potvrzení hned po odeslání přihlášky na vypsaný termín kurzu.",
     vars: ["name", "courseTitle", "date", "startTime", "endTime"],
     subject: "Přihláška přijata — {{courseTitle}} ({{date}})",
@@ -173,14 +174,30 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 <p>Ozveme se vám co nejdřív s potvrzením místa.</p>`,
   },
   signup_decision_approved: {
-    label: "Přihlášený: místo potvrzeno",
+    label: "Vaše místo na kurzu je potvrzené (zákazník, schváleno adminem)",
     description: "Pošle se, když admin schválí přihlášku na vypsaný termín kurzu.",
     vars: ["name", "courseTitle", "date", "startTime", "endTime"],
     subject: "Vaše místo na kurzu je potvrzené — {{date}}",
     body: `<p>Dobrý den,</p><p>vaše místo na kurzu <strong>{{courseTitle}}</strong> ({{date}} {{startTime}}–{{endTime}}) je potvrzené. Těšíme se na vás.</p>`,
   },
+  course_paid: {
+    label: "Potvrzeno: kurz zaplacen 🎉 (zákazník po platbě)",
+    description: "Jediný e-mail zákazníkovi po zaplacení kurzu kartou: potvrzení místa a platby, kdy a kde, tlačítko do kalendáře. Pod podpisem se vždy připojí věta o obchodních podmínkách (není v šabloně).",
+    vars: ["courseTitle", "weekday", "date", "startTime", "endTime", "amount", "people", "castingNote", "calendarUrl"],
+    subject: "Potvrzeno: {{courseTitle}}, {{date}}, zaplaceno {{amount}} 🎉",
+    body: `<p>Dobrý den,</p>
+<p>děkujeme, Vaše místo na kurzu <strong>{{courseTitle}}</strong> je potvrzené a platba proběhla.</p>
+<p><strong>Kdy:</strong> {{weekday}} {{date}}, {{startTime}}–{{endTime}}<br>
+<strong>Kde:</strong> <a href="https://mapy.com/cs/zakladni?q=Na%20pob%C5%99e%C5%BE%C3%AD%2067%2C%20Kol%C3%ADn">Ateliér na pobřeží, Na pobřeží 67, Kolín</a> (5 minut pěšky od nádraží)<br>
+<strong>Zaplaceno:</strong> {{amount}}, {{people}}{{castingNote}}<br>
+<strong>V ceně:</strong> materiál, vybavení, vedení lektorem a občerstvení</p>
+<p style="margin:18px 0;"><a href="{{calendarUrl}}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Přidat do kalendáře</a></p>
+<p>Potvrzení o platbě Vám zasílá platební brána Stripe samostatně. Chcete-li kurz objednat na firmu, ozvěte se nám a vyřešíme to.</p>
+<p>Podrobné informace k samotnému kurzu včetně mapy Vám pošleme na tento e-mail včas před jeho konáním.</p>
+<p>Těšíme se na Vás.</p>`,
+  },
   signup_decision_rejected: {
-    label: "Přihlášený: místo nelze potvrdit",
+    label: "K vaší přihlášce na kurz (zákazník, nelze potvrdit)",
     description: "Pošle se, když admin zamítne přihlášku na vypsaný termín kurzu (např. plná kapacita).",
     vars: ["name", "courseTitle", "date", "startTime", "endTime"],
     subject: "K vaší přihlášce na kurz — {{date}}",

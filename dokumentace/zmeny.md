@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Spojený e-mail po platbě kurzu v šablonách + konfeta v předmětu (e-maily, návrh k sloučení)
+- E-mail „Potvrzeno: <kurz>, <datum>, zaplaceno <částka> 🎉“ je teď v adminu mezi šablonami (klíč `course_paid`), předmět i text jdou upravit. Tlačítko kalendáře, částka, datum a čas se dosazují automaticky. Věta „Objednáním kurzu souhlasíte s obchodními podmínkami“ pod podpisem zůstává v kódu (není v šabloně), aby se nedala omylem smazat.
+- Názvy šablon kurzových e-mailů v přehledu odpovídají předmětům, s upřesněním v závorce, komu a kdy chodí (např. „Změna termínu kurzu (účastník)“, „Zrušení termínu kurzu (účastník)“, „Nová přihláška na kurz (admin)“). Samotné předměty a texty ostatních šablon se nemění. Zápis „Milan 2026-11-11, varianta A“: ostatní šablony projdeme po testovacím kole (varianta B).
+
 ## 2026-11-11 — Správa: tlačítka „Smazat kurz“ a „Změnit kurz“ (admin, návrh k sloučení)
 - V detailu kurzu v adminu se tlačítka a nadpisy jmenují „Smazat kurz“ a „Změnit kurz“ (u ostatních rezervací „Smazat rezervaci“ a „Změnit rezervaci“), potvrzení „Opravdu smazat kurz …?“ a „Potvrdit smazání kurzu“. Nápad Milana při testu 2026-11-11. Texty jsou návrh ke schválení.
 
