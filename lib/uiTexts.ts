@@ -179,6 +179,20 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     vars: [],
     text: "Platba proběhne na zabezpečené stránce Stripe. Po zaplacení je vaše místo potvrzené a pošleme vám e-mail.",
   },
+  "kurzy.terms.lead": {
+    group: "Objednávka kurzu",
+    label: "Souhlas s podmínkami: úvod věty",
+    description: "Věta pod tlačítkem Zaplatit. Za ni se vloží odkaz (text níže) a tečka.",
+    vars: [],
+    text: "Objednáním souhlasíte s",
+  },
+  "kurzy.terms.link": {
+    group: "Objednávka kurzu",
+    label: "Souhlas s podmínkami: text odkazu",
+    description: "Odkaz na obchodní podmínky na webu ateliéru.",
+    vars: [],
+    text: "obchodními podmínkami",
+  },
   "kurzy.nav.next": {
     group: "Objednávka kurzu",
     label: "Tlačítko Pokračovat",

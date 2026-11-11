@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Souhlas s obchodními podmínkami u tlačítka Zaplatit (rezervace, návrh k sloučení)
+- Pod tlačítkem „Zaplatit“ na /kurzy a /poukazy je věta „Objednáním souhlasíte s obchodními podmínkami“ s odkazem na https://ateliernapobrezi.cz/obchodni-podminky (nová stránka, otevírá se v novém okně). Bez zaškrtávacího políčka, aby nepřibyl krok. Text na /kurzy jde upravit v adminu (klíče `kurzy.terms.*`). Důvod: storno pravidla jsou už jen v podmínkách, ne v e-mailu. Text je návrh ke schválení.
+
 ## 2026-11-11 — E-mail po zaplacení kurzu: jeden přehledný e-mail a potvrzení od Stripe (rezervace/e-maily, návrh k sloučení)
 - Po zaplacení kurzu dostane zákazník **jeden** e-mail „Potvrzeno: <kurz>, <datum>, zaplaceno <částka>“ (kdy, kde, zaplaceno, v ceně, tlačítko Přidat do kalendáře, věta o Stripe a firmě, informace před kurzem). Dřív chodily dva (potvrzení místa + „Doklad k vaší platbě“). Text schválil Milan 2026-11-11. Bez zmínky o dokladu a vracení peněz (to patří do obchodních podmínek); pod podpisem odkaz „Objednáním kurzu souhlasíte s obchodními podmínkami“.
 - Stripe Checkout teď dostává `receipt_email`, aby zákazníkovi poslal potvrzení o platbě (platí i pro poukazy). V testovacím režimu Stripe potvrzení neposílá, ověření až v ostrém režimu.
