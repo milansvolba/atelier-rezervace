@@ -13,6 +13,7 @@ Varianta B onboardingu (větev `clenstvi-zadost`, PR čeká na Milana):
 - **Schválení:** v administraci Účty je nahoře seznam žádostí. „Schválit a poslat platbu“ jedním klikem založí účet člena a pošle **e-mail 1** (text Milana o platbě kartou, tlačítko Zaplatit členství, odkaz platí 30 dní). „Zamítnout“ žádost uzavře. Dvojklik ani druhý admin nevytvoří duplicitu.
 - **E-mail 2** (vítejte v Klubu, jak se dostat dovnitř, kódy pošle Milan v SMS, tlačítko „Zaber si flek“ níž, obrácené barvy) se pošle **jen jednou po první zaplacené platbě** (webhook `invoice.paid`, jednorázová značka `users.membership_welcome_sent_at`). Člen zdarma ho dostane rovnou po přidání. Tlačítko přihlásí odkazem platným 7 dní (běžný přihlašovací odkaz platí 15 minut).
 - **Potvrzení v administraci:** po schválení i po ručním přidání člena se ukáže zpráva „Nový člen je v klubu a dostal potvrzení“, ale jen když e-mail opravdu odešel (`send()` nově vrací pravda/nepravda). Když ne, ukáže se chyba.
+- Na `/clenstvi` se pojmenování sjednotilo: **Klub na pobřeží** = členství a platforma pro setkávání, **Ateliér na pobřeží** = prostor, kde se to odehrává (úvodní věty před platbou, po platbě i u formuláře).
 - Texty jsou **návrh ke schválení**. Poznámky: kódy ke schránce s klíči nejsou nikde v kódu ani v e-mailu. Cena 302,50 Kč je na `/clenstvi` natvrdo, stejně jako dřív.
 
 ## 2026-11-11 — Stránka po zaplacení členství: text o faktuře (rezervace, text)
