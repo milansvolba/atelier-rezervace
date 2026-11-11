@@ -40,7 +40,7 @@ export interface TemplateForAdmin extends TemplateDef {
 
 // Výchozí texty — pokud admin nic neupraví, používají se tyhle. Zástupné
 // symboly {{promenna}} se při odeslání nahradí skutečnými hodnotami (viz
-// renderTemplate). Patička s "Ateliér na pobřeží · rezervace..." se
+// renderTemplate). Podpis „Ateliér na pobřeží“ s adresou www.ateliernapobrezi.cz se
 // připojuje automaticky při odeslání, není součástí šablony.
 export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
   admin_new_request_kurz: {
