@@ -1,3 +1,5 @@
+import RequestForm from "./RequestForm";
+
 // Stránka členství: sem vede odkaz z uvítacího e-mailu (úvod před platbou) i návrat ze Stripe (poděkování).
 export const dynamic = "force-dynamic";
 
@@ -16,7 +18,7 @@ export default function MembershipPage({ searchParams }: { searchParams: { token
           <>
             <h1 className="text-xl font-semibold">Děkujeme, členství je zaplacené</h1>
             <p className="text-sm text-gray-700">
-              Platba proběhla v pořádku a tvoje členství v Ateliéru na Pobřeží je aktivní.
+              Platba proběhla v pořádku a tvoje členství v Klubu na pobřeží je aktivní.
             </p>
             <ul className="text-sm text-gray-700 space-y-2 list-disc pl-5">
               <li>Faktura ti přijde e-mailem teď stejně jako každý další měsíc.</li>
@@ -41,7 +43,7 @@ export default function MembershipPage({ searchParams }: { searchParams: { token
             {payHref ? (
               <>
                 <p className="text-sm text-gray-700">
-                  Jsi o krok od členství v Ateliéru na Pobřeží. Členství je měsíční předplatné.
+                  Jsi o krok od členství v Klubu na pobřeží. Členství je měsíční předplatné.
                 </p>
                 <p className="text-2xl font-semibold">
                   302,50 Kč <span className="text-sm font-normal text-gray-500">měsíčně, včetně DPH</span>
@@ -61,12 +63,21 @@ export default function MembershipPage({ searchParams }: { searchParams: { token
             ) : (
               <>
                 <p className="text-sm text-gray-700">
-                  Odkaz na platbu členství najdeš v uvítacím e-mailu. Pokud už členem jsi, přihlas se do rezervací
-                  a klikni nahoře na Členství.
+                  Klub na pobřeží je místo, kde se potkávají lidé, kteří rádi tvoří. Členství vám otevře
+                  Ateliér na pobřeží: můžete si v něm rezervovat místo nebo aktivitu, kdykoliv je v kalendáři
+                  volno. Pošlete nám žádost a my se vám ozveme.
                 </p>
-                <a href="/admin" className="block text-center border border-gray-300 rounded-md py-3 font-medium hover:bg-gray-50">
-                  Přihlásit se do rezervací
-                </a>
+                <p className="text-2xl font-semibold">
+                  302,50 Kč <span className="text-sm font-normal text-gray-500">měsíčně, včetně DPH</span>
+                </p>
+                <RequestForm />
+                <p className="text-sm text-gray-600 text-center">
+                  Už členem jste?{" "}
+                  <a href="/admin" className="underline">
+                    Přihlaste se do rezervací
+                  </a>
+                  .
+                </p>
               </>
             )}
           </>

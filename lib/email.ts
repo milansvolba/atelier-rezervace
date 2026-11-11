@@ -48,7 +48,7 @@ async function send(
   html: string,
   meta: { type: string; bookingId?: string; signupId?: string },
   opts?: { replyTo?: string }
-) {
+): Promise<boolean> {
   const recipient = Array.isArray(to) ? to.join(", ") : to;
   const c = getClient();
   if (!c) {
@@ -56,14 +56,16 @@ async function send(
     // ať kvůli chybějícímu klíči nespadne celá žádost/rezervace.
     console.warn(`[email] RESEND_API_KEY není nastavený, e-mail "${subject}" pro ${recipient} se neodeslal.`);
     await logEmail({ ...meta, recipient, subject, status: "skipped", error: "RESEND_API_KEY není nastavený" });
-    return;
+    return false;
   }
   try {
     await c.emails.send({ from: FROM, to, subject, html, ...(opts?.replyTo ? { replyTo: opts.replyTo } : {}) });
     await logEmail({ ...meta, recipient, subject, status: "sent" });
+    return true;
   } catch (err) {
     console.error(`[email] Odeslání "${subject}" pro ${recipient} selhalo:`, err);
     await logEmail({ ...meta, recipient, subject, status: "failed", error: String(err) });
+    return false;
   }
 }
 
@@ -123,28 +125,75 @@ export async function sendMagicLinkEmail(user: { name: string; email: string }, 
   await send(user.email, subject, html, { type: "magic_link" });
 }
 
-// --- Uvítací e-mail pro nově založený účet (rovnou s přihlašovacím odkazem) ---
+// --- E-maily pro členy klubu (NÁVRH textů ke schválení Milanem) ---
+// Vrací true, jen když e-mail opravdu odešel (podle toho se v administraci ukáže potvrzení).
+
+// Tlačítko „Zaplatit členství“: plné černé. Tlačítko „Zaber si flek“: obrácené barvy (bílé s černým ohraničením).
+const BTN_FILLED = "background:#111;color:#fff;border:2px solid #111;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;";
+const BTN_OUTLINE = "background:#fff;color:#111;border:2px solid #111;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;";
+
+// E-mail 1: po schválení žádosti (nebo ručním přidání placeného člena). Jen platba.
+export async function sendMembershipPaymentEmail(user: { name: string; email: string }, payLink: string): Promise<boolean> {
+  const subject = "Vaše žádost o členství je schválená";
+  const html = wrap(`
+    <p>Ahoj ${escapeHtml(user.name)}!</p>
+    <p>Vítej v Klubu na pobřeží. Díky, že do toho jdeš.</p>
+    <p>Kartou zaplatíš přes online platební bránu Stripe. Potom ti přijde potvrzení a odkaz na rezervaci místa v Klubu na pobřeží. S každou další měsíční platbou ti přijde e-mailem potvrzení a faktura. Členství můžeš kdykoliv zrušit v rezervačním systému.</p>
+    <p style="margin-top:20px;"><a href="${payLink}" style="${BTN_FILLED}">Zaplatit členství</a></p>
+    <p style="color:#888;font-size:13px;margin-top:10px;">Tenhle odkaz na platbu platí 30 dní.</p>
+  `);
+  return send(user.email, subject, html, { type: "membership_payment" });
+}
+
+// E-mail 2: po první zaplacené platbě (a hned po přidání člena zdarma). Přístup, jak se dostat dovnitř, tlačítko k rezervacím.
+// Kódy ke schránce s klíči se do e-mailu ani do kódu nikdy nepíšou, posílá je Milan v SMS.
+export async function sendMembershipAccessEmail(user: { name: string; email: string }, loginLink: string): Promise<boolean> {
+  const subject = "Vítejte v Klubu na pobřeží";
+  const html = wrap(`
+    <p>Vítejte, přátelé, v Klubu na pobřeží. Díky, že do toho jdete. Krom jiného jste získali přístup do Ateliéru na pobřeží, kde si můžete <a href="${APP_URL}" style="color:#111;text-decoration:underline;">zarezervovat</a> místo nebo aktivitu, kdykoliv je v kalendáři volno.</p>
+    <p>Do ateliéru se dostanete z ulice Na pobřeží, od kolejí. Na dveřích je poštovní schránka a v ní schránka s klíči. Kódy k ní vám pošleme v SMS.</p>
+    <p style="margin-top:20px;"><a href="${loginLink}" style="${BTN_OUTLINE}">Zaber si flek</a></p>
+    <p style="color:#888;font-size:13px;margin-top:10px;">Tlačítko vás rovnou přihlásí do rezervací. Odkaz platí 7 dní. Potom se stačí přihlásit zadáním e-mailu na rezervace.ateliernapobrezi.cz.</p>
+  `);
+  return send(user.email, subject, html, { type: "membership_access" });
+}
+
+// Přihlašovací odkaz platný 7 dní pro e-mail 2 (běžný přihlašovací odkaz platí jen 15 minut).
+export async function membershipLoginLink(email: string): Promise<string> {
+  const { createMagicLinkToken } = await import("./auth");
+  const token = await createMagicLinkToken(email, "7d");
+  return `${APP_URL}/api/auth/verify?token=${encodeURIComponent(token)}`;
+}
+
+// Uvítání ručně založeného účtu: admin dostane přihlášení, placený člen odkaz na platbu, člen zdarma rovnou přístup.
 export async function sendWelcomeEmail(
   user: { name: string; email: string; role: "admin" | "member" },
   link: string,
   payLink?: string
-) {
-  const subject = "Vítejte v Atelieru na Pobřeží! 🎉";
-  const payBlock = payLink
-    ? `
-    <p style="margin-top:22px;"><strong>Členství v klubu</strong><br>Členství funguje jako měsíční předplatné. Platbu kartou založíš na zabezpečené stránce Stripe, fakturu dostaneš e-mailem. Předplatné můžeš kdykoli zrušit po přihlášení do rezervací.</p>
-    <p style="margin-top:10px;"><a href="${payLink}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaplatit členství</a></p>
-    <p style="color:#888;font-size:13px;margin-top:10px;">Tenhle odkaz na platbu platí 30 dní.</p>`
-    : "";
+): Promise<boolean> {
+  if (payLink) return sendMembershipPaymentEmail(user, payLink);
+  if (user.role === "member") return sendMembershipAccessEmail(user, await membershipLoginLink(user.email));
+  const subject = "Máte přístup do rezervací — Ateliér na pobřeží";
   const html = wrap(`
-    <p>Ahoj ${user.name}!</p>
-    <p>Právě jsi dostal/a přístup do rezervačního systému Atelieru na Pobřeží 🎨.</p>
-    <p style="margin-top:16px;">Teď si můžeš rezervovat místo:</p>
-    <p style="margin-top:10px;"><a href="${link}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaber si flek</a></p>
-    <p style="color:#888;font-size:13px;margin-top:16px;">Tenhle odkaz platí 15 minut. Až vyprší, stačí na přihlašovací stránce znovu zadat svůj e-mail a pošleme nový.</p>
-    ${payBlock}
+    <p>Dobrý den ${escapeHtml(user.name)},</p>
+    <p>právě jste dostali přístup do administrace rezervací Ateliéru na pobřeží.</p>
+    <p style="margin-top:20px;"><a href="${link}" style="${BTN_FILLED}">Přihlásit se</a></p>
+    <p style="color:#888;font-size:13px;margin-top:10px;">Odkaz platí 15 minut. Až vyprší, zadejte na přihlašovací stránce svůj e-mail a pošleme nový.</p>
   `);
-  await send(user.email, subject, html, { type: "welcome" });
+  return send(user.email, subject, html, { type: "welcome" });
+}
+
+// Adminům: někdo požádal o členství na stránce /clenstvi.
+export async function sendAdminMembershipRequestEmail(r: { name: string; email: string; phone: string | null; message: string | null }) {
+  const subject = "Nová žádost o členství: " + r.name.slice(0, 60);
+  const html = wrap(`
+    <p><strong>Nová žádost o členství v klubu</strong></p>
+    <p>Jméno: ${escapeHtml(r.name)}<br>E-mail: <a href="mailto:${escapeHtml(r.email)}">${escapeHtml(r.email)}</a>${r.phone ? "<br>Telefon: " + escapeHtml(r.phone) : ""}</p>
+    ${r.message ? `<p style="white-space:pre-wrap;border-left:3px solid #ddd;margin:16px 0;padding:4px 0 4px 14px;">${escapeHtml(r.message)}</p>` : ""}
+    <p style="margin-top:20px;"><a href="${APP_URL}/admin" style="${BTN_FILLED}">Otevřít a schválit</a></p>
+    <p style="color:#888;font-size:13px;margin-top:10px;">V administraci otevřete Účty, nahoře uvidíte žádosti ke schválení.</p>
+  `);
+  await send(ADMIN_EMAILS, subject, html, { type: "membership_request", ...(r.email ? {} : {}) });
 }
 
 // --- Adminům: nová žádost od veřejnosti (pronájem, nebo poptávka na kurz) ---
