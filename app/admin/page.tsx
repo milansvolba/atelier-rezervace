@@ -1810,7 +1810,6 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
             </svg>
             {session.name} · {isAdmin ? "admin" : "člen"}
           </span>
-          </span>
           {isAdmin && (
             <button onClick={() => setShowMembers(true)} className="text-sm text-gray-500 hover:text-gray-800">
               Účty
