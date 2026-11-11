@@ -28,7 +28,9 @@ export async function POST(req: NextRequest) {
     user.role === "member" && !user.membershipFree
       ? `${appUrl}/clenstvi?token=${encodeURIComponent(await createPayToken(user.id))}`
       : undefined;
-  await sendWelcomeEmail(user, link, payLink);
+  const welcomeEmailSent = await sendWelcomeEmail(user, link, payLink);
+  // Člen zdarma dostává rovnou e-mail s přístupem, ten se už nebude posílat znovu po platbě.
+  if (user.role === "member" && user.membershipFree && welcomeEmailSent) await users.claimWelcomeSent(user.id);
 
-  return NextResponse.json(user, { status: 201 });
+  return NextResponse.json({ ...user, welcomeEmailSent }, { status: 201 });
 }

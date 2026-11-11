@@ -1,6 +1,6 @@
 import { users, AppUser, MembershipStatus } from "./users";
 import { invoiceStore } from "./invoices";
-import { sendAdminInvoiceBasisEmail } from "./email";
+import { sendAdminInvoiceBasisEmail, sendMembershipAccessEmail, membershipLoginLink } from "./email";
 
 // Členství v klubu = měsíční předplatné ve Stripe (Checkout v režimu "subscription").
 // Cena se bere z proměnné STRIPE_MEMBERSHIP_PRICE_ID (ve sandboxu a v ostrém provozu je jiná).
@@ -120,6 +120,14 @@ export async function handleMembershipEvent(event: {
     // Ruční fakturace v Caflou: každá zaplacená faktura předplatného (i první) založí podklad ve frontě
     // „Doklad k vystavení“ a pošle e-mail Milanovi. Chyba tady nesmí shodit webhook (stav členství už je uložen).
     if (event.type === "invoice.paid") {
+      // Uvítací e-mail s přístupem do ateliéru: jen po první zaplacené platbě (claimWelcomeSent projde jen jednou).
+      if (user && (await users.claimWelcomeSent(user.id))) {
+        try {
+          await sendMembershipAccessEmail(user, await membershipLoginLink(user.email));
+        } catch (e) {
+          console.error("[stripe] Uvítací e-mail po platbě se nepodařilo odeslat:", e);
+        }
+      }
       try {
         await queueMembershipInvoice(o, user);
       } catch (e) {

@@ -75,11 +75,11 @@ export function sessionCookieOptions() {
 }
 
 // --- Magic-link přihlašovací token (krátkodobý, samostatný od session) ---
-export async function createMagicLinkToken(email: string): Promise<string> {
+export async function createMagicLinkToken(email: string, expiresIn: string = "15m"): Promise<string> {
   return await new SignJWT({ email, purpose: "login" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("15m")
+    .setExpirationTime(expiresIn)
     .sign(secretKey());
 }
 

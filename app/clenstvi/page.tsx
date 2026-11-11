@@ -1,3 +1,5 @@
+import RequestForm from "./RequestForm";
+
 // Stránka členství: sem vede odkaz z uvítacího e-mailu (úvod před platbou) i návrat ze Stripe (poděkování).
 export const dynamic = "force-dynamic";
 
@@ -61,12 +63,20 @@ export default function MembershipPage({ searchParams }: { searchParams: { token
             ) : (
               <>
                 <p className="text-sm text-gray-700">
-                  Odkaz na platbu členství najdeš v uvítacím e-mailu. Pokud už členem jsi, přihlas se do rezervací
-                  a klikni nahoře na Členství.
+                  Klub na pobřeží je měsíční členství v Ateliéru na pobřeží. Členové si mohou rezervovat místo
+                  nebo aktivitu, kdykoliv je v kalendáři volno. Pošlete nám žádost a my se vám ozveme.
                 </p>
-                <a href="/admin" className="block text-center border border-gray-300 rounded-md py-3 font-medium hover:bg-gray-50">
-                  Přihlásit se do rezervací
-                </a>
+                <p className="text-2xl font-semibold">
+                  302,50 Kč <span className="text-sm font-normal text-gray-500">měsíčně, včetně DPH</span>
+                </p>
+                <RequestForm />
+                <p className="text-sm text-gray-600 text-center">
+                  Už členem jste?{" "}
+                  <a href="/admin" className="underline">
+                    Přihlaste se do rezervací
+                  </a>
+                  .
+                </p>
               </>
             )}
           </>

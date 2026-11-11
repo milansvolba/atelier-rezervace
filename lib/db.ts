@@ -160,6 +160,22 @@ await sql`
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id text`;
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_free boolean NOT NULL DEFAULT false`;
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_ends_at timestamptz`;
+      // Uvítací e-mail po první zaplacené platbě se pošle jen jednou: tady se značí, že už odešel.
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_welcome_sent_at timestamptz`;
+      // Žádosti o členství z úvodní stránky /clenstvi (Chci do klubu). Admin je jedním klikem schválí.
+      await sql`
+        CREATE TABLE IF NOT EXISTS membership_requests (
+          id text PRIMARY KEY,
+          name text NOT NULL,
+          email text NOT NULL,
+          phone text,
+          message text,
+          status text NOT NULL DEFAULT 'pending',
+          ip_hash text,
+          created_at timestamptz NOT NULL DEFAULT now(),
+          decided_at timestamptz
+        )
+      `;
       // Počáteční admini podle specifikace — jde jen o seed, ON CONFLICT nic nepřepíše,
       // pokud si e-mail nebo roli později v adminu upravíte.
       await sql`
