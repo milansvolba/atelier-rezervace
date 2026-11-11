@@ -603,6 +603,8 @@ function fmtCzk(n: number) {
 // Adminům po zaplacení: podklady pro vystavení daňového dokladu v Caflou.
 export async function sendAdminInvoiceBasisEmail(item: InvoiceItem) {
   const b = item.billing;
+  // Soukromé osobě se daňový doklad nevystavuje (stačí potvrzení ze Stripe), upozornění jen u firmy (rozhodnutí Milana 2026-11-11).
+  if (!b?.company && !b?.ico && !b?.taxIds?.length) return;
   const addr = addressLine(b?.address);
   const ids = idsLine(b);
   const paid = item.paidAt ? fmtDate(item.paidAt.slice(0, 10)) : "";

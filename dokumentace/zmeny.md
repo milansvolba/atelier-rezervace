@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — E-mail „Doklad k vystavení“ jen u firem (rezervace, e-maily, návrh k sloučení)
+- Adminům už nechodí e-mail „Doklad k vystavení“ za platbu soukromé osoby (kurz, poukaz, členství), protože jí se daňový doklad nevystavuje a stačí potvrzení ze Stripe. Chodí jen u firmy (název firmy, IČO nebo DIČ). Platba zůstává zapsaná ve frontě dokladů v adminu, aby šlo řešit vratky a přehled pro účetní.
+
 ## 2026-11-11 — Objednávka: soukromá osoba už nikdy nezadává adresu (rezervace, návrh k sloučení)
 - U kurzů i poukazů zmizel text „U objednávky nad 10 000 Kč potřebujeme pro daňový doklad vaši adresu“ a s ním pole pro adresu soukromé osoby (na screenshotu Milana vypadalo, že patří pod „Nakupuji na firmu“). Server adresu u soukromé osoby také nevyžaduje.
 - Důvod: soukromé osobě (nepodnikateli) se daňový doklad nevystavuje, stačí potvrzení o platbě ze Stripe (zákon o DPH ukládá doklad osobám povinným k dani a právnickým osobám; spotřebiteli jen doklad o koupi na žádost). Pravidlo ještě potvrdí účetní Hana.
