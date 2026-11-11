@@ -6,6 +6,16 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Členství: žádost „Chci do klubu“, schválení jedním klikem, dva e-maily, potvrzení v administraci (rezervace, e-maily, databáze)
+
+Varianta B onboardingu (větev `clenstvi-zadost`, PR čeká na Milana):
+- **Žádost:** na `/clenstvi` (bez platebního odkazu) je formulář „Chci do klubu“ (jméno, e-mail, telefon a vzkaz nepovinné, souhlas se zpracováním údajů, past na roboty, omezení počtu žádostí). Ukládá se do nové tabulky `membership_requests` a adminům odejde e-mail „Nová žádost o členství“.
+- **Schválení:** v administraci Účty je nahoře seznam žádostí. „Schválit a poslat platbu“ jedním klikem založí účet člena a pošle **e-mail 1** (text Milana o platbě kartou, tlačítko Zaplatit členství, odkaz platí 30 dní). „Zamítnout“ žádost uzavře. Dvojklik ani druhý admin nevytvoří duplicitu.
+- **E-mail 2** (vítejte v Klubu, jak se dostat dovnitř, kódy pošle Milan v SMS, tlačítko „Zaber si flek“ níž, obrácené barvy) se pošle **jen jednou po první zaplacené platbě** (webhook `invoice.paid`, jednorázová značka `users.membership_welcome_sent_at`). Člen zdarma ho dostane rovnou po přidání. Tlačítko přihlásí odkazem platným 7 dní (běžný přihlašovací odkaz platí 15 minut).
+- **Potvrzení v administraci:** po schválení i po ručním přidání člena se ukáže zpráva „Nový člen je v klubu a dostal potvrzení“, ale jen když e-mail opravdu odešel (`send()` nově vrací pravda/nepravda). Když ne, ukáže se chyba.
+- Na `/clenstvi` se pojmenování sjednotilo: **Klub na pobřeží** = členství a platforma pro setkávání, **Ateliér na pobřeží** = prostor, kde se to odehrává (úvodní věty před platbou, po platbě i u formuláře).
+- Texty jsou **návrh ke schválení**. Poznámky: kódy ke schránce s klíči nejsou nikde v kódu ani v e-mailu. Cena 302,50 Kč je na `/clenstvi` natvrdo, stejně jako dřív.
+
 ## 2026-11-11 — Doklad k vystavení: tlačítko „Vystavit fakturu“ do Caflou (rezervace, vzhled)
 
 Ve frontě „Doklad k vystavení“ je vedle „Vystaveno“ nové tlačítko **Vystavit fakturu** (otevře https://app.caflou.cz/login v nové záložce). „Vystaveno“ je nově černé místo zeleného. Výchozí adresa Caflou v e-mailu „Doklad k vystavení“ je stejná (platí, jen když není nastavená proměnná `CAFLOU_URL`; ta ve Vercelu přebíjí). Soubory `app/admin/page.tsx`, `lib/email.ts`.
