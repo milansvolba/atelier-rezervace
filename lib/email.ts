@@ -81,7 +81,7 @@ function isWholeSpace(resource: Booking["resource"]) {
 function wrap(bodyHtml: string, afterFooterHtml = "") {
   // Logo ateliéru nahoře (soubor public/logo.png, 705×160 px, zobrazí se zmenšené na výšku 36 px).
   const logo = `<p style="margin:0 0 20px;"><a href="https://ateliernapobrezi.cz"><img src="${APP_URL}/logo.png" alt="Ateliér na pobřeží" width="159" height="36" style="display:block;border:0;height:36px;width:auto;"></a></p>`;
-  return `<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;">${logo}${bodyHtml}<p style="margin-top:24px;color:#888;font-size:12px;line-height:1.5;"><strong style="color:#555;">Ateliér na pobřeží</strong><br><a href="https://www.ateliernapobrezi.cz" style="color:#888;">www.ateliernapobrezi.cz</a></p>${afterFooterHtml}</div>`;
+  return `<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;">${logo}${bodyHtml}<p style="margin-top:24px;color:#888;font-size:12px;line-height:1.6;"><strong style="color:#555;">Ateliér na pobřeží</strong><br>Na pobřeží 67, Kolín<br><a href="tel:+420724241721" style="color:#888;text-decoration:none;">+420 724 241 721</a><br><a href="https://www.ateliernapobrezi.cz" style="color:#888;">www.ateliernapobrezi.cz</a></p>${afterFooterHtml}</div>`;
 }
 
 // Sestaví e-mail ze šablony (výchozí, nebo upravená adminem) a odešle ho.

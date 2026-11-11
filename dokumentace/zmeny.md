@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Podpis v e-mailech: doplněna adresa a telefon (e-maily, návrh k sloučení)
+- Podpis všech e-mailů z rezervací: „Ateliér na pobřeží“, „Na pobřeží 67, Kolín“, telefon +420 724 241 721 a www.ateliernapobrezi.cz (Milan 2026-11-11). Navazuje na PR #44.
+
 ## 2026-11-11 — Podpis v e-mailech: Ateliér na pobřeží a www.ateliernapobrezi.cz (e-maily, návrh k sloučení)
 - Patička všech e-mailů z rezervací dřív ukazovala technickou adresu „rezervace.ateliernapobrezi.cz“. Teď je tam podpis „Ateliér na pobřeží“ a pod ním odkaz na hlavní web www.ateliernapobrezi.cz. Platí pro všechny e-maily (zákazník i admin). Text je návrh ke schválení. Případné doplnění podpisu o adresu nebo telefon je na Milanovi.
 
