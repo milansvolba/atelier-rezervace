@@ -8,7 +8,6 @@ import { handleVoucherPaid } from "@/lib/vouchers";
 import { invoiceStore, billingFromSession } from "@/lib/invoices";
 import { czDate } from "@/lib/invoiceFormat";
 import { cleanPhone } from "@/lib/signupContact";
-import { SIMPLIFIED_LIMIT_CZK } from "@/lib/billingInput";
 import { sendAdminNewSignupEmail, sendVoucherEmail, sendAdminNewVoucherEmail, sendAdminInvoiceBasisEmail, sendCoursePaidEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
@@ -94,9 +93,7 @@ export async function POST(req: NextRequest) {
         } catch (e) {
           console.error("[stripe] Nepodařilo se spojit platbu " + sessionId + " s přihláškou:", e);
         }
-        const billing = billingFromSession(obj);
-        const needsInvoice = !!(billing.company || billing.ico) || amount > SIMPLIFIED_LIMIT_CZK;
-        await Promise.all([sendAdminNewSignupEmail(booking, signup), sendCoursePaidEmail(booking, signup, amount, needsInvoice, Number(meta.casting) || 0)]);
+        await Promise.all([sendAdminNewSignupEmail(booking, signup), sendCoursePaidEmail(booking, signup, amount, Number(meta.casting) || 0)]);
         await queueInvoice(sessionId, obj, meta.name, "kurz", "Kurz " + booking.title + " " + czDate(booking.date) + ", " + people + " os.");
       } else {
         console.error("[stripe] Zaplacená session " + sessionId + ": kurz " + bookingId + " už neexistuje.");

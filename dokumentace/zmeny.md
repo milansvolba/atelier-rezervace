@@ -7,8 +7,7 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 ---
 
 ## 2026-11-11 — E-mail po zaplacení kurzu: jeden přehledný e-mail a potvrzení od Stripe (rezervace/e-maily, návrh k sloučení)
-- Po zaplacení kurzu dostane zákazník **jeden** e-mail „Potvrzeno: <kurz>, <datum>, zaplaceno <částka>“ (kdy, kde, zaplaceno, v ceně, tlačítko Přidat do kalendáře, doklad, storno podmínky). Dřív chodily dva (potvrzení místa + „Doklad k vaší platbě“). Text schválil Milan 2026-11-11.
-- Věta o dokladu: soukromá osoba do 10 000 Kč = potvrzení ze Stripe stačí, na firmu stačí odpovědět s IČO. Firma s IČO nebo částka nad 10 000 Kč = „fakturu zašleme zvlášť“ (soulad s pravidly z `ucetnictvi-dph-pravidla-2026-11-11.md`).
+- Po zaplacení kurzu dostane zákazník **jeden** e-mail „Potvrzeno: <kurz>, <datum>, zaplaceno <částka>“ (kdy, kde, zaplaceno, v ceně, tlačítko Přidat do kalendáře, věta o Stripe a firmě, informace před kurzem). Dřív chodily dva (potvrzení místa + „Doklad k vaší platbě“). Text schválil Milan 2026-11-11. Bez zmínky o dokladu a vracení peněz (to patří do obchodních podmínek); pod podpisem odkaz „Objednáním kurzu souhlasíte s obchodními podmínkami“.
 - Stripe Checkout teď dostává `receipt_email`, aby zákazníkovi poslal potvrzení o platbě (platí i pro poukazy). V testovacím režimu Stripe potvrzení neposílá, ověření až v ostrém režimu.
 - Odstraněn starý e-mail `doklad_note`. Zbývá: e-mail poukazu stále slibuje fakturu (`DOKLAD_NOTE`), admin e-mail „Doklad k vystavení“ má větu „Vystavte daňový doklad“ i u soukromých osob do 10 000 Kč.
 
