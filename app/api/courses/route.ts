@@ -39,5 +39,9 @@ export async function GET() {
   });
 
   withCapacity.sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
-  return NextResponse.json(withCapacity);
+  // Krátká sdílená cache na Vercelu: většina návštěvníků dostane odpověď hned, bez probouzení serveru a databáze.
+  // Obsazenost se tím může zpozdit nejvýš o ~minutu; před platbou ji server stejně znovu ověří.
+  return NextResponse.json(withCapacity, {
+    headers: { "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300" },
+  });
 }
