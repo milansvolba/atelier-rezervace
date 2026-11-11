@@ -2011,7 +2011,17 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                   {d.correctionNeeded ? (
                     <button onClick={() => dokladAction(d.id, "correction_done")} className="h-8 px-3 rounded-md border border-gray-300 text-xs shrink-0">Opravný doklad vystaven</button>
                   ) : (
-                    <button onClick={() => dokladAction(d.id, "issued")} className="h-8 px-3 rounded-md bg-green-700 text-white text-xs shrink-0">Vystaveno</button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href="https://app.caflou.cz/login"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-8 px-3 rounded-md border border-gray-900 text-gray-900 text-xs inline-flex items-center hover:bg-gray-50"
+                      >
+                        Vystavit fakturu
+                      </a>
+                      <button onClick={() => dokladAction(d.id, "issued")} className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs hover:bg-black">Vystaveno</button>
+                    </div>
                   )}
                 </div>
               );

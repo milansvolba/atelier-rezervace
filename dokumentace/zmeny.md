@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Doklad k vystavení: tlačítko „Vystavit fakturu“ do Caflou (rezervace, vzhled)
+
+Ve frontě „Doklad k vystavení“ je vedle „Vystaveno“ nové tlačítko **Vystavit fakturu** (otevře https://app.caflou.cz/login v nové záložce). „Vystaveno“ je nově černé místo zeleného. Výchozí adresa Caflou v e-mailu „Doklad k vystavení“ je stejná (platí, jen když není nastavená proměnná `CAFLOU_URL`; ta ve Vercelu přebíjí). Soubory `app/admin/page.tsx`, `lib/email.ts`.
+
 ## 2026-11-11 — Stránka po zaplacení členství: text o faktuře (rezervace, text)
 
 Na stránce „Děkujeme, členství je zaplacené“ první odrážka nově zní „Faktura ti přijde e-mailem teď stejně jako každý další měsíc.“ (návrh od Milana; fakturu členům vystavuje Milan ručně v Caflou, ne Stripe). Soubor `app/clenstvi/page.tsx`.
