@@ -10,6 +10,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 Po kliknutí na „Vystaveno“ se zobrazí jedno okno: „Číslo faktury nebo odkaz na ni v Caflou (nepovinné)“. Co začíná `https://`, se uloží jako odkaz (nový sloupec `payments.invoice_url`), jinak jako číslo faktury. V seznamu „Naposledy vystavené“ je u položky odkaz „Otevřít fakturu“. Server uloží jen adresy `http(s)`, žádné `javascript:`. Soubory `lib/invoices.ts`, `lib/db.ts`, `app/api/admin/doklady/[id]/route.ts`, `app/admin/page.tsx`. Pracovní pravidlo od Milana: časy se uvádějí v pražském čase (SEČ/SELČ), ne v UTC.
 
+## 2026-11-11 — Členství: předmět e-mailu 2 s konfeti (e-maily, text)
+
+Předmět e-mailu 2 (po první platbě) je nově „Vítejte v Klubu na pobřeží 🎉“ (přání Milana). Soubor `lib/email.ts`. Ověřeno při testu: e-mail 2 odešel právě jednou po první platbě, tlačítko „Zaber si flek“ přihlásí člena rovnou do rezervací.
+
 ## 2026-11-11 — Členství: oprava, e-mail 2 po první platbě nechodil (platby, e-maily)
 
 Při testu neodešel e-mail 2 po zaplacení. Příčina: Stripe poslal událost „faktura zaplacena“ (`invoice.paid`) dřív než „platba dokončena“ (`checkout.session.completed`), takže člen ještě neměl uložené číslo zákazníka ve Stripe, nebyl nalezen a e-mail se přeskočil. Oprava: uvítání po platbě zkouší obě události a pošle se právě jednou (značka `membership_welcome_sent_at`). Soubor `lib/membership.ts`. Poučení: události Stripe chodí v libovolném pořadí, nic se nesmí spoléhat na pořadí.
