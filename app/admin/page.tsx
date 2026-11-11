@@ -1794,14 +1794,11 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <span
-            className="flex items-center gap-1.5 text-xs text-gray-700"
-            title={`Přihlášen: ${session.name} (${session.email})`}
-          >
+          <span className="flex items-center gap-1 text-xs text-gray-400">
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
-              className="h-4 w-4 shrink-0 text-gray-500"
+              className="h-4 w-4 shrink-0"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.8"
@@ -1811,11 +1808,8 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
               <circle cx="12" cy="8" r="4" />
               <path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" />
             </svg>
-            <span className="leading-tight">
-              <span className="font-medium">{session.name}</span>
-              <span className="hidden sm:inline text-gray-500"> · {session.email}</span>
-              <span className="text-gray-500"> · {isAdmin ? "admin" : "člen"}</span>
-            </span>
+            {session.name} · {isAdmin ? "admin" : "člen"}
+          </span>
           </span>
           {isAdmin && (
             <button onClick={() => setShowMembers(true)} className="text-sm text-gray-500 hover:text-gray-800">

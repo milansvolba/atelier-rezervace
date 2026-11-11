@@ -6,9 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
-## 2026-11-11 — Rezervace: v hlavičce je vidět, kdo je přihlášený (rezervace, vzhled)
+## 2026-11-11 — Rezervace: ikonka postavy u přihlášeného (rezervace, vzhled)
 
-V horní liště rezervací je u přihlášeného ikonka postavy, jméno, e-mail (na úzkém mobilu jen jméno, e-mail je v bublině po najetí) a role. Dřív tam bylo jen malé světlé jméno. Soubor `app/admin/page.tsx`.
+V horní liště rezervací je před jménem přihlášeného nově malá ikonka postavy. Zbytek (jméno a role) zůstal. Soubor `app/admin/page.tsx`.
 
 ## 2026-11-11 — Stránka po zaplacení členství: text o faktuře (rezervace, text)
 
