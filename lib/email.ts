@@ -538,13 +538,52 @@ export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, si
   ]);
 }
 
+// Kurz zaplacený online: jediný e-mail zákazníkovi (potvrzení místa + platba + doklad + storno podmínky).
+// Text: návrh schválený Milanem 2026-11-11. needsInvoice = firma s IČO nebo částka nad limit zjednodušeného dokladu.
+function weekdayCz(dateISO: string) {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  return ["neděle", "pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota"][new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+}
+
+function shortTime(t: string) {
+  return t.replace(/^0/, "");
+}
+
+export async function sendCoursePaidEmail(booking: Booking, signup: CourseSignup, amountCzk: number, needsInvoice: boolean, castingCount = 0) {
+  const to = signupNotifyTo(signup);
+  if (!to) return;
+  const people = signup.people + " " + (signup.people === 1 ? "osoba" : signup.people <= 4 ? "osoby" : "osob");
+  const stamp = (date: string, time: string) => date.replace(/-/g, "") + "T" + time.replace(":", "") + "00";
+  const calUrl =
+    "https://calendar.google.com/calendar/render?" +
+    new URLSearchParams({
+      action: "TEMPLATE",
+      text: booking.title + " – Ateliér na pobřeží",
+      dates: stamp(booking.date, booking.startTime) + "/" + stamp(booking.date, booking.endTime),
+      ctz: "Europe/Prague",
+      location: "Ateliér na pobřeží, Na pobřeží 67, Kolín",
+      details: "Pohodlné oblečení, které může být od hlíny. Materiál a pomůcky zajišťujeme.",
+    }).toString();
+  const dokladText = needsInvoice
+    ? `Potvrzení o platbě Vám zasílá Stripe samostatně. Fakturu Vám zašleme zvlášť. Chybí-li na ní něco, odpovězte na tento e-mail.`
+    : `Potvrzení o platbě Vám zasílá Stripe samostatně a pro soukromé osoby slouží jako doklad. Potřebujete fakturu na firmu? Odpovězte na tento e-mail a uveďte IČO.`;
+  const html = wrap(
+    `<p>Dobrý den,</p>` +
+      `<p>děkujeme, Vaše místo na kurzu <strong>${esc(booking.title)}</strong> je potvrzené a platba proběhla.</p>` +
+      `<p><strong>Kdy:</strong> ${weekdayCz(booking.date)} ${fmtDate(booking.date)}, ${shortTime(booking.startTime)}–${shortTime(booking.endTime)}<br>` +
+      `<strong>Kde:</strong> <a href="${STUDIO_MAP_URL}">Ateliér na pobřeží, Na pobřeží 67, Kolín</a> (5 minut pěšky od nádraží)<br>` +
+      `<strong>Zaplaceno:</strong> ${fmtKc(amountCzk)}, ${people}${castingCount > 0 ? ", včetně " + castingText(castingCount) : ""}<br>` +
+      `<strong>V ceně:</strong> materiál, vybavení, vedení lektorem a občerstvení</p>` +
+      emailButton(calUrl, "Přidat do kalendáře") +
+      `<p><strong>Doklad:</strong> ${dokladText}</p>` +
+      `<p><strong>Změna nebo zrušení:</strong> 7 a více dní předem vrátíme 100 %, 3 až 6 dní předem 50 %, později platbu nevracíme. Stačí odpovědět na tento e-mail.</p>` +
+      `<p>Těšíme se na Vás.</p>`
+  );
+  await send(to, `Potvrzeno: ${booking.title}, ${fmtDate(booking.date)}, zaplaceno ${fmtKc(amountCzk)}`, html, { type: "course_paid", bookingId: booking.id, signupId: signup.id });
+}
+
 // --- Doklady k platbám ---
 const DOKLAD_NOTE = `<p style="font-size:13px;color:#555;">Potvrzení o platbě ze Stripe není daňový doklad. Daňový doklad (fakturu) vám zašleme samostatně.</p>`;
-
-// Zákazníkovi po zaplacení kurzu: upozornění, že daňový doklad přijde zvlášť.
-export async function sendDokladNoteEmail(to: string, signupId?: string, bookingId?: string) {
-  await send(to, "Doklad k vaší platbě", wrap(`<p>Dobrý den,</p><p>děkujeme za platbu.</p>${DOKLAD_NOTE}`), { type: "doklad_note", signupId, bookingId });
-}
 
 function fmtCzk(n: number) {
   return n.toLocaleString("cs-CZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Kč";
