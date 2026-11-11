@@ -1632,12 +1632,21 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     loadVouchers();
   }
 
-  type DokladItem = { id: string; kind: "kurz" | "poukaz" | "clenstvi"; description: string; amountCzk: number; baseCzk: number; vatCzk: number; paidAt: string; billing: { name: string; company?: string; ico?: string; email: string; address: { line1?: string; line2?: string; city?: string; postalCode?: string; country?: string }; taxIds: { type: string; value: string }[] } | null; invoiceNumber?: string; invoiceUrl?: string; correctionNeeded: boolean; refundedCzk: number; overdue: boolean };
+  type DokladItem = { id: string; kind: "kurz" | "poukaz" | "clenstvi"; description: string; amountCzk: number; baseCzk: number; vatCzk: number; paidAt: string; billing: { name: string; company?: string; ico?: string; email: string; address: { line1?: string; line2?: string; city?: string; postalCode?: string; country?: string }; taxIds: { type: string; value: string }[] } | null; status: "pending" | "issued"; invoiceNumber?: string; invoiceUrl?: string; correctionNeeded: boolean; refundedCzk: number; overdue: boolean };
   const [doklady, setDoklady] = useState<{ open: DokladItem[]; done: DokladItem[] }>({ open: [], done: [] });
 
   async function loadDoklady() {
     const res = await fetch("/api/admin/doklady");
     if (res.ok) setDoklady(await res.json());
+  }
+
+  // Platba vrácená celá a bez vystaveného dokladu: doklad se nevystavuje, položka se jen uzavře.
+  async function dokladVoid(id: string) {
+    if (!window.confirm("Platba byla vrácena celá a doklad nebyl vystaven. Uzavřít položku bez dokladu?")) return;
+    const patch = (body: object) => fetch("/api/admin/doklady/" + id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    await patch({ action: "issued", number: "nevystaveno, vráceno celé" });
+    await patch({ action: "correction_done" });
+    loadDoklady();
   }
 
   async function dokladAction(id: string, action: "issued" | "reopen" | "correction_done") {
@@ -2073,7 +2082,9 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                   <div>
                     <p className="font-medium">
                       {d.billing?.company || d.billing?.name || "—"} · {d.amountCzk.toLocaleString("cs-CZ", { minimumFractionDigits: d.amountCzk % 1 ? 2 : 0 })} Kč
-                      {d.correctionNeeded && <span className="text-red-700"> · vratka: vystavit opravný doklad (vráceno {d.refundedCzk} Kč)</span>}
+                      {d.correctionNeeded && d.status === "pending" && d.refundedCzk >= d.amountCzk && <span className="text-red-700"> · vráceno celé, doklad nevystavovat</span>}
+                      {d.correctionNeeded && d.status === "pending" && d.refundedCzk < d.amountCzk && <span className="text-red-700"> · vráceno {d.refundedCzk} Kč: doklad vystavte jen na zbytek</span>}
+                      {d.correctionNeeded && d.status !== "pending" && <span className="text-red-700"> · vratka: vystavit opravný doklad (vráceno {d.refundedCzk} Kč)</span>}
                       {d.overdue && !d.correctionNeeded && <span className="text-red-700"> · po lhůtě</span>}
                     </p>
                     <p className="text-xs text-gray-500">{d.description}</p>
@@ -2085,7 +2096,9 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                     </p>
                     {icoMissing(d.billing) && <p className="text-xs text-amber-700">Chybí IČO: zákazník nakupuje na firmu. Dohledej ho v ARES (Caflou).</p>}
                   </div>
-                  {d.correctionNeeded ? (
+                  {d.correctionNeeded && d.status === "pending" && d.refundedCzk >= d.amountCzk ? (
+                    <button onClick={() => dokladVoid(d.id)} className="h-8 px-3 rounded-md border border-gray-300 text-xs shrink-0">Uzavřít bez dokladu</button>
+                  ) : d.correctionNeeded && d.status !== "pending" ? (
                     <button onClick={() => dokladAction(d.id, "correction_done")} className="h-8 px-3 rounded-md border border-gray-300 text-xs shrink-0">Opravný doklad vystaven</button>
                   ) : (
                     <div className="flex items-center gap-2 shrink-0">

@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Fronta dokladů: plně vrácená platba bez dokladu (admin, návrh k sloučení)
+- Když je platba vrácená celá a doklad nebyl vystaven, fronta „Doklady k vystavení“ píše „vráceno celé, doklad nevystavovat“ a nabízí tlačítko „Uzavřít bez dokladu“ (po potvrzení položku uzavře a do čísla dokladu zapíše „nevystaveno, vráceno celé“). Při částečné vratce a nevystaveném dokladu píše „vráceno X Kč: doklad vystavte jen na zbytek“. U už vystaveného dokladu zůstává „vratka: vystavit opravný doklad“. Postupy pro různé situace s vratkami a dobropisy: `claude/dobropisy-postup-2026-11-11.md` (návrh, čeká na účetní).
+
 ## 2026-11-11 — Rychlejší načtení termínů na /kurzy (rezervace, návrh k sloučení)
 - `/api/courses` se ukládá do sdílené cache Vercelu na 60 s (`s-maxage=60`, po vypršení se starší odpověď ještě až 5 minut ukáže a na pozadí se obnoví). Příčina pomalého prvního načtení byl studený start serveru a databáze (první volání 4–7 s, další 0,33 s). Vedlejší účinek: počet volných míst a nově vypsaný termín se mohou zobrazit se zpožděním do ~minuty; kapacitu server před platbou stále ověřuje znovu (`app/api/signups/checkout`). Marketingový web má vlastní cache (`inc/courses_cache.php`, 5 minut). Varianta A schválena Milanem 2026-11-11.
 
