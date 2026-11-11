@@ -21,7 +21,9 @@ export type TemplateKey =
   | "signup_decision_approved"
   | "signup_decision_rejected"
   | "course_paid"
-  | "voucher_redeemed";
+  | "voucher_redeemed"
+  | "voucher_buyer"
+  | "signup_cancelled";
 
 export interface TemplateDef {
   label: string;
@@ -212,6 +214,31 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 <p>Při příchodu stačí zmínit kód poukazu. S sebou si vezměte pohodlné oblečení, které může být od hlíny, materiál a pomůcky zajišťujeme.</p>
 <p>Podrobné informace k samotnému kurzu Vám pošleme na tento e-mail včas před jeho konáním.</p>
 <p>Těšíme se na Vás.</p>`,
+  },
+  voucher_buyer: {
+    label: "Váš dárkový poukaz (kupující po zaplacení)",
+    description: "Pošle se kupujícímu hned po zaplacení poukazu: kód, shrnutí a jak poukaz uplatnit. Bloky {{summaryBlock}}, {{messageBlock}} a {{redeemBlock}} se skládají automaticky (termín/tlačítko/kontakt podle toho, jestli je u poukazu vybraný termín), jejich text se mění v kódu, ne tady.",
+    vars: ["amount", "code", "summaryBlock", "messageBlock", "redeemBlock"],
+    subject: "Váš dárkový poukaz {{code}} 🎉",
+    body: `<p>Dobrý den,</p>
+<p>děkujeme za objednávku, platba proběhla v pořádku. Váš dárkový poukaz v hodnotě <strong>{{amount}}</strong>:</p>
+<p style="margin:16px 0 4px;color:#666;font-size:13px;">Kód poukazu</p>
+<p style="display:inline-block;margin:0 0 16px;padding:12px 20px;border:2px solid #111;border-radius:8px;font-size:22px;letter-spacing:2px;"><strong>{{code}}</strong></p>
+{{summaryBlock}}
+{{messageBlock}}
+{{redeemBlock}}
+<p>Poukaz můžete přeposlat obdarovanému: stačí mu předat tento e-mail nebo jen kód.</p>
+<p>Těšíme se na Vás.</p>`,
+  },
+  signup_cancelled: {
+    label: "Storno přihlášky na kurz (zákazník)",
+    description: "Pošle se, když admin stornuje přihlášku na kurz. Blok {{refundBlock}} se přidá jen při vratce peněz.",
+    vars: ["courseTitle", "date", "startTime", "endTime", "refundBlock"],
+    subject: "Storno přihlášky na kurz",
+    body: `<p>Dobrý den,</p>
+<p>Vaše přihláška na kurz <strong>{{courseTitle}}</strong> ({{date}}, {{startTime}}–{{endTime}}) byla stornována.</p>
+{{refundBlock}}
+<p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`,
   },
   signup_decision_rejected: {
     label: "K vaší přihlášce na kurz (zákazník, nelze potvrdit)",
