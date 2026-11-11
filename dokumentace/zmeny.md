@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — E-mail „Doklad k vystavení“ jen u firem (rezervace, e-maily, návrh k sloučení)
+- Adminům už nechodí e-mail „Doklad k vystavení“ za platbu soukromé osoby (kurz, poukaz, členství), protože jí se daňový doklad nevystavuje a stačí potvrzení ze Stripe. Chodí jen u firmy (název firmy, IČO nebo DIČ). Platba zůstává zapsaná ve frontě dokladů v adminu, aby šlo řešit vratky a přehled pro účetní.
+
 ## 2026-11-11 — E-maily: poukaz pro kupujícího a storno přihlášky v šablonách (rezervace, e-maily, návrh k sloučení)
 - E-mail „Váš dárkový poukaz <kód> 🎉“ (kupující po zaplacení) a „Storno přihlášky na kurz“ jsou v adminu mezi šablonami (klíče `voucher_buyer`, `signup_cancelled`), takže jde každé slovo upravit bez programátora. Dynamické části (shrnutí poukazu, tlačítko/termín/kontakt, věta o vratě) se skládají v kódu a do šablony se vkládají značkami `{{summaryBlock}}`, `{{redeemBlock}}`, `{{refundBlock}}` apod.
 - Z e-mailu s poukazem zmizela věta o samostatném daňovém dokladu (v rozporu s účetním pravidlem, Milan: doklad ani vracení v e-mailech zákazníkům nezmiňovat). Opravena chyba „Penize“ a vykání s velkým V (Vám, Vaše) ve stornu. Návrh textu ke schválení.
