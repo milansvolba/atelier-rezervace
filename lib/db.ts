@@ -110,6 +110,7 @@ await sql`
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS invoice_number text`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS invoice_issued_at timestamptz`;
       await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS correction_needed boolean NOT NULL DEFAULT false`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS amount_hal integer`;
       // Dárkové poukazy na kurzy (kód, platnost 1 rok, stav active/redeemed)
       await sql`
         CREATE TABLE IF NOT EXISTS vouchers (

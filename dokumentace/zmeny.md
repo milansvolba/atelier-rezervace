@@ -6,6 +6,22 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Členství: podklad k ruční faktuře po každé platbě (rezervace, větev + PR)
+
+**Proč:** Členství se platí automaticky přes Stripe, ale faktury vystavuje Milan ručně v Caflou (jednotky měsíčně, zatím nejvýš 2 členové). Dosud se při platbě členství jen změnil stav, takže by na fakturu nikdo nemyslel.
+
+**Co se změnilo:**
+- `lib/membership.ts`: při `invoice.paid` (včetně první platby) se z faktury Stripe založí položka ve frontě „Doklad k vystavení“ a odejde e-mail na `INVOICE_EMAILS` (výchozí Milan). Nulové faktury se přeskočí. Duplicitní doručení události duplicitu nevytvoří (id položky = ID faktury Stripe). Chyba při ukládání nesmí shodit webhook.
+- `lib/invoices.ts`, `lib/db.ts`: nový druh „clenstvi“, nový sloupec `payments.amount_hal` (částka v haléřích, protože 302,50 Kč se do celých korun nevejde), metoda `invoiceStore.recordMembership`.
+- `lib/email.ts`: e-mail „Doklad k vystavení“ má tlačítko „Otevřít frontu dokladů“ (u všech druhů dokladů) a u členství i poznámku „měsíční platba členství“.
+- `app/admin/page.tsx`: popisek fronty zmiňuje členství, částky s haléři se zobrazí správně.
+
+**Rozhodnutí Milana (2026-11-11):** varianta B (e-mail s podklady při každé platbě); cena členství 250 Kč bez DPH = **302,50 Kč vč. DPH 21 %** (základ 250,00 + DPH 52,50); Stripe posílá členům potvrzení o platbě (ne faktury), členové tak mají pod kontrolou platby a rušení v portálu.
+
+**Co musí udělat Milan:** ve Stripe založit cenu 302,50 Kč / měsíc (vč. DPH, sazba 21 %) a nastavit její ID do `STRIPE_MEMBERSHIP_PRICE_ID`; ve Stripe vypnout posílání faktur zákazníkům a zapnout potvrzení o platbě. Rozpor v dokumentaci: `ukoly.md` uvádí cenu 249 Kč; platí novější rozhodnutí (302,50 Kč).
+
+---
+
 ## 2026-11-06 — Formulář Firemní akce přes kontaktní cestu, odstavce v referencích, překlep (web)
 
 **Proč:** Revize PHP stránek po opravě odstavců na O ateliéru ukázala, že poptávkový formulář na `/firemni-akce` pořád používá `mailto:`. Stejný problém jako dřív `/kontakt`: Chrome hlásí nezabezpečené odeslání a zpráva nikam neodejde, takže poptávky firem na vánoční workshopy se mohly ztrácet. Vedlejší nálezy: delší reference (více odstavců) se vykreslovaly jako jeden souvislý blok a v obou stránkách kurzů byl překlep „vypsáné“.

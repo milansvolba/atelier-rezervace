@@ -18,7 +18,7 @@ export interface BillingDetails {
   taxIds: { type: string; value: string }[]; // např. { type: "eu_vat", value: "CZ12345678" }
 }
 
-export type InvoiceKind = "kurz" | "poukaz";
+export type InvoiceKind = "kurz" | "poukaz" | "clenstvi";
 
 export interface InvoiceItem {
   id: string; // Stripe session
@@ -94,7 +94,8 @@ export function mergeBilling(stripe: BillingDetails, input: BillingInput | null,
 }
 
 function rowToItem(r: Record<string, unknown>): InvoiceItem {
-  const amountCzk = Number(r.amount_czk ?? 0);
+  // Členství (302,50 Kč) má halíře: přesná částka je v amount_hal, amount_czk je zaokrouhlená.
+  const amountCzk = r.amount_hal != null ? Number(r.amount_hal) / 100 : Number(r.amount_czk ?? 0);
   const { base, vat } = vatBreakdown(amountCzk);
   const paidAt = r.paid_at ? (typeof r.paid_at === "string" ? r.paid_at : (r.paid_at as Date).toISOString()) : "";
   const status = r.invoice_status === "issued" ? "issued" : "pending";
@@ -139,6 +140,19 @@ export const invoiceStore = {
       UPDATE payments SET kind = ${d.kind}, description = ${d.description}, billing = ${JSON.stringify(d.billing)},
         amount_czk = ${Math.round(d.amountCzk)}, paid_at = COALESCE(paid_at, now()), invoice_status = COALESCE(invoice_status, 'pending')
       WHERE id = ${sessionId}
+      RETURNING *
+    `;
+    return rows[0] ? rowToItem(rows[0]) : null;
+  },
+
+  // Členství: po zaplacení faktury předplatného (Stripe invoice.paid) založí řádek ve frontě dokladů.
+  // id = ID faktury Stripe (in_...), takže opakované doručení události nezaloží duplicitu (vrací null).
+  async recordMembership(invoiceId: string, d: { description: string; amountHal: number; billing: BillingDetails; paidAt?: string }): Promise<InvoiceItem | null> {
+    await ensureSchema();
+    const rows = await sql`
+      INSERT INTO payments (id, booking_id, people, status, kind, description, billing, amount_czk, amount_hal, paid_at, invoice_status)
+      VALUES (${invoiceId}, 'clenstvi', 0, 'paid', 'clenstvi', ${d.description}, ${JSON.stringify(d.billing)}, ${Math.round(d.amountHal / 100)}, ${Math.round(d.amountHal)}, ${d.paidAt ?? new Date().toISOString()}, 'pending')
+      ON CONFLICT (id) DO NOTHING
       RETURNING *
     `;
     return rows[0] ? rowToItem(rows[0]) : null;

@@ -1,4 +1,6 @@
 import { users, AppUser, MembershipStatus } from "./users";
+import { invoiceStore } from "./invoices";
+import { sendAdminInvoiceBasisEmail } from "./email";
 
 // Členství v klubu = měsíční předplatné ve Stripe (Checkout v režimu "subscription").
 // Cena se bere z proměnné STRIPE_MEMBERSHIP_PRICE_ID (ve sandboxu a v ostrém provozu je jiná).
@@ -59,6 +61,32 @@ function str(v: unknown): string | undefined {
   return typeof v === "string" && v ? v : undefined;
 }
 
+const cz = (ts: number) => new Date(ts * 1000).toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" }).replace(/\u00a0/g, " ");
+
+// Z faktury Stripe (invoice.paid) vytvoří položku fronty dokladů. Nulové faktury (kupón, zkušební doba) se přeskočí.
+async function queueMembershipInvoice(o: Record<string, unknown>, user: AppUser | null) {
+  const invoiceId = str(o.id);
+  const amountHal = typeof o.amount_paid === "number" ? o.amount_paid : 0;
+  if (!invoiceId || amountHal <= 0) return;
+  const lines = (o.lines as { data?: Array<{ period?: { start?: number; end?: number } }> } | undefined)?.data;
+  const period = lines?.[0]?.period;
+  const range = period?.start && period?.end ? ", " + cz(period.start) + " – " + cz(period.end - 1) : "";
+  const addr = (o.customer_address ?? {}) as { line1?: string; line2?: string; city?: string; postal_code?: string; country?: string };
+  const paidTs = (o.status_transitions as { paid_at?: number } | undefined)?.paid_at;
+  const item = await invoiceStore.recordMembership(invoiceId, {
+    description: "Členství v klubu" + range,
+    amountHal,
+    paidAt: paidTs ? new Date(paidTs * 1000).toISOString() : undefined,
+    billing: {
+      name: str(o.customer_name) || user?.name || "",
+      email: str(o.customer_email) || user?.email || "",
+      address: { line1: addr.line1, line2: addr.line2, city: addr.city, postalCode: addr.postal_code, country: addr.country },
+      taxIds: [],
+    },
+  });
+  if (item) await sendAdminInvoiceBasisEmail(item);
+}
+
 // Zpracuje události Stripe týkající se členství. Vrací true, pokud událost patřila sem
 // (a webhook ji už nemá posílat do větve plateb za kurzy).
 export async function handleMembershipEvent(event: {
@@ -88,6 +116,15 @@ export async function handleMembershipEvent(event: {
     if (user) {
       const status: MembershipStatus = event.type === "invoice.paid" ? "active" : "past_due";
       await users.setMembership(user.id, { status });
+    }
+    // Ruční fakturace v Caflou: každá zaplacená faktura předplatného (i první) založí podklad ve frontě
+    // „Doklad k vystavení“ a pošle e-mail Milanovi. Chyba tady nesmí shodit webhook (stav členství už je uložen).
+    if (event.type === "invoice.paid") {
+      try {
+        await queueMembershipInvoice(o, user);
+      } catch (e) {
+        console.error("[stripe] Podklad k dokladu za členství (faktura " + String(o.id) + ") se nepodařilo uložit:", e);
+      }
     }
     return true;
   }

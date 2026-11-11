@@ -508,12 +508,14 @@ export async function sendAdminInvoiceBasisEmail(item: InvoiceItem) {
   const ids = idsLine(b);
   const paid = item.paidAt ? fmtDate(item.paidAt.slice(0, 10)) : "";
   const who = b?.company || b?.name || item.description;
+  const membership = item.kind === "clenstvi";
   const html = wrap(
     `<p><strong>Vystavte daňový doklad v Caflou.</strong></p>` +
       `<p>Odběratel: ${esc(b?.company || b?.name || "—")}${b?.company && b?.name ? `<br>Kontaktní osoba: ${esc(b.name)}` : ""}<br>E-mail: ${esc(b?.email || "—")}<br>Adresa: ${esc(addr || (item.amountCzk <= SIMPLIFIED_LIMIT_CZK ? `neuvedena (zjednodušený doklad do ${SIMPLIFIED_LIMIT_CZK.toLocaleString("cs-CZ").replace(/\u00a0/g, " ")} Kč)` : "—"))}<br>${ids ? esc(ids) : "IČO/DIČ: neuvedeno (nejspíš fyzická osoba)"}</p>` +
       (icoMissing(b) ? `<p style="background:#fff4d6;padding:8px;"><strong>Pozor: chybí IČO.</strong> Zákazník nakupuje na firmu, ale IČO nevyplnil. Dohledejte ho v ARES (Caflou ho umí načíst podle názvu nebo DIČ).</p>` : "") +
       `<p>Položka: ${esc(item.description)}<br>Celkem vč. DPH 21 %: <strong>${fmtCzk(item.amountCzk)}</strong><br>Základ: ${fmtCzk(item.baseCzk)} · DPH: ${fmtCzk(item.vatCzk)}<br>Datum přijetí platby (DUZP): <strong>${paid}</strong><br>Stripe: ${esc(item.id)}</p>` +
-      `<p>Doklad je už zaplacený (kartou, Stripe). Po vystavení ho v adminu odškrtněte: <a href="${APP_URL}/admin">Otevřít admin</a></p>`
+      `<p>Doklad je už zaplacený (${membership ? "měsíční platba členství, Stripe" : "kartou, Stripe"}). Po vystavení ho v adminu odškrtněte tlačítkem „Vystaveno“.</p>` +
+      emailButton(`${APP_URL}/admin`, "Otevřít frontu dokladů")
   );
-  await send(INVOICE_EMAILS, "Doklad k vystavení: " + who + ", " + fmtCzk(item.amountCzk), html, { type: "invoice_basis" });
+  await send(INVOICE_EMAILS, "Doklad k vystavení: " + who + ", " + fmtCzk(item.amountCzk) + (membership ? " (členství)" : ""), html, { type: "invoice_basis" });
 }
