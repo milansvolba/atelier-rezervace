@@ -8,7 +8,7 @@ import { resolveHeardAbout } from "@/lib/types";
 import { HeardAboutField } from "@/components/HeardAboutField";
 import { spotsPhrase } from "@/lib/invoiceFormat";
 import BillingFields from "@/components/BillingFields";
-import { BillingInput, emptyBilling, needsPrivateAddress } from "@/lib/billingInput";
+import { BillingInput, emptyBilling } from "@/lib/billingInput";
 import { kc, num } from "@/lib/money";
 
 interface CourseCard {
@@ -784,7 +784,7 @@ export default function KurzyPage() {
                     onChange={(e) => setSignupNote(e.target.value)}
                   />
                 </label>
-                {quote && <BillingFields value={billing} onChange={setBilling} needAddress={needsPrivateAddress(quote.grand)} />}
+                {quote && <BillingFields value={billing} onChange={setBilling} />}
                 <HeardAboutField
                   value={heardAbout}
                   onChange={setHeardAbout}

@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Objednávka: soukromá osoba už nikdy nezadává adresu (rezervace, návrh k sloučení)
+- U kurzů i poukazů zmizel text „U objednávky nad 10 000 Kč potřebujeme pro daňový doklad vaši adresu“ a s ním pole pro adresu soukromé osoby (na screenshotu Milana vypadalo, že patří pod „Nakupuji na firmu“). Server adresu u soukromé osoby také nevyžaduje.
+- Důvod: soukromé osobě (nepodnikateli) se daňový doklad nevystavuje, stačí potvrzení o platbě ze Stripe (zákon o DPH ukládá doklad osobám povinným k dani a právnickým osobám; spotřebiteli jen doklad o koupi na žádost). Pravidlo ještě potvrdí účetní Hana.
+- Zaškrtávátko se jmenuje „Nakupuji na firmu (faktura na IČO)“; po zaškrtnutí se ukáže IČO, DIČ, firma a adresa jako dřív. Text návrh ke schválení.
 ## 2026-11-11 — E-maily: poukaz pro kupujícího a storno přihlášky v šablonách (rezervace, e-maily, návrh k sloučení)
 - E-mail „Váš dárkový poukaz <kód> 🎉“ (kupující po zaplacení) a „Storno přihlášky na kurz“ jsou v adminu mezi šablonami (klíče `voucher_buyer`, `signup_cancelled`), takže jde každé slovo upravit bez programátora. Dynamické části (shrnutí poukazu, tlačítko/termín/kontakt, věta o vratě) se skládají v kódu a do šablony se vkládají značkami `{{summaryBlock}}`, `{{redeemBlock}}`, `{{refundBlock}}` apod.
 - Z e-mailu s poukazem zmizela věta o samostatném daňovém dokladu (v rozporu s účetním pravidlem, Milan: doklad ani vracení v e-mailech zákazníkům nezmiňovat). Opravena chyba „Penize“ a vykání s velkým V (Vám, Vaše) ve stornu. Návrh textu ke schválení.
