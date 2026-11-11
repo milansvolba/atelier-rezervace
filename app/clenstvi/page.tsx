@@ -44,11 +44,11 @@ export default function MembershipPage({ searchParams }: { searchParams: { token
                   Jsi o krok od členství v Ateliéru na Pobřeží. Členství je měsíční předplatné.
                 </p>
                 <p className="text-2xl font-semibold">
-                  249 Kč <span className="text-sm font-normal text-gray-500">měsíčně, včetně DPH</span>
+                  302,50 Kč <span className="text-sm font-normal text-gray-500">měsíčně, včetně DPH</span>
                 </p>
                 <ul className="text-sm text-gray-700 space-y-2 list-disc pl-5">
                   <li>Platíš kartou na zabezpečené stránce Stripe. Údaje o kartě k nám nedorazí.</li>
-                  <li>Po každé platbě ti Stripe pošle fakturu e-mailem.</li>
+                  <li>Po každé platbě ti Stripe pošle potvrzení e-mailem.</li>
                   <li>Předplatné můžeš kdykoli zrušit: po přihlášení do rezervací klikni nahoře na Členství.</li>
                 </ul>
                 <a
