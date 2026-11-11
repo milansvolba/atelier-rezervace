@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Členství: oprava, e-mail 2 po první platbě nechodil (platby, e-maily)
+
+Při testu neodešel e-mail 2 po zaplacení. Příčina: Stripe poslal událost „faktura zaplacena“ (`invoice.paid`) dřív než „platba dokončena“ (`checkout.session.completed`), takže člen ještě neměl uložené číslo zákazníka ve Stripe, nebyl nalezen a e-mail se přeskočil. Oprava: uvítání po platbě zkouší obě události a pošle se právě jednou (značka `membership_welcome_sent_at`). Soubor `lib/membership.ts`. Poučení: události Stripe chodí v libovolném pořadí, nic se nesmí spoléhat na pořadí.
+
 ## 2026-11-11 — Členství: žádost „Chci do klubu“, schválení jedním klikem, dva e-maily, potvrzení v administraci (rezervace, e-maily, databáze)
 
 Varianta B onboardingu (větev `clenstvi-zadost`, PR čeká na Milana):
