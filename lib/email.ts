@@ -148,7 +148,7 @@ export async function sendMembershipPaymentEmail(user: { name: string; email: st
 // E-mail 2: po první zaplacené platbě (a hned po přidání člena zdarma). Přístup, jak se dostat dovnitř, tlačítko k rezervacím.
 // Kódy ke schránce s klíči se do e-mailu ani do kódu nikdy nepíšou, posílá je Milan v SMS.
 export async function sendMembershipAccessEmail(user: { name: string; email: string }, loginLink: string): Promise<boolean> {
-  const subject = "Vítejte v Klubu na pobřeží";
+  const subject = "Vítejte v Klubu na pobřeží 🎉";
   const html = wrap(`
     <p>Vítejte, přátelé, v Klubu na pobřeží. Díky, že do toho jdete. Krom jiného jste získali přístup do Ateliéru na pobřeží, kde si můžete <a href="${APP_URL}" style="color:#111;text-decoration:underline;">zarezervovat</a> místo nebo aktivitu, kdykoliv je v kalendáři volno.</p>
     <p>Do ateliéru se dostanete z ulice Na pobřeží, od kolejí. Na dveřích je poštovní schránka a v ní schránka s klíči. Kódy k ní vám pošleme v SMS.</p>
