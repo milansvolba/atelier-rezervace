@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Stránka po zaplacení členství: text o faktuře (rezervace, text)
+
+Na stránce „Děkujeme, členství je zaplacené“ první odrážka nově zní „Faktura ti přijde e-mailem teď stejně jako každý další měsíc.“ (návrh od Milana; fakturu členům vystavuje Milan ručně v Caflou, ne Stripe). Soubor `app/clenstvi/page.tsx`.
+
 ## 2026-11-11 — Stránka /clenstvi: nová cena a text o potvrzení (rezervace, text)
 
 Na úvodní stránce členství byla pevně napsaná stará cena 249 Kč a věta „Stripe pošle fakturu e-mailem“. Opraveno na **302,50 Kč měsíčně vč. DPH** (250 Kč + 21 %) a „Stripe pošle potvrzení e-mailem“ (faktury členům vystavuje Milan ručně v Caflou). Cena je zatím natvrdo v `app/clenstvi/page.tsx`; skutečná částka se strhává podle ceny ve Stripe (`STRIPE_MEMBERSHIP_PRICE_ID`), obě místa musí sedět. Návrh do příště: brát cenu na stránce přímo ze Stripe.
