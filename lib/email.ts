@@ -138,7 +138,7 @@ export async function sendMembershipPaymentEmail(user: { name: string; email: st
   const html = wrap(`
     <p>Ahoj ${escapeHtml(user.name)}!</p>
     <p>Vítej v Klubu na pobřeží. Díky, že do toho jdeš.</p>
-    <p>Kartou zaplatíš přes online platební bránu Stripe. Potom ti přijde potvrzení a odkaz na rezervaci místa v Klubu na pobřeží. S každou další měsíční platbou ti přijde e-mailem potvrzení. Pokud potřebuješ fakturu na firmu, napiš nám. Členství můžeš kdykoliv zrušit v rezervačním systému.</p>
+    <p>Kartou zaplatíš přes online platební bránu Stripe. Potom ti přijde potvrzení a odkaz na rezervaci místa v Klubu na pobřeží. S každou další měsíční platbou ti přijde e-mailem potvrzení. Pokud potřebuješ daňový doklad, napiš Milanovi. Členství můžeš kdykoliv zrušit v rezervačním systému.</p>
     <p style="margin-top:20px;"><a href="${payLink}" style="${BTN_FILLED}">Zaplatit členství</a></p>
     <p style="color:#888;font-size:13px;margin-top:10px;">Tenhle odkaz na platbu platí 30 dní.</p>
   `);
