@@ -23,6 +23,9 @@ const CONTACT_EMAILS = (process.env.CONTACT_EMAILS || "")
   .map((s) => s.trim())
   .filter(Boolean);
 // Podklady k dokladům jdou jen na tyto adresy (proměnná INVOICE_EMAILS, čárkou oddělené); výchozí je Milan.
+// Kam vede tlačítko „Vystavit fakturu v Caflou“ (proměnná CAFLOU_URL, nejlépe odkaz na stránku Nová faktura).
+const CAFLOU_URL = process.env.CAFLOU_URL || "https://app.caflou.com";
+
 const INVOICE_EMAILS = (process.env.INVOICE_EMAILS || "milan.svolba@gmail.com")
   .split(",")
   .map((s) => s.trim())
@@ -514,8 +517,29 @@ export async function sendAdminInvoiceBasisEmail(item: InvoiceItem) {
       `<p>Odběratel: ${esc(b?.company || b?.name || "—")}${b?.company && b?.name ? `<br>Kontaktní osoba: ${esc(b.name)}` : ""}<br>E-mail: ${esc(b?.email || "—")}<br>Adresa: ${esc(addr || (item.amountCzk <= SIMPLIFIED_LIMIT_CZK ? `neuvedena (zjednodušený doklad do ${SIMPLIFIED_LIMIT_CZK.toLocaleString("cs-CZ").replace(/\u00a0/g, " ")} Kč)` : "—"))}<br>${ids ? esc(ids) : "IČO/DIČ: neuvedeno (nejspíš fyzická osoba)"}</p>` +
       (icoMissing(b) ? `<p style="background:#fff4d6;padding:8px;"><strong>Pozor: chybí IČO.</strong> Zákazník nakupuje na firmu, ale IČO nevyplnil. Dohledejte ho v ARES (Caflou ho umí načíst podle názvu nebo DIČ).</p>` : "") +
       `<p>Položka: ${esc(item.description)}<br>Celkem vč. DPH 21 %: <strong>${fmtCzk(item.amountCzk)}</strong><br>Základ: ${fmtCzk(item.baseCzk)} · DPH: ${fmtCzk(item.vatCzk)}<br>Datum přijetí platby (DUZP): <strong>${paid}</strong><br>Stripe: ${esc(item.id)}</p>` +
-      `<p>Doklad je už zaplacený (${membership ? "měsíční platba členství, Stripe" : "kartou, Stripe"}). Po vystavení ho v adminu odškrtněte tlačítkem „Vystaveno“.</p>` +
-      emailButton(`${APP_URL}/admin`, "Otevřít frontu dokladů")
+      `<p>Doklad je už zaplacený (${membership ? "měsíční platba členství, Stripe" : "kartou, Stripe"}). Po vystavení ho v adminu odškrtněte tlačítkem „Vystaveno“, jinak Vám bude každý den chodit připomínka: <a href="${APP_URL}/admin">otevřít admin</a>.</p>` +
+      emailButton(CAFLOU_URL, "Vystavit fakturu v Caflou")
   );
   await send(INVOICE_EMAILS, "Doklad k vystavení: " + who + ", " + fmtCzk(item.amountCzk) + (membership ? " (členství)" : ""), html, { type: "invoice_basis" });
+}
+
+// Denní připomínka (cron): souhrn dokladů, které ještě nejsou odškrtnuté jako vystavené.
+export async function sendInvoiceReminderEmail(items: InvoiceItem[]) {
+  if (items.length === 0) return;
+  const now = Date.now();
+  const rows = items
+    .map((i) => {
+      const days = i.paidAt ? Math.max(0, Math.floor((now - new Date(i.paidAt).getTime()) / 86400000)) : 0;
+      const who = i.billing?.company || i.billing?.name || "—";
+      const label = i.correctionNeeded ? "opravný doklad po vratce" : i.kind === "clenstvi" ? "členství" : i.kind === "poukaz" ? "poukaz" : "kurz";
+      return `<li>${esc(who)} · ${fmtCzk(i.amountCzk)} · ${esc(i.description)} (${label}, zaplaceno ${i.paidAt ? fmtDate(i.paidAt.slice(0, 10)) : "—"}, čeká ${days} dn.)</li>`;
+    })
+    .join("");
+  const html = wrap(
+    `<p><strong>Připomínka: nevystavené doklady (${items.length}).</strong></p><ul>${rows}</ul>` +
+      `<p>Vystavte doklady v Caflou a v adminu je odškrtněte tlačítkem „Vystaveno“. Připomínka chodí každý den, dokud fronta není prázdná.</p>` +
+      emailButton(CAFLOU_URL, "Vystavit fakturu v Caflou") +
+      `<p><a href="${APP_URL}/admin">Otevřít frontu dokladů v adminu</a></p>`
+  );
+  await send(INVOICE_EMAILS, "Připomínka: nevystavené doklady (" + items.length + ")", html, { type: "invoice_reminder" });
 }

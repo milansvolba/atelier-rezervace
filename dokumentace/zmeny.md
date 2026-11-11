@@ -14,11 +14,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 - `lib/membership.ts`: při `invoice.paid` (včetně první platby) se z faktury Stripe založí položka ve frontě „Doklad k vystavení“ a odejde e-mail na `INVOICE_EMAILS` (výchozí Milan). Nulové faktury se přeskočí. Duplicitní doručení události duplicitu nevytvoří (id položky = ID faktury Stripe). Chyba při ukládání nesmí shodit webhook.
 - `lib/invoices.ts`, `lib/db.ts`: nový druh „clenstvi“, nový sloupec `payments.amount_hal` (částka v haléřích, protože 302,50 Kč se do celých korun nevejde), metoda `invoiceStore.recordMembership`.
 - `lib/email.ts`: e-mail „Doklad k vystavení“ má tlačítko „Otevřít frontu dokladů“ (u všech druhů dokladů) a u členství i poznámku „měsíční platba členství“.
+- **MVP upřesnění Milana (11. 11.):** tlačítko v e-mailu vede do Caflou (proměnná `CAFLOU_URL`, výchozí `https://app.caflou.com`, nejlépe nastavit na stránku „Nová faktura“); odkaz do adminu je v textu. Denní připomínka: `app/api/cron/doklady-pripominka` (Vercel Cron v `vercel.json`, denně 07:00 UTC, chráněno `CRON_SECRET`) pošle souhrn všech nevystavených dokladů (kurzy, poukazy, členství), dokud nejsou odškrtnuté. Položky mladší ~20 hodin se nepřipomínají (už dostaly e-mail po platbě).
 - `app/admin/page.tsx`: popisek fronty zmiňuje členství, částky s haléři se zobrazí správně.
 
 **Rozhodnutí Milana (2026-11-11):** varianta B (e-mail s podklady při každé platbě); cena členství 250 Kč bez DPH = **302,50 Kč vč. DPH 21 %** (základ 250,00 + DPH 52,50); Stripe posílá členům potvrzení o platbě (ne faktury), členové tak mají pod kontrolou platby a rušení v portálu.
 
-**Co musí udělat Milan:** ve Stripe založit cenu 302,50 Kč / měsíc (vč. DPH, sazba 21 %) a nastavit její ID do `STRIPE_MEMBERSHIP_PRICE_ID`; ve Stripe vypnout posílání faktur zákazníkům a zapnout potvrzení o platbě. Rozpor v dokumentaci: `ukoly.md` uvádí cenu 249 Kč; platí novější rozhodnutí (302,50 Kč).
+**Co musí udělat Milan:** do Vercelu přidat `CRON_SECRET` (libovolný dlouhý náhodný řetězec) a `CAFLOU_URL`; ve Stripe založit cenu 302,50 Kč / měsíc (vč. DPH, sazba 21 %) a nastavit její ID do `STRIPE_MEMBERSHIP_PRICE_ID`; ve Stripe vypnout posílání faktur zákazníkům a zapnout potvrzení o platbě. Rozpor v dokumentaci: `ukoly.md` uvádí cenu 249 Kč; platí novější rozhodnutí (302,50 Kč).
 
 ---
 
