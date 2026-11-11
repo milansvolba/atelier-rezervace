@@ -20,7 +20,8 @@ export type TemplateKey =
   | "signup_received"
   | "signup_decision_approved"
   | "signup_decision_rejected"
-  | "course_paid";
+  | "course_paid"
+  | "voucher_redeemed";
 
 export interface TemplateDef {
   label: string;
@@ -194,6 +195,22 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 <p style="margin:18px 0;"><a href="{{calendarUrl}}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Přidat do kalendáře</a></p>
 <p>Potvrzení o platbě Vám zasílá platební brána Stripe samostatně. Chcete-li kurz objednat na firmu, ozvěte se nám a vyřešíme to.</p>
 <p>Podrobné informace k samotnému kurzu včetně mapy Vám pošleme na tento e-mail včas před jeho konáním.</p>
+<p>Těšíme se na Vás.</p>`,
+  },
+  voucher_redeemed: {
+    label: "Potvrzeno: poukaz uplatněn 🎉 (obdarovaný po uplatnění)",
+    description: "Pošle se tomu, kdo na /kurzy uplatnil dárkový poukaz a vybral termín: místo je potvrzené hned, bez platby.",
+    vars: ["courseTitle", "weekday", "date", "startTime", "endTime", "code", "people", "castingNote", "calendarUrl"],
+    subject: "Potvrzeno: {{courseTitle}}, {{date}}, uplatněn poukaz 🎉",
+    body: `<p>Dobrý den,</p>
+<p>poukaz <strong>{{code}}</strong> je uplatněný a Vaše místo na kurzu <strong>{{courseTitle}}</strong> je potvrzené.</p>
+<p><strong>Kdy:</strong> {{weekday}} {{date}}, {{startTime}}–{{endTime}}<br>
+<strong>Kde:</strong> <a href="https://mapy.com/cs/zakladni?q=Na%20pob%C5%99e%C5%BE%C3%AD%2067%2C%20Kol%C3%ADn">Ateliér na pobřeží, Na pobřeží 67, Kolín</a> (5 minut pěšky od nádraží)<br>
+<strong>Počet osob:</strong> {{people}}{{castingNote}}<br>
+<strong>V ceně:</strong> materiál, vybavení, vedení lektorem a občerstvení</p>
+<p style="margin:18px 0;"><a href="{{calendarUrl}}" style="background:#111;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Přidat do kalendáře</a></p>
+<p>Při příchodu stačí zmínit kód poukazu. S sebou si vezměte pohodlné oblečení, které může být od hlíny, materiál a pomůcky zajišťujeme.</p>
+<p>Podrobné informace k samotnému kurzu Vám pošleme na tento e-mail včas před jeho konáním.</p>
 <p>Těšíme se na Vás.</p>`,
   },
   signup_decision_rejected: {

@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Poukaz: nová hláška u použitého kódu a e-mail o uplatnění v šablonách (rezervace, e-maily, návrh k sloučení)
+- U už uplatněného poukazu na /kurzy je červená hláška: „Tenhle poukaz už někdo využil. Nejste si toho vědomi? Napište nám na rezervace@ateliernapobrezi.cz a společně to zkusíme vyřešit.“ (text Milana 2026-11-11, návrh ke schválení). Platí na stránce i na serveru při uplatnění.
+- E-mail o uplatnění poukazu obdarovanému je v adminu mezi šablonami (klíč `voucher_redeemed`), předmět „Potvrzeno: <kurz>, <datum>, uplatněn poukaz 🎉“, s tlačítkem „Přidat do kalendáře“ (jako e-mail po platbě kurzu). E-mail pro admina o uplatnění zůstává v kódu. Poukazy a kalendář sdílejí pomocnou funkci `calendarUrlFor`.
+
 ## 2026-11-11 — Poukazy: výběr kurzu jako výběrové pole (rezervace, návrh k sloučení)
 - Na /poukazy je kurz (hlava, reliéf) v rozbalovacím poli jako Termín, ne jako přepínače (nápad Milana při testu 2026-11-11). Důvod: nové typy kurzů se do seznamu přidají bez zahlcení stránky. Chování, ceny a předvyplnění z odkazu `?kurz=` se nemění.
 
