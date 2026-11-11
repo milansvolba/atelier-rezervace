@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Souhlas s obchodními podmínkami u tlačítka Zaplatit (rezervace, návrh k sloučení)
+- Pod tlačítkem „Zaplatit“ na /kurzy a /poukazy je věta „Objednáním souhlasíte s obchodními podmínkami“ s odkazem na https://ateliernapobrezi.cz/obchodni-podminky (nová stránka, otevírá se v novém okně). Bez zaškrtávacího políčka, aby nepřibyl krok. Text na /kurzy jde upravit v adminu (klíče `kurzy.terms.*`). Důvod: storno pravidla jsou už jen v podmínkách, ne v e-mailu. Text je návrh ke schválení.
+
 ## 2026-11-11 — Kurzy: přehledné termíny, odkaz z marketingu a rychlejší načtení (rezervace, návrh k sloučení)
 
 Důvod: stránka /kurzy nebyla intuitivní (kroky „Vyberte kurz → Koupit → Pro koho?“ před termínem, po kliknutí na „Pro jednotlivce“ nebyla vidět změna, načítání ~5 s bez zpětné vazby, odkaz z marketingového webu nepředvybral termín). Rešerše a zdroje: `claude/ux-kurzy-resers-2026-11-11.md` (NN/g, Baymard). Co se mění: (1) termíny jsou vidět hned, krok „Vyberte kurz / Koupit / Pro koho?“ je pryč; filtr podle kurzu se ukáže jen při více tématech; (2) `/kurzy?termin=<id>` rovnou otevře přihlášku na daný termín, u zaniklého nebo plného termínu se ukáže hláška; (3) každý termín ukazuje délku, místo, co je v ceně a podmínky zrušení (texty převzaté z webu a obchodních podmínek, upravitelné v `lib/uiTexts.ts`, návrh ke schválení); (4) při načítání se ukáže kostra karet; (5) `/api/courses` se ptá databáze na obsazenost jedním dotazem a čte rezervace a firemní příznaky současně (názvy polí beze změny, marketingový web se tím nerozbije). Soubory `app/kurzy/page.tsx`, `lib/uiTexts.ts`, `app/api/courses/route.ts`, `lib/signups.ts`. Nahrazuje PR č. 34. Po nasazení upravit odkazy „Přihlásit se →“ na marketingovém webu (`kurz-modelovani-hlavy.php`, `kurz-relief.php`) na `/kurzy?termin=<id>`.

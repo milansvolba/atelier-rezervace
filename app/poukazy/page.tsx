@@ -245,6 +245,10 @@ export default function PoukazyPage() {
           {busy ? "Přesměrovávám na platbu…" : "Zaplatit " + kc(price.total)}
         </button>
         <p className="text-xs text-gray-500">Platba proběhne na zabezpečené stránce Stripe. Poukaz vám přijde e-mailem hned po zaplacení.</p>
+        <p className="text-xs text-gray-500">
+          Objednáním souhlasíte s{" "}
+          <a href="https://ateliernapobrezi.cz/obchodni-podminky" target="_blank" rel="noopener noreferrer" className="underline">obchodními podmínkami</a>.
+        </p>
       </form>
     </main>
   );

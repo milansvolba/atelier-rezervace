@@ -886,6 +886,12 @@ export default function KurzyPage() {
                   </button>
                 </div>
                 {quote && <p className="text-xs text-gray-500">{t("kurzy.pay.hint")}</p>}
+                {quote && (
+                  <p className="text-xs text-gray-500">
+                    {t("kurzy.terms.lead")}{" "}
+                    <a href="https://ateliernapobrezi.cz/obchodni-podminky" target="_blank" rel="noopener noreferrer" className="underline">{t("kurzy.terms.link")}</a>.
+                  </p>
+                )}
               </div>
             )}
           </div>
