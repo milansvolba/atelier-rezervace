@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Propadlý poukaz: hláška se stejnou nabídkou pomoci (rezervace, návrh k sloučení)
+- Hláška u poukazu s prošlou platností je nově: „Platnost poukazu vypršela. Nejste si toho vědomi? Napište nám na rezervace@ateliernapobrezi.cz a společně to zkusíme vyřešit.“ (stejná formulace jako u už použitého poukazu; připomínka Milana při testu 2026-11-12). Platí na stránce i při uplatnění. Text návrh ke schválení.
+
 ## 2026-11-12 — E-mail s poukazem: věta o předání obdarovanému (rezervace, e-maily, návrh k sloučení)
 - Ve výchozím textu šablony `voucher_buyer` je nová věta: „Obdarovanému stačí předat jen kód poukazu. Pozor: pokud mu přepošlete celý tento e-mail, dozví se i cenu poukazu.“ (původní věta radila přeposlat celý e-mail, což by prozradilo cenu; připomínka Milana 2026-11-11). Text návrh ke schválení, graficky pěkný poukaz bez ceny se řeší později.
 - Pokud už byla šablona v adminu upravena, platí uložený text; změnu pak provést ručně v adminu.
