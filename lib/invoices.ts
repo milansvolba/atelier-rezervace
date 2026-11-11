@@ -31,6 +31,7 @@ export interface InvoiceItem {
   billing: BillingDetails | null;
   status: "pending" | "issued";
   invoiceNumber?: string;
+  invoiceUrl?: string;
   issuedAt?: string;
   correctionNeeded: boolean;
   refundedCzk: number;
@@ -117,6 +118,7 @@ function rowToItem(r: Record<string, unknown>): InvoiceItem {
     billing,
     status,
     invoiceNumber: (r.invoice_number as string) ?? undefined,
+    invoiceUrl: (r.invoice_url as string) ?? undefined,
     issuedAt: r.invoice_issued_at ? (typeof r.invoice_issued_at === "string" ? r.invoice_issued_at : (r.invoice_issued_at as Date).toISOString()) : undefined,
     correctionNeeded: Boolean(r.correction_needed),
     refundedCzk: Number(r.refunded_czk ?? 0),
@@ -172,9 +174,20 @@ export const invoiceStore = {
     return { open: open.map(rowToItem), done: done.map(rowToItem) };
   },
 
-  async markIssued(id: string, number?: string): Promise<void> {
+  // Odkaz na fakturu (např. v Caflou) se uloží jen jako http(s) adresa, nic jiného (ochrana proti odkazům typu javascript:).
+  async markIssued(id: string, number?: string, url?: string): Promise<void> {
     await ensureSchema();
-    await sql`UPDATE payments SET invoice_status = 'issued', invoice_number = ${number?.trim() || null}, invoice_issued_at = now() WHERE id = ${id}`;
+    let safeUrl: string | null = null;
+    const raw = (url || "").trim();
+    if (raw && raw.length <= 500) {
+      try {
+        const u = new URL(raw);
+        if (u.protocol === "https:" || u.protocol === "http:") safeUrl = u.toString();
+      } catch {
+        safeUrl = null;
+      }
+    }
+    await sql`UPDATE payments SET invoice_status = 'issued', invoice_number = ${number?.trim() || null}, invoice_url = ${safeUrl}, invoice_issued_at = now() WHERE id = ${id}`;
   },
 
   async reopen(id: string): Promise<void> {
