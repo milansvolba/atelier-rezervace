@@ -16,6 +16,10 @@ Varianta B onboardingu (větev `clenstvi-zadost`, PR čeká na Milana):
 - Na `/clenstvi` se pojmenování sjednotilo: **Klub na pobřeží** = členství a platforma pro setkávání, **Ateliér na pobřeží** = prostor, kde se to odehrává (úvodní věty před platbou, po platbě i u formuláře).
 - Texty jsou **návrh ke schválení**. Poznámky: kódy ke schránce s klíči nejsou nikde v kódu ani v e-mailu. Cena 302,50 Kč je na `/clenstvi` natvrdo, stejně jako dřív.
 
+## 2026-11-11 — Rezervace: ikonka postavy u přihlášeného (rezervace, vzhled)
+
+V horní liště rezervací je před jménem přihlášeného nově malá ikonka postavy. Zbytek (jméno a role) zůstal. Soubor `app/admin/page.tsx`.
+
 ## 2026-11-11 — Doklad k vystavení: tlačítko „Vystavit fakturu“ do Caflou (rezervace, vzhled)
 
 Ve frontě „Doklad k vystavení“ je vedle „Vystaveno“ nové tlačítko **Vystavit fakturu** (otevře https://app.caflou.cz/login v nové záložce). „Vystaveno“ je nově černé místo zeleného. Výchozí adresa Caflou v e-mailu „Doklad k vystavení“ je stejná (platí, jen když není nastavená proměnná `CAFLOU_URL`; ta ve Vercelu přebíjí). Soubory `app/admin/page.tsx`, `lib/email.ts`.
