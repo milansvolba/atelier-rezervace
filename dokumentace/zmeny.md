@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Poukazy: výběr kurzu jako výběrové pole (rezervace, návrh k sloučení)
+- Na /poukazy je kurz (hlava, reliéf) v rozbalovacím poli jako Termín, ne jako přepínače (nápad Milana při testu 2026-11-11). Důvod: nové typy kurzů se do seznamu přidají bez zahlcení stránky. Chování, ceny a předvyplnění z odkazu `?kurz=` se nemění.
+
 ## 2026-11-11 — Podpis v e-mailech: doplněna adresa a telefon (e-maily, návrh k sloučení)
 - Podpis všech e-mailů z rezervací: „Ateliér na pobřeží“, „Na pobřeží 67, Kolín“, telefon +420 724 241 721 a www.ateliernapobrezi.cz (Milan 2026-11-11). Navazuje na PR #44.
 
