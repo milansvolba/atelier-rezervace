@@ -7,7 +7,7 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 ---
 
 ## 2026-11-11 — Podpis v e-mailech: Ateliér na pobřeží a www.ateliernapobrezi.cz (e-maily, návrh k sloučení)
-- Patička všech e-mailů z rezervací dřív ukazovala technickou adresu „rezervace.ateliernapobrezi.cz“. Teď je tam podpis „Ateliér na pobřeží“ a pod ním odkaz na hlavní web www.ateliernapobrezi.cz. Platí pro všechny e-maily (zákazník i admin). Text je návrh ke schválení. Případné doplnění podpisu o adresu nebo telefon je na Milanovi.
+- Patička všech e-mailů z rezervací dřív ukazovala technickou adresu „rezervace.ateliernapobrezi.cz“. Teď je tam podpis „Ateliér na pobřeží“ a pod ním odkaz na hlavní web www.ateliernapobrezi.cz. Platí pro všechny e-maily (zákazník i admin). Text je návrh ke schválení. Podpis obsahuje i adresu „Na pobřeží 67, Kolín“ a telefon +420 724 241 721 (Milan 2026-11-11).
 
 ## 2026-11-11 — Spojený e-mail po platbě kurzu v šablonách + konfeta v předmětu (e-maily, návrh k sloučení)
 - E-mail „Potvrzeno: <kurz>, <datum>, zaplaceno <částka> 🎉“ je teď v adminu mezi šablonami (klíč `course_paid`), předmět i text jdou upravit. Tlačítko kalendáře, částka, datum a čas se dosazují automaticky. Věta „Objednáním kurzu souhlasíte s obchodními podmínkami“ pod podpisem zůstává v kódu (není v šabloně), aby se nedala omylem smazat.
