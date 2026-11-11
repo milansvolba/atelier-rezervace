@@ -21,7 +21,7 @@ export default function MembershipPage({ searchParams }: { searchParams: { token
               Platba proběhla v pořádku a tvoje členství v Klubu na pobřeží je aktivní.
             </p>
             <ul className="text-sm text-gray-700 space-y-2 list-disc pl-5">
-              <li>Faktura ti přijde e-mailem teď stejně jako každý další měsíc.</li>
+              <li>Potvrzení o platbě ti přijde e-mailem teď stejně jako každý další měsíc.</li>
               <li>Rezervace ateliéru, pingpongu a stolů najdeš po přihlášení.</li>
               <li>Předplatné můžeš kdykoli zrušit: po přihlášení klikni nahoře na Členství.</li>
             </ul>
