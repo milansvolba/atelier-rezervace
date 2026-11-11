@@ -541,11 +541,6 @@ export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, si
 // --- Doklady k platbám ---
 const DOKLAD_NOTE = `<p style="font-size:13px;color:#555;">Potvrzení o platbě ze Stripe není daňový doklad. Daňový doklad (fakturu) vám zašleme samostatně.</p>`;
 
-// Zákazníkovi po zaplacení kurzu: upozornění, že daňový doklad přijde zvlášť.
-export async function sendDokladNoteEmail(to: string, signupId?: string, bookingId?: string) {
-  await send(to, "Doklad k vaší platbě", wrap(`<p>Dobrý den,</p><p>děkujeme za platbu.</p>${DOKLAD_NOTE}`), { type: "doklad_note", signupId, bookingId });
-}
-
 function fmtCzk(n: number) {
   return n.toLocaleString("cs-CZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Kč";
 }
