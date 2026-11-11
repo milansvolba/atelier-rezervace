@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — E-mail s poukazem: věta o předání obdarovanému (rezervace, e-maily, návrh k sloučení)
+- Ve výchozím textu šablony `voucher_buyer` je nová věta: „Obdarovanému stačí předat jen kód poukazu. Pozor: pokud mu přepošlete celý tento e-mail, dozví se i cenu poukazu.“ (původní věta radila přeposlat celý e-mail, což by prozradilo cenu; připomínka Milana 2026-11-11). Text návrh ke schválení, graficky pěkný poukaz bez ceny se řeší později.
+- Pokud už byla šablona v adminu upravena, platí uložený text; změnu pak provést ručně v adminu.
+
 ## 2026-11-11 — E-mail „Doklad k vystavení“ jen u firem (rezervace, e-maily, návrh k sloučení)
 - Adminům už nechodí e-mail „Doklad k vystavení“ za platbu soukromé osoby (kurz, poukaz, členství), protože jí se daňový doklad nevystavuje a stačí potvrzení ze Stripe. Chodí jen u firmy (název firmy, IČO nebo DIČ). Platba zůstává zapsaná ve frontě dokladů v adminu, aby šlo řešit vratky a přehled pro účetní.
 
