@@ -395,15 +395,17 @@ export async function sendSignupReceivedEmail(booking: Booking, signup: CourseSi
 // --- Přihlášenému: rozhodnutí o přihlášce ---
 // Storno přihlášky na kurz zadané adminem (s případnou vratkou).
 export async function sendSignupCancelledEmail(booking: Booking, signup: CourseSignup, refundCzk: number) {
-  const refundLine = refundCzk > 0
-    ? `<p>Vrátíme vám <strong>${refundCzk} Kč</strong> na kartu, kterou jste platili. Penize obvykle dorazí do 5–10 pracovních dnů.</p>`
-    : "";
-  const html = wrap(
-    `<p>Dobrý den,</p><p>vaše přihláška na kurz <strong>${booking.title}</strong> (${fmtDate(booking.date)}, ${booking.startTime}–${booking.endTime}) byla stornována.</p>${refundLine}<p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`
-  );
   const to = signupNotifyTo(signup);
   if (!to) return;
-  await send(to, "Storno přihlášky na kurz", html, { type: "signup_cancelled", bookingId: booking.id, signupId: signup.id });
+  const refundBlock = refundCzk > 0
+    ? `<p>Vrátíme Vám <strong>${refundCzk} Kč</strong> na kartu, kterou jste platili. Peníze obvykle dorazí do 5–10 pracovních dnů.</p>`
+    : "";
+  await sendFromTemplate(
+    "signup_cancelled",
+    to,
+    { courseTitle: booking.title, date: fmtDate(booking.date), startTime: shortTime(booking.startTime), endTime: shortTime(booking.endTime), refundBlock },
+    { bookingId: booking.id, signupId: signup.id }
+  );
 }
 
 export async function sendSignupDecisionEmail(booking: Booking, signup: CourseSignup, approved: boolean) {
@@ -474,18 +476,12 @@ export async function sendVoucherEmail(v: Voucher, booking?: Booking) {
       emailButton(`${APP_URL}/kurzy?poukaz=${encodeURIComponent(v.code)}`, "Využít poukaz a vybrat termín") +
       `<p style="color:#666;font-size:13px;">Kdyby tlačítko nešlo otevřít, zadá kód <strong>${esc(v.code)}</strong> ručně na <a href="${APP_URL}/kurzy">rezervace.ateliernapobrezi.cz/kurzy</a>.</p>`;
   const msg = v.message ? `<p>Vzkaz od kupujícího:<br><em>${esc(v.message)}</em></p>` : "";
-  const html = wrap(
-    `<p>Dobrý den,</p>` +
-      `<p>děkujeme za objednávku, platba proběhla v pořádku. Váš dárkový poukaz v hodnotě <strong>${fmtKc(v.amountCzk)}</strong>:</p>` +
-      `<p style="margin:16px 0 4px;color:#666;font-size:13px;">Kód poukazu</p>` +
-      `<p style="display:inline-block;margin:0 0 16px;padding:12px 20px;border:2px solid #111;border-radius:8px;font-size:22px;letter-spacing:2px;"><strong>${esc(v.code)}</strong></p>` +
-      voucherSummaryHtml(v, booking) +
-      msg +
-      redeem +
-      `<p>Poukaz můžete přeposlat obdarovanému: stačí mu předat tento e-mail nebo jen kód.</p>` +
-      DOKLAD_NOTE
+  await sendFromTemplate(
+    "voucher_buyer",
+    v.buyerEmail,
+    { amount: fmtKc(v.amountCzk), code: esc(v.code), summaryBlock: voucherSummaryHtml(v, booking), messageBlock: msg, redeemBlock: redeem },
+    { bookingId: booking?.id }
   );
-  await send(v.buyerEmail, "Váš dárkový poukaz " + v.code, html, { type: "voucher_buyer", bookingId: booking?.id });
 }
 
 // Adminům: nový zaplacený poukaz (a upozornění, když něco vyžaduje ruční zásah).
@@ -599,7 +595,6 @@ export async function sendCoursePaidEmail(booking: Booking, signup: CourseSignup
 }
 
 // --- Doklady k platbám ---
-const DOKLAD_NOTE = `<p style="font-size:13px;color:#555;">Potvrzení o platbě ze Stripe není daňový doklad. Daňový doklad (fakturu) vám zašleme samostatně.</p>`;
 
 function fmtCzk(n: number) {
   return n.toLocaleString("cs-CZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Kč";
