@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Členství: texty bez slibu faktury (rezervace)
+
+Podle účetní stačí soukromým osobám potvrzení o platbě ze Stripe a záznam v měsíčních sestavách; faktura z Caflou jde firmám. Upraveny dva texty (návrh ke schválení): e-mail 1 už neslibuje „potvrzení a fakturu“, ale potvrzení a nabídku faktury na firmu na požádání; stránka po zaplacení `/clenstvi?platba=ok` stejně. Soubory `lib/email.ts`, `app/clenstvi/page.tsx`. Fronta „Doklad k vystavení“ zatím beze změny.
+
 ## 2026-11-11 — Doklad k vystavení: odkaz na fakturu po kliknutí na „Vystaveno“ (platby, rezervace)
 
 Po kliknutí na „Vystaveno“ se zobrazí jedno okno: „Číslo faktury nebo odkaz na ni v Caflou (nepovinné)“. Co začíná `https://`, se uloží jako odkaz (nový sloupec `payments.invoice_url`), jinak jako číslo faktury. V seznamu „Naposledy vystavené“ je u položky odkaz „Otevřít fakturu“. Server uloží jen adresy `http(s)`, žádné `javascript:`. Soubory `lib/invoices.ts`, `lib/db.ts`, `app/api/admin/doklady/[id]/route.ts`, `app/admin/page.tsx`. Pracovní pravidlo od Milana: časy se uvádějí v pražském čase (SEČ/SELČ), ne v UTC.
