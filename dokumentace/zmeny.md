@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-11 — Tlačítko „Objednat a zaplatit“ (rezervace, návrh k sloučení)
+- Tlačítko platby na /kurzy a /poukazy se jmenuje „Objednat a zaplatit 8 270 Kč“ místo „Zaplatit …“ (nápad Milana po testu: pod tlačítkem je souhlas s podmínkami, tedy jde o objednávku). Text na /kurzy jde upravit v adminu (`kurzy.pay.button`; má-li admin vlastní přepsání, změní se až po jeho úpravě). Text je návrh ke schválení, formulaci s povinností platby je dobré ověřit s právníkem nebo účetní.
+
 ## 2026-11-11 — Souhlas s obchodními podmínkami u tlačítka Zaplatit (rezervace, návrh k sloučení)
 - Pod tlačítkem „Zaplatit“ na /kurzy a /poukazy je věta „Objednáním souhlasíte s obchodními podmínkami“ s odkazem na https://ateliernapobrezi.cz/obchodni-podminky (nová stránka, otevírá se v novém okně). Bez zaškrtávacího políčka, aby nepřibyl krok. Text na /kurzy jde upravit v adminu (klíče `kurzy.terms.*`). Důvod: storno pravidla jsou už jen v podmínkách, ne v e-mailu. Text je návrh ke schválení.
 

@@ -156,7 +156,7 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     label: "Tlačítko platby",
     description: "Hlavní tlačítko v kroku 4. total = celková cena v Kč.",
     vars: ["total"],
-    text: "Zaplatit {{total}} Kč",
+    text: "Objednat a zaplatit {{total}} Kč",
   },
   "kurzy.signup.busy": {
     group: "Objednávka kurzu",
@@ -175,7 +175,7 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
   "kurzy.pay.hint": {
     group: "Objednávka kurzu",
     label: "Poznámka pod tlačítkem platby",
-    description: "Krátké ujištění pod tlačítkem Zaplatit.",
+    description: "Krátké ujištění pod tlačítkem objednávky.",
     vars: [],
     text: "Platba proběhne na zabezpečené stránce Stripe. Po zaplacení je vaše místo potvrzené a pošleme vám e-mail.",
   },
