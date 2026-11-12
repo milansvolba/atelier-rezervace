@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Režim poukazu: skrytá cena a řádek o zrušení (rezervace, návrh k sloučení)
+- Když obdarovaný uplatňuje poukaz (odkaz s kódem), na kartě termínu se už nezobrazuje cena „/os.“ (dárek nesmí prozradit cenu) ani řádek „Zrušení: 7 a více dní předem vrátíme 100 %…“ (týká se plateb, ne poukazů). Pravidlo pro zrušení termínu uplatněného poukazu čeká na rozhodnutí Milana. Běžný nákup kurzu beze změny.
+
 ## 2026-11-12 — Členství: připomínka poslat novému členovi SMS s kódy ke schránce (rezervace, e-maily, návrh k sloučení)
 - Když novému členovi odejde uvítací e-mail s přístupem (po první platbě členství nebo po přidání člena zdarma), dostane admin e-mail „Pošlete SMS s kódy ke schránce: <jméno>“ s jménem, e-mailem a telefonem (z žádosti o členství, pokud ho člen vyplnil). Text je v šablonách v adminu (klíč `membership_sms_admin`). Kódy ke schránce se nikdy neukládají do kódu ani do e-mailů, SMS posílá Milan ručně (nápad Milana 2026-11-12). Automatická SMS zatím není (vyžaduje SMS bránu).
 
