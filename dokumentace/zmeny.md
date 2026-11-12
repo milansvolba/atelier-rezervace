@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Režim poukazu: řádek „Změna termínu“ místo storna (rezervace, návrh k sloučení)
+- V režimu poukazu je u termínu místo skrytého řádku o zrušení řádek „Změna termínu: napište nám, rádi najdeme jiný termín“ (text je upravitelný v adminu u textů, klíč `kurzy.fact.cancelVoucher`). Nic neslibuje, jen říká, co dělat, když termín nevyhovuje (UX: obdarovaný nezůstane bez informace). Pravidlo pro vrácení poukazu při zrušení termínu čeká na rozhodnutí Milana. Návrh ke schválení.
+
 ## 2026-11-12 — Režim poukazu: skrytá cena a řádek o zrušení (rezervace, návrh k sloučení)
 - Když obdarovaný uplatňuje poukaz (odkaz s kódem), na kartě termínu se už nezobrazuje cena „/os.“ (dárek nesmí prozradit cenu) ani řádek „Zrušení: 7 a více dní předem vrátíme 100 %…“ (týká se plateb, ne poukazů). Pravidlo pro zrušení termínu uplatněného poukazu čeká na rozhodnutí Milana. Běžný nákup kurzu beze změny.
 

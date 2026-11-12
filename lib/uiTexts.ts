@@ -32,6 +32,13 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     vars: [],
     text: "7 a více dní předem vrátíme 100 %, 3 až 6 dní předem 50 %, později platbu nevracíme",
   },
+  "kurzy.fact.cancelVoucher": {
+    group: "Objednávka kurzu",
+    label: "Karta termínu v režimu poukazu: změna termínu",
+    description: "Řádek „Změna termínu“ u termínu, když obdarovaný uplatňuje poukaz (cena a podmínky storna se tam neukazují, aby dárek neprozradil cenu).",
+    vars: [],
+    text: "napište nám, rádi najdeme jiný termín",
+  },
   "kurzy.loading": {
     group: "Objednávka kurzu",
     label: "Načítání termínů",
