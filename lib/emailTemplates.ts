@@ -23,7 +23,10 @@ export type TemplateKey =
   | "course_paid"
   | "voucher_redeemed"
   | "voucher_buyer"
-  | "signup_cancelled";
+  | "signup_cancelled"
+  | "membership_payment"
+  | "membership_access"
+  | "membership_request";
 
 export interface TemplateDef {
   label: string;
@@ -239,6 +242,38 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 <p>Vaše přihláška na kurz <strong>{{courseTitle}}</strong> ({{date}}, {{startTime}}–{{endTime}}) byla stornována.</p>
 {{refundBlock}}
 <p>V případě dotazů nám napište odpovědí na tento e-mail.</p>`,
+  },
+  membership_payment: {
+    label: "Vaše žádost o členství je schválená (člen, odkaz na platbu)",
+    description: "Pošle se členovi po schválení žádosti nebo po ručním přidání placeného člena: odkaz na zaplacení prvního měsíce přes Stripe. Tykání členům.",
+    vars: ["name", "payLink"],
+    subject: "Vaše žádost o členství je schválená",
+    body: `<p>Ahoj {{name}}!</p>
+<p>Vítej v Klubu na pobřeží. Díky, že do toho jdeš.</p>
+<p>Kartou zaplatíš přes online platební bránu Stripe. Potom ti přijde potvrzení a odkaz na rezervaci místa v Klubu na pobřeží. S každou další měsíční platbou ti přijde e-mailem potvrzení. Pokud potřebuješ daňový doklad, napiš Milanovi. Členství můžeš kdykoliv zrušit v rezervačním systému.</p>
+<p style="margin-top:20px;"><a href="{{payLink}}" style="background:#111;color:#fff;border:2px solid #111;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaplatit členství</a></p>
+<p style="color:#888;font-size:13px;margin-top:10px;">Tenhle odkaz na platbu platí 30 dní.</p>`,
+  },
+  membership_access: {
+    label: "Vítejte v Klubu na pobřeží 🎉 (člen po první platbě)",
+    description: "Pošle se členovi po první zaplacené platbě (a hned po přidání člena zdarma): přístup do ateliéru a tlačítko do rezervací. Kódy ke schránce s klíči sem nepatří, posílá je Milan v SMS.",
+    vars: ["loginLink", "appUrl"],
+    subject: "Vítejte v Klubu na pobřeží 🎉",
+    body: `<p>Vítejte, přátelé, v Klubu na pobřeží. Díky, že do toho jdete. Krom jiného jste získali přístup do Ateliéru na pobřeží, kde si můžete <a href="{{appUrl}}" style="color:#111;text-decoration:underline;">zarezervovat</a> místo nebo aktivitu, kdykoliv je v kalendáři volno.</p>
+<p>Do ateliéru se dostanete z ulice Na pobřeží, od kolejí. Na dveřích je poštovní schránka a v ní schránka s klíči. Kódy k ní vám pošleme v SMS.</p>
+<p style="margin-top:20px;"><a href="{{loginLink}}" style="background:#fff;color:#111;border:2px solid #111;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaber si flek</a></p>
+<p style="color:#888;font-size:13px;margin-top:10px;">Tlačítko vás rovnou přihlásí do rezervací. Odkaz platí 7 dní. Potom se stačí přihlásit zadáním e-mailu na rezervace.ateliernapobrezi.cz.</p>`,
+  },
+  membership_request: {
+    label: "Nová žádost o členství (admin)",
+    description: "Pošle se adminům, když někdo vyplní „Chci do klubu“ na /clenstvi. Blok {{messageBlock}} (vzkaz žadatele) se skládá automaticky.",
+    vars: ["name", "email", "phoneLine", "messageBlock", "adminUrl"],
+    subject: "Nová žádost o členství: {{name}}",
+    body: `<p><strong>Nová žádost o členství v klubu</strong></p>
+<p>Jméno: {{name}}<br>E-mail: {{email}}{{phoneLine}}</p>
+{{messageBlock}}
+<p style="margin-top:20px;"><a href="{{adminUrl}}" style="background:#111;color:#fff;border:2px solid #111;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Otevřít a schválit</a></p>
+<p style="color:#888;font-size:13px;margin-top:10px;">V administraci otevřete Účty, nahoře uvidíte žádosti ke schválení.</p>`,
   },
   signup_decision_rejected: {
     label: "K vaší přihlášce na kurz (zákazník, nelze potvrdit)",

@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Členství: e-maily v editovatelných šablonách (rezervace, e-maily, návrh k sloučení)
+- E-maily klubu jsou v adminu mezi šablonami: „Vaše žádost o členství je schválená“ (člen, odkaz na platbu; klíč `membership_payment`), „Vítejte v Klubu na pobřeží 🎉“ (po první platbě; `membership_access`) a „Nová žádost o členství“ (admin; `membership_request`). Texty zůstaly beze změny, jen se dají upravovat bez programátora (Milan 2026-11-12: musí jít hned opravit chyby, které uvidí).
+- V kódu zůstává přihlašovací odkaz (magic link) a uvítání nového správce, protože jsou bezpečnostně citlivé.
+
 ## 2026-11-12 — E-mail s poukazem: věta o předání obdarovanému (rezervace, e-maily, návrh k sloučení)
 - Ve výchozím textu šablony `voucher_buyer` je nová věta: „Obdarovanému stačí předat jen kód poukazu. Pozor: pokud mu přepošlete celý tento e-mail, dozví se i cenu poukazu.“ (původní věta radila přeposlat celý e-mail, což by prozradilo cenu; připomínka Milana 2026-11-11). Text návrh ke schválení, graficky pěkný poukaz bez ceny se řeší později.
 - Pokud už byla šablona v adminu upravena, platí uložený text; změnu pak provést ručně v adminu.
