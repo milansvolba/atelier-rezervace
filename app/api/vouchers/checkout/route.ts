@@ -99,6 +99,9 @@ export async function POST(req: NextRequest) {
 
   const billingCheck = parseBillingInput(billing, price.total);
   if (!billingCheck.ok) return NextResponse.json({ error: billingCheck.error }, { status: 400 });
+  if (billingCheck.value?.isCompany) {
+    return NextResponse.json({ error: "Firmy neplatí kartou. Odešlete prosím poptávku, ozveme se vám s nabídkou a fakturou." }, { status: 400 });
+  }
 
   try {
     const session = await createCheckoutSession({

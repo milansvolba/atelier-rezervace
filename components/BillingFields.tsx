@@ -71,6 +71,9 @@ export default function BillingFields({ value, onChange }: { value: BillingInput
 
       {value.isCompany && (
         <div className="space-y-3">
+          <p className="text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-md p-3">
+            Firmám neprodáváme kartou. Vyplňte údaje a odešlete poptávku, ozveme se vám s nabídkou a fakturou (nejpozději do tří pracovních dní, většinou ještě týž den). Místo se rezervuje až po domluvě.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="text-sm">
               IČO

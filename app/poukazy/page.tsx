@@ -48,7 +48,7 @@ export default function PoukazyPage() {
   }, [billing, people, topic, buyerEmail]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<null | "ok" | "cancel">(null);
+  const [result, setResult] = useState<null | "ok" | "cancel" | "firma">(null);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
@@ -71,6 +71,36 @@ export default function PoukazyPage() {
     setBusy(true);
     setError("");
     try {
+      if (billing.isCompany) {
+        // Firma neplatí kartou: odešle se poptávka, Milan se ozve a vystaví fakturu.
+        const rf = await fetch("/api/firm-inquiry", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "poukaz",
+            topic,
+            people,
+            casting: Math.min(castings, people),
+            bookingId: bookingId || undefined,
+            name: buyerName,
+            email: buyerEmail,
+            phone: buyerPhone,
+            note: message ? "Vzkaz na poukaz: " + message + (recipientName ? "\nObdarovaný: " + recipientName : "") : recipientName ? "Obdarovaný: " + recipientName : undefined,
+            heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
+            billing,
+            honeypot,
+          }),
+        });
+        const fd = await rf.json().catch(() => ({}));
+        if (rf.ok) {
+          setResult("firma");
+          setBusy(false);
+          return;
+        }
+        setError(fd.error || "Poptávku se nepodařilo odeslat, zkuste to prosím znovu.");
+        setBusy(false);
+        return;
+      }
       const r = await fetch("/api/vouchers/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,6 +134,20 @@ export default function PoukazyPage() {
   }
 
   const input = "mt-1 w-full h-10 border border-gray-300 rounded-md px-2";
+
+  if (result === "firma") {
+    return (
+      <main className="max-w-xl mx-auto space-y-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
+          <h1 className="text-xl font-semibold">Děkujeme za poptávku</h1>
+          <p className="text-sm text-gray-700">Ozveme se vám s nabídkou a fakturou nejpozději do tří pracovních dní, většinou to stihneme ještě týž den. Potvrzení vám právě posíláme e-mailem.</p>
+          <a href="https://ateliernapobrezi.cz" className="block text-center bg-black text-white rounded-md py-3 font-semibold hover:bg-gray-800">
+            Zpátky na web
+          </a>
+        </div>
+      </main>
+    );
+  }
 
   if (result === "ok") {
     return (
@@ -241,7 +285,7 @@ export default function PoukazyPage() {
 
         {error && <p className="text-sm text-red-700">{error}</p>}
         <button disabled={busy} className="h-10 px-5 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60">
-          {busy ? "Přesměrovávám na platbu…" : "Objednat a zaplatit " + kc(price.total)}
+          {busy ? (billing.isCompany ? "Odesílám…" : "Přesměrovávám na platbu…") : billing.isCompany ? "Odeslat poptávku" : "Objednat a zaplatit " + kc(price.total)}
         </button>
         <p className="text-xs text-gray-500">Platba proběhne na zabezpečené stránce Stripe. Poukaz vám přijde e-mailem hned po zaplacení.</p>
         <p className="text-xs text-gray-500">

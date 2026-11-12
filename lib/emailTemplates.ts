@@ -27,7 +27,8 @@ export type TemplateKey =
   | "membership_payment"
   | "membership_access"
   | "membership_request"
-  | "membership_sms_admin";
+  | "membership_sms_admin"
+  | "firm_inquiry_customer";
 
 export interface TemplateDef {
   label: string;
@@ -251,7 +252,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
     subject: "Vaše žádost o členství je schválená",
     body: `<p>Ahoj {{name}}!</p>
 <p>Vítej v Klubu na pobřeží. Díky, že do toho jdeš.</p>
-<p>Kartou zaplatíš přes online platební bránu Stripe. Potom ti přijde potvrzení a odkaz na rezervaci místa v Klubu na pobřeží. S každou další měsíční platbou ti přijde e-mailem potvrzení. Pokud potřebuješ daňový doklad, napiš Milanovi. Členství můžeš kdykoliv zrušit v rezervačním systému.</p>
+<p>Kartou zaplatíš přes online platební bránu Stripe. Při platbě prosím použij stejný e-mail, který jsi uvedl v žádosti, ať ti členství správně přiřadíme. Potom ti přijde potvrzení a odkaz na rezervaci místa v Klubu na pobřeží. S každou další měsíční platbou ti přijde e-mailem potvrzení. Pokud potřebuješ daňový doklad, napiš Milanovi. Členství můžeš kdykoliv zrušit v rezervačním systému.</p>
 <p style="margin-top:20px;"><a href="{{payLink}}" style="background:#111;color:#fff;border:2px solid #111;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaplatit členství</a></p>
 <p style="color:#888;font-size:13px;margin-top:10px;">Tenhle odkaz na platbu platí 30 dní.</p>`,
   },
@@ -264,6 +265,16 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 <p>Do ateliéru se dostanete z ulice Na pobřeží, od kolejí. Na dveřích je poštovní schránka a v ní schránka s klíči. Kódy k ní vám pošleme v SMS.</p>
 <p style="margin-top:20px;"><a href="{{loginLink}}" style="background:#fff;color:#111;border:2px solid #111;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Zaber si flek</a></p>
 <p style="color:#888;font-size:13px;margin-top:10px;">Tlačítko vás rovnou přihlásí do rezervací. Odkaz platí 7 dní. Potom se stačí přihlásit zadáním e-mailu na rezervace.ateliernapobrezi.cz.</p>`,
+  },
+  firm_inquiry_customer: {
+    label: "Děkujeme za poptávku (firma, zákazník)",
+    description: "Pošle se firmě, která v objednávce kurzu nebo poukazu zaškrtla „Nakupuji na firmu“ a odeslala poptávku. Firmy neplatí kartou, ozvete se jim s nabídkou a fakturou. Blok {{summaryBlock}} (rekapitulace poptávky) se skládá automaticky. Vykání.",
+    vars: ["name", "summaryBlock"],
+    subject: "Děkujeme za vaši poptávku",
+    body: `<p>Dobrý den, {{name}},</p>
+<p>děkujeme za vaši poptávku. Ozveme se vám s nabídkou a fakturou nejpozději do tří pracovních dní, většinou to ale stihneme ještě týž den. Místo zatím není rezervované, rezervujeme ho po domluvě.</p>
+{{summaryBlock}}
+<p>Kdybyste chtěli cokoliv doplnit, stačí odpovědět na tento e-mail.</p>`,
   },
   membership_request: {
     label: "Nová žádost o členství (admin)",
