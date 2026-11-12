@@ -906,7 +906,7 @@ export default function KurzyPage() {
                     <p className="font-medium">{c.title}</p>
                     <p className="text-sm text-gray-500">
                       {fmtDate(c.date)} · {c.startTime}–{c.endTime}
-                      {c.price ? " · " + kc(c.price) + "/os." : ""}
+                      {c.price && !voucherMode ? " · " + kc(c.price) + "/os." : ""}
                     </p>
                     {c.note && <p className="text-sm text-gray-500 mt-1">{c.note}</p>}
                     <dl className="mt-3 space-y-1 text-sm text-gray-600">
@@ -915,7 +915,7 @@ export default function KurzyPage() {
                       )}
                       <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">Kde</dt><dd>{t("kurzy.fact.place")}</dd></div>
                       <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">V ceně</dt><dd>{t("kurzy.fact.included")}</dd></div>
-                      <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">Zrušení</dt><dd>{t("kurzy.fact.cancel")}</dd></div>
+                      {!voucherMode && <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">Zrušení</dt><dd>{t("kurzy.fact.cancel")}</dd></div>}
                     </dl>
                     {c.capacity && (
                       <p className="text-xs text-gray-400 mt-1">
