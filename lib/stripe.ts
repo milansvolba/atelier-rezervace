@@ -150,8 +150,10 @@ export const paymentStore = {
 
   async addRefunded(sessionId: string, czk: number): Promise<void> {
     await ensureSchema();
-    // Vratka = je potřeba vystavit opravný doklad (fronta v adminu, viz lib/invoices.ts).
-    await sql`UPDATE payments SET refunded_czk = refunded_czk + ${Math.round(czk)}, correction_needed = true WHERE id = ${sessionId}`;
+    // Vratka = je potřeba opravný doklad (fronta v adminu, viz lib/invoices.ts), ale jen když se pro platbu doklad
+    // vystavuje (firma). U soukromé osoby ('none') se nic nezakládá, stačí vratka ve Stripe.
+    await sql`UPDATE payments SET refunded_czk = refunded_czk + ${Math.round(czk)},
+      correction_needed = correction_needed OR invoice_status IN ('pending', 'issued') WHERE id = ${sessionId}`;
   },
 
   async markExpired(sessionId: string): Promise<void> {

@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — „Doklad k vystavení“ jen pro firmy (rezervace, platby, návrh k sloučení)
+- Fronta „Doklad k vystavení“ v administraci a upozornění se nově zakládají **jen u plateb firem** (vyplněný název firmy, IČO nebo DIČ). Platby soukromých osob (kurzy, poukazy, měsíční členství) se do fronty nezapisují (stav `none`), protože stačí potvrzení ze Stripe. Vratka u soukromé osoby už nevytváří úkol „vystavit opravný doklad“, u firmy ano. E-mail „Doklad k vystavení“ byl už dřív jen pro firmy (PR #50), nově používá stejné společné pravidlo. Členství: člen je soukromá osoba, do fronty se tedy nedostane; pokud by členství chtěla firma, fakturuje se ručně. Starší testovací platby soukromých osob byly ve frontě označeny jako „mimo frontu“ (data, ne kód). Návrh ke schválení.
+
 ## 2026-11-12 — Režim poukazu: řádek „Změna termínu“ místo storna (rezervace, návrh k sloučení)
 - V režimu poukazu je u termínu místo skrytého řádku o zrušení řádek „Změna termínu: napište nám, rádi najdeme jiný termín“ (text je upravitelný v adminu u textů, klíč `kurzy.fact.cancelVoucher`). Nic neslibuje, jen říká, co dělat, když termín nevyhovuje (UX: obdarovaný nezůstane bez informace). Pravidlo pro vrácení poukazu při zrušení termínu čeká na rozhodnutí Milana. Návrh ke schválení.
 
