@@ -9,6 +9,7 @@ import { addressLine, idsLine, icoMissing } from "./invoiceFormat";
 import { signupNotifyTo } from "./signupContact";
 import { SIMPLIFIED_LIMIT_CZK } from "./billingInput";
 import { escapeHtml } from "./html";
+import { sql } from "./db";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Ateliér na pobřeží <rezervace@ateliernapobrezi.cz>";
@@ -141,7 +142,34 @@ export async function sendMembershipPaymentEmail(user: { name: string; email: st
 // E-mail 2: po první zaplacené platbě (a hned po přidání člena zdarma). Přístup, jak se dostat dovnitř, tlačítko k rezervacím.
 // Kódy ke schránce s klíči se do e-mailu ani do kódu nikdy nepíšou, posílá je Milan v SMS.
 export async function sendMembershipAccessEmail(user: { name: string; email: string }, loginLink: string): Promise<boolean> {
-  return sendFromTemplate("membership_access", user.email, { loginLink, appUrl: APP_URL }, {});
+  const ok = await sendFromTemplate("membership_access", user.email, { loginLink, appUrl: APP_URL }, {});
+  if (ok) await sendAdminMemberSmsReminder(user);
+  return ok;
+}
+
+// Adminům: nový člen dostal přístup, připomínka poslat mu SMS s kódy ke schránce s klíči (kódy se nikdy neukládají do kódu ani e-mailu).
+async function sendAdminMemberSmsReminder(user: { name: string; email: string }) {
+  try {
+    let phone: string | null = null;
+    try {
+      const rows = await sql`SELECT phone FROM membership_requests WHERE lower(email) = ${user.email.toLowerCase()} AND phone IS NOT NULL AND phone <> '' ORDER BY created_at DESC LIMIT 1`;
+      phone = (rows[0]?.phone as string | undefined) ?? null;
+    } catch {
+      phone = null;
+    }
+    await sendFromTemplate(
+      "membership_sms_admin",
+      ADMIN_EMAILS,
+      {
+        name: escapeHtml(user.name),
+        email: `<a href="mailto:${escapeHtml(user.email)}">${escapeHtml(user.email)}</a>`,
+        phoneLine: phone ? `<br><strong>Telefon:</strong> ${escapeHtml(phone)}` : "<br><strong>Telefon:</strong> nevyplněn, zeptejte se člena",
+      },
+      {}
+    );
+  } catch (e) {
+    console.error("[email] Připomínku SMS s kódy se nepodařilo odeslat:", e);
+  }
 }
 
 // Přihlašovací odkaz platný 7 dní pro e-mail 2 (běžný přihlašovací odkaz platí jen 15 minut).

@@ -26,7 +26,8 @@ export type TemplateKey =
   | "signup_cancelled"
   | "membership_payment"
   | "membership_access"
-  | "membership_request";
+  | "membership_request"
+  | "membership_sms_admin";
 
 export interface TemplateDef {
   label: string;
@@ -274,6 +275,15 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 {{messageBlock}}
 <p style="margin-top:20px;"><a href="{{adminUrl}}" style="background:#111;color:#fff;border:2px solid #111;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Otevřít a schválit</a></p>
 <p style="color:#888;font-size:13px;margin-top:10px;">V administraci otevřete Účty, nahoře uvidíte žádosti ke schválení.</p>`,
+  },
+  membership_sms_admin: {
+    label: "Pošlete SMS s kódy ke schránce (admin, nový člen)",
+    description: "Pošle se adminům ve chvíli, kdy novému členovi odejde uvítací e-mail s přístupem (po první platbě nebo po přidání člena zdarma). Připomíná poslat členovi SMS s kódy ke schránce s klíči; kódy sem nepatří. Telefon se bere ze žádosti o členství, pokud ho člen vyplnil.",
+    vars: ["name", "email", "phoneLine"],
+    subject: "Pošlete SMS s kódy ke schránce: {{name}}",
+    body: `<p>Nový člen klubu má přístup do rezervací a čeká na kódy ke schránce s klíči.</p>
+<p><strong>Jméno:</strong> {{name}}<br><strong>E-mail:</strong> {{email}}{{phoneLine}}</p>
+<p><strong>Co udělat:</strong> pošlete mu SMS s kódy ke schránce s klíči (poštovní schránka na dveřích ateliéru).</p>`,
   },
   signup_decision_rejected: {
     label: "K vaší přihlášce na kurz (zákazník, nelze potvrdit)",
