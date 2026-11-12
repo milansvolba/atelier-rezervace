@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Admin: širší pracovní plocha na velkých monitorech (rezervace, návrh k sloučení)
+- Na velkých monitorech (od 1536 px šířky) je administrace široká až 1760 px místo dosavadních 1280 px, aby se méně zkracovaly a schovávaly texty (nápad Milana 2026-11-12). Na menších obrazovkách beze změny, web pro zákazníky se nemění.
+
 ## 2026-11-12 — Admin: upozornění na nové žádosti o členství (rezervace, návrh k sloučení)
 - Na hlavní stránce administrace je žlutý box „Žádosti o členství v klubu“ se jmény žadatelů a tlačítkem „Otevřít a schválit“, u tlačítka „Účty“ je počet čekajících žádostí. Dosud byla žádost vidět jen uvnitř okna Účty (nález z testu 2026-11-12, žádost test9). Počet se obnoví po zavření okna Účty.
 

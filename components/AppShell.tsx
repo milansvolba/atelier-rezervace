@@ -9,7 +9,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const admin = !!pathname && pathname.startsWith("/admin");
   return (
-    <div className={`mx-auto px-4 py-6 max-w-3xl ${admin ? "lg:max-w-7xl" : ""}`}>
+    <div className={`mx-auto px-4 py-6 max-w-3xl ${admin ? "lg:max-w-7xl 2xl:max-w-[1760px]" : ""}`}>
       {children}
     </div>
   );
