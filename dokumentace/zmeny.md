@@ -6,9 +6,11 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
-## 2026-11-12 — „Včetně občerstvení“ v názvu položky na dokladu ze Stripe (platby, návrh k sloučení)
+## 2026-11-12 — „Včetně občerstvení“ v názvu položky na dokladu ze Stripe (platby, PR #70 sloučeno a ověřeno živě)
 - Název položky při platbě kurzu i dárkového poukazu ve Stripe nově končí „…, včetně občerstvení“ (např. „Modelování hlavy — 15. 11. 2026, 1 místo, včetně občerstvení“). Zobrazí se na platební stránce, v potvrzení o platbě a v exportu ze Stripe. Důvod: občerstvení je součástí ceny kurzu a doklad to má jasně říkat (opatření pro účetní uznání nákupu občerstvení a odpočet DPH; není to záruka, potvrdit s účetní Hanou).
-- Stránka Kurzy v aplikaci a e-maily po zaplacení už „V ceně: … občerstvení“ uváděly. Marketingový web (`kurz-modelovani-hlavy.php`, `kurz-relief.php`) tuto větu zatím nemá, navrženo doplnit přes FTP po schválení textu.
+- Stránka Kurzy v aplikaci a e-maily po zaplacení už „V ceně: … občerstvení“ uváděly. Marketingový web (`kurz-modelovani-hlavy.php`, `kurz-relief.php`) věta mít nemusí (rozhodnutí Milana 2026-11-12: stačí na potvrzeních, účtenkách a fakturách).
+- **Ověřeno živě (2026-11-12 večer):** Stripe Checkout (živý režim) u zkušební platby 15 Kč ukazuje „TEST – prosím nekupovat — 15. 11. 2026, 1 místo, včetně občerstvení“. Potvrzení o platbě ze Stripe i e-mail z aplikace dorazily, Support email na potvrzení je `rezervace@ateliernapobrezi.cz`. Poukaz ostře zatím nezkoušen.
+- **Stripe nastavení (Milan, 2026-11-12):** e-maily o vratkách vypnuty (Stripe je posílal napůl anglicky; zákazník dostane český `signup_cancelled`), „Successful payments“ zůstává zapnuté. Ostré storno s plnou vratkou 2× po 15 Kč: Stripe 1 vratka na každou platbu, e-mail o stornu po jednom. Viz `claude/stripe-emaily-rozhodnuti-2026-11-12.md`.
 
 ## 2026-11-12 — Platba kurzu: místa se rezervují dřív, než se ověří kapacita (rezervace, platby, návrh k sloučení)
 - Dřív se kapacita kontrolovala a teprve potom se zakládala rezervace míst, takže dva zákazníci, kteří kliknuli ve stejný okamžik na poslední místa, mohli oba dojít k platbě (přeprodání termínu). Nově se místa nejdřív zarezervují v databázi (dočasné ID `pending_…`), pak se kapacita ověří znovu včetně vlastní rezervace a až potom se vytvoří platba ve Stripe; dočasné ID se přepíše na skutečné ID session. Při souběhu radši neprojde žádný ze dvou (409 „není dost volných míst“), nikdy neprojdou oba. Když se platba nepodaří založit, rezervace se smaže.
