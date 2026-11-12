@@ -64,6 +64,32 @@ export const signupStore = {
     return s;
   },
 
+  // Vloží přihlášku jen pokud s tím ID ještě neexistuje. Vrací true jen u skutečného vložení
+  // (opakované doručení webhooku ze Stripe tak nevytvoří druhou přihlášku ani druhé e-maily).
+  async addIfNew(s: CourseSignup): Promise<boolean> {
+    await ensureSchema();
+    const rows = await sql`
+      INSERT INTO course_signups (id, booking_id, name, contact, people, note, status, created_at, heard_about, phone, notify_email)
+      VALUES (${s.id}, ${s.bookingId}, ${s.name}, ${s.contact}, ${s.people}, ${s.note ?? null}, ${s.status}, ${s.createdAt}, ${s.heardAbout ?? null}, ${s.phone ?? null}, ${s.notifyEmail ?? null})
+      ON CONFLICT (id) DO NOTHING
+      RETURNING id
+    `;
+    return rows.length > 0;
+  },
+
+  // Zruší přihlášku jen pokud ještě není zrušená. Vrací předchozí stav, nebo null, když už zrušená byla
+  // (ochrana proti dvojitému kliknutí na storno — druhé volání nic neudělá).
+  async cancelIfActive(id: string): Promise<SignupStatus | null> {
+    await ensureSchema();
+    const rows = await sql`
+      WITH old AS (SELECT status FROM course_signups WHERE id = ${id} AND status <> 'cancelled' FOR UPDATE)
+      UPDATE course_signups SET status = 'cancelled'
+      FROM old WHERE course_signups.id = ${id}
+      RETURNING old.status AS previous
+    `;
+    return rows[0] ? ((rows[0].previous as SignupStatus) ?? "confirmed") : null;
+  },
+
   async updateStatus(id: string, status: SignupStatus): Promise<CourseSignup | null> {
     await ensureSchema();
     await sql`UPDATE course_signups SET status = ${status} WHERE id = ${id}`;
