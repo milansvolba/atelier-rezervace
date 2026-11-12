@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Centrální ceník kurzů: cena u termínu se už nezadává (rezervace, platby, návrh k sloučení)
+- Cena kurzu za osobu typu hlava (8 270 Kč) a relief (6 470 Kč) se bere z jednoho místa v kódu (`VOUCHER_COURSES` v `lib/pricing.ts`), stejného, ze kterého se počítají poukazy a odlitky. Platí pro stránku /kurzy, platbu i admin. V adminu je pole „Cena“ u těchto kurzů jen zobrazené a zamčené; cena uložená u termínu se pro ně nepoužívá. Důvod: nepůjde omylem zadat jinou cenu, než je na marketingovém webu (nápad Milana 2026-11-12).
+- Jednorázové kurzy mimo web (typ „jiný“) dál mají cenu zadanou u termínu. Starší termíny bez uloženého typu se rozpoznají podle názvu (hlava, reliéf), takže dostanou cenu z ceníku také.
+- Slevu pro jednotlivce řešíte individuálně nebo kupónem (kupóny zatím nejsou, viz úkoly).
+- Změna ceny = úprava jednoho řádku v `lib/pricing.ts` (přes větev a PR). Příště: veřejná adresa s ceníkem, aby marketingový web načítal ceny odtud (viz úkoly).
+
 ## 2026-11-12 — Členství: e-maily v editovatelných šablonách (rezervace, e-maily, návrh k sloučení)
 - E-maily klubu jsou v adminu mezi šablonami: „Vaše žádost o členství je schválená“ (člen, odkaz na platbu; klíč `membership_payment`), „Vítejte v Klubu na pobřeží 🎉“ (po první platbě; `membership_access`) a „Nová žádost o členství“ (admin; `membership_request`). Texty zůstaly beze změny, jen se dají upravovat bez programátora (Milan 2026-11-12: musí jít hned opravit chyby, které uvidí).
 - V kódu zůstává přihlašovací odkaz (magic link) a uvítání nového správce, protože jsou bezpečnostně citlivé.

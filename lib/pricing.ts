@@ -71,3 +71,9 @@ export const VOUCHER_COURSES = [
 export function voucherCourse(key: string) {
   return VOUCHER_COURSES.find((c) => c.key === key) ?? null;
 }
+
+// Centrální ceník: cena kurzu za osobu podle typu kurzu (Kč vč. DPH); null = typ nemá centrální cenu (jednorázový kurz, cena se zadává u termínu).
+// Cenu u termínu typu hlava/relief už nikdo nezadává ručně, bere se odtud (platí pro stránku /kurzy, platbu i admin).
+export function centralCoursePrice(typeKey: string | null | undefined): number | null {
+  return VOUCHER_COURSES.find((c) => c.key === typeKey)?.pricePerPerson ?? null;
+}

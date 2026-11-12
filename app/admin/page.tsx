@@ -19,7 +19,7 @@ import {
   startOfWeekMon,
 } from "@/lib/calendar";
 import { windowsOnDate, restrictedInWindow } from "@/lib/prep";
-import { VOUCHER_COURSES, COURSE_TYPE_NONE, courseTypeKey } from "@/lib/pricing";
+import { VOUCHER_COURSES, COURSE_TYPE_NONE, courseTypeKey, centralCoursePrice } from "@/lib/pricing";
 import { addressLine, idsLine, icoMissing } from "@/lib/invoiceFormat";
 
 type ViewMode = "day" | "week" | "month" | "quarter" | "year";
@@ -501,7 +501,8 @@ function QuickAddModal({
                 type="number"
                 min={0}
                 className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                value={form.price}
+                value={centralCoursePrice(form.courseType) ?? form.price}
+                    disabled={centralCoursePrice(form.courseType) !== null}
                 onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                 placeholder="nepovinné"
               />
@@ -958,7 +959,8 @@ function BookingDetailModal({
                     type="number"
                     min={0}
                     className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                    value={form.price}
+                    value={centralCoursePrice(form.courseType) ?? form.price}
+                    disabled={centralCoursePrice(form.courseType) !== null}
                     onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                   />
                 </label>
@@ -2337,7 +2339,8 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                     type="number"
                     min={0}
                     className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2"
-                    value={form.price}
+                    value={centralCoursePrice(form.courseType) ?? form.price}
+                    disabled={centralCoursePrice(form.courseType) !== null}
                     onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                     placeholder="nepovinné"
                   />

@@ -3,6 +3,13 @@ import { Booking, BookingCategory, ResourceId, resourcesConflict, timesOverlap }
 import { notifyDataChanged } from "./webhooks";
 import { findPrepConflict, PrepConflict, PrepRole } from "./prep";
 import { iso, addDays } from "./calendar";
+import { centralCoursePrice, courseTypeKey } from "./pricing";
+
+// Cena kurzu typu hlava/relief se bere z centrálního ceníku (lib/pricing.ts), ne z hodnoty uložené u termínu.
+function centralPriceForRow(r: Record<string, unknown>): number | undefined {
+  if (r.category !== "kurz") return undefined;
+  return centralCoursePrice(courseTypeKey({ title: String(r.title ?? ""), courseType: (r.course_type as string) ?? null })) ?? undefined;
+}
 
 function rowToBooking(r: Record<string, unknown>): Booking {
   const date = r.date as string | Date;
@@ -30,7 +37,7 @@ function rowToBooking(r: Record<string, unknown>): Booking {
     createdAt: typeof created === "string" ? created : created.toISOString(),
     category: ((r.category as BookingCategory) ?? "pronajem") as BookingCategory,
     capacity: (r.capacity as number) ?? undefined,
-    price: (r.price as number) ?? undefined,
+    price: centralPriceForRow(r) ?? ((r.price as number) ?? undefined),
     heardAbout: (r.heard_about as string) ?? undefined,
     courseType: (r.course_type as string) ?? undefined,
   };
