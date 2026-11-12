@@ -1,3 +1,5 @@
+import { CENIK } from "./cenik";
+
 // Ceny kurzů: množstevní slevy podle počtu lidí v objednávce a volitelný betonový odlitek.
 // Společné pro server (výpočet částky do Stripe) i průvodce objednávkou (zobrazení ceny).
 
@@ -61,12 +63,9 @@ export function computeOrder(pricePerPerson: number, people: number, castings: n
   return { discountPercent, courseBefore, courseAfter, castingTotal, total: courseAfter + castingTotal };
 }
 
-// Kurzy, na které lze koupit dárkový poukaz: základní cena za 1 osobu (vc. DPH, bez slevy) a cena odlitku.
-// "match" slouží už jen jako záloha pro starší termíny bez typu (viz courseTypeKey).
-export const VOUCHER_COURSES = [
-  { key: "hlava", title: "Modelování hlavy", pricePerPerson: 8270, castingPrice: 3490, match: "hlav" },
-  { key: "relief", title: "Modelování reliéfu", pricePerPerson: 6470, castingPrice: 2990, match: "reli" },
-] as const;
+// Kurzy, na které lze koupit dárkový poukaz: základní cena za 1 osobu (vč. DPH, bez slevy) a cena odlitku.
+// Ceny se upravují v souboru lib/cenik.ts (návod je tam nahoře).
+export const VOUCHER_COURSES = CENIK;
 
 export function voucherCourse(key: string) {
   return VOUCHER_COURSES.find((c) => c.key === key) ?? null;
