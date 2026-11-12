@@ -147,6 +147,11 @@ export async function sendMembershipAccessEmail(user: { name: string; email: str
   return ok;
 }
 
+// E-mail členovi po zrušení předplatného: členství platí do konce zaplaceného období, zrušení jde vzít zpět.
+export async function sendMembershipCancelledEmail(user: { name: string; email: string }, endDate: string): Promise<boolean> {
+  return sendFromTemplate("membership_cancelled", user.email, { name: escapeHtml(user.name), endDate, appUrl: APP_URL }, {});
+}
+
 // Adminům: nový člen dostal přístup, připomínka poslat mu SMS s kódy ke schránce s klíči (kódy se nikdy neukládají do kódu ani e-mailu).
 async function sendAdminMemberSmsReminder(user: { name: string; email: string }) {
   try {

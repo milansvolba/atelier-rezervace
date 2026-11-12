@@ -94,6 +94,17 @@ export const users = {
     await sql`UPDATE users SET membership_ends_at = ${endsAt}::timestamptz WHERE id = ${id}`;
   },
 
+  // Uloží konec členství a vrátí true jen tehdy, když zrušení dosud nebylo zaznamenané (konec byl prázdný).
+  // Podle toho se pošle e-mail o zrušení jen jednou, i když Stripe pošle událost opakovaně.
+  async setMembershipEndIfNew(id: string, endsAt: string): Promise<boolean> {
+    await ensureSchema();
+    const rows = await sql`UPDATE users SET membership_ends_at = ${endsAt}::timestamptz
+      WHERE id = ${id} AND membership_ends_at IS NULL RETURNING id`;
+    if (rows.length > 0) return true;
+    await sql`UPDATE users SET membership_ends_at = ${endsAt}::timestamptz WHERE id = ${id}`;
+    return false;
+  },
+
   // Nastaví stav členství; Stripe identifikátory se přepíšou jen když jsou zadané.
   async setMembership(
     id: string,
