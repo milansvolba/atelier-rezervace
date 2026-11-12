@@ -6,6 +6,11 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Bezpečnostní záplaty knihoven (celý systém, návrh k sloučení)
+- Next.js 14.2.5 → 14.2.35 (poslední vydání řady 14), jose 6.2.3 → 6.2.17, resend 6.17.2 → 6.38.0, postcss → 8.5.x (přímá závislost), `npm audit fix` pro vedlejší nástroje (browserslist, nanoid, source-map-js aj.).
+- `next.config.mjs`: `images.unoptimized: true`. Web nepoužívá optimalizaci obrázků (jediný obrázek je logo ve /public), vypnutím se zavírá koncový bod `/_next/image`, kolem kterého je několik kritických zranitelností Next.js.
+- Zbývající nález `npm audit`: samotný Next.js řady 14 (opravy vycházejí už jen pro 15.5.28+). Většina nálezů se týká vlastního hostování, Server Actions, middleware nebo optimalizace obrázků, což web nepoužívá a běží na Vercelu. Úplné vyřešení = povýšení na Next 15.5.x jako samostatný krok (větší zásah, vyžaduje test všech stránek). Ověřeno: `tsc` bez chyb, `next build` projde (fonty z Google v sandboxu nelze stáhnout, build ověřen s dočasně vypnutými fonty; skutečný build ověří Vercel).
+
 ## 2026-11-12 — Členství: e-mail po zrušení předplatného (rezervace, e-maily, návrh k sloučení)
 - Když člen zruší předplatné (portál Stripe), dostane hned e-mail „Tvoje členství v Klubu na pobřeží skončí <datum>“: členství platí do konce zaplaceného období, další platba se nestrhne, zrušení jde vzít zpět ve správě předplatného a po skončení stačí znovu požádat o členství. Šablona je upravitelná v adminu (klíč `membership_cancelled`, tykání, text je návrh ke schválení). Posílá se jen jednou při prvním zaznamenaném zrušení (opakované události Stripe ho nezduplikují; pokud člen zrušení vezme zpět a zruší znovu, dostane e-mail znovu).
 
