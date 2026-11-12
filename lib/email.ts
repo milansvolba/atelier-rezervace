@@ -91,11 +91,11 @@ async function sendFromTemplate(
   vars: Record<string, string>,
   meta: { bookingId?: string; signupId?: string },
   afterFooterHtml = ""
-) {
+): Promise<boolean> {
   const tpl = await getTemplate(key);
   const subject = renderTemplate(tpl.subject, vars);
   const html = wrap(renderTemplate(tpl.body, vars), afterFooterHtml);
-  await send(to, subject, html, { type: key, ...meta });
+  return send(to, subject, html, { type: key, ...meta });
 }
 
 // --- Zpráva z kontaktního formuláře na webu ---
@@ -135,28 +135,13 @@ const BTN_OUTLINE = "background:#fff;color:#111;border:2px solid #111;padding:12
 
 // E-mail 1: po schválení žádosti (nebo ručním přidání placeného člena). Jen platba.
 export async function sendMembershipPaymentEmail(user: { name: string; email: string }, payLink: string): Promise<boolean> {
-  const subject = "Vaše žádost o členství je schválená";
-  const html = wrap(`
-    <p>Ahoj ${escapeHtml(user.name)}!</p>
-    <p>Vítej v Klubu na pobřeží. Díky, že do toho jdeš.</p>
-    <p>Kartou zaplatíš přes online platební bránu Stripe. Potom ti přijde potvrzení a odkaz na rezervaci místa v Klubu na pobřeží. S každou další měsíční platbou ti přijde e-mailem potvrzení. Pokud potřebuješ daňový doklad, napiš Milanovi. Členství můžeš kdykoliv zrušit v rezervačním systému.</p>
-    <p style="margin-top:20px;"><a href="${payLink}" style="${BTN_FILLED}">Zaplatit členství</a></p>
-    <p style="color:#888;font-size:13px;margin-top:10px;">Tenhle odkaz na platbu platí 30 dní.</p>
-  `);
-  return send(user.email, subject, html, { type: "membership_payment" });
+  return sendFromTemplate("membership_payment", user.email, { name: escapeHtml(user.name), payLink }, {});
 }
 
 // E-mail 2: po první zaplacené platbě (a hned po přidání člena zdarma). Přístup, jak se dostat dovnitř, tlačítko k rezervacím.
 // Kódy ke schránce s klíči se do e-mailu ani do kódu nikdy nepíšou, posílá je Milan v SMS.
 export async function sendMembershipAccessEmail(user: { name: string; email: string }, loginLink: string): Promise<boolean> {
-  const subject = "Vítejte v Klubu na pobřeží 🎉";
-  const html = wrap(`
-    <p>Vítejte, přátelé, v Klubu na pobřeží. Díky, že do toho jdete. Krom jiného jste získali přístup do Ateliéru na pobřeží, kde si můžete <a href="${APP_URL}" style="color:#111;text-decoration:underline;">zarezervovat</a> místo nebo aktivitu, kdykoliv je v kalendáři volno.</p>
-    <p>Do ateliéru se dostanete z ulice Na pobřeží, od kolejí. Na dveřích je poštovní schránka a v ní schránka s klíči. Kódy k ní vám pošleme v SMS.</p>
-    <p style="margin-top:20px;"><a href="${loginLink}" style="${BTN_OUTLINE}">Zaber si flek</a></p>
-    <p style="color:#888;font-size:13px;margin-top:10px;">Tlačítko vás rovnou přihlásí do rezervací. Odkaz platí 7 dní. Potom se stačí přihlásit zadáním e-mailu na rezervace.ateliernapobrezi.cz.</p>
-  `);
-  return send(user.email, subject, html, { type: "membership_access" });
+  return sendFromTemplate("membership_access", user.email, { loginLink, appUrl: APP_URL }, {});
 }
 
 // Přihlašovací odkaz platný 7 dní pro e-mail 2 (běžný přihlašovací odkaz platí jen 15 minut).
@@ -186,15 +171,18 @@ export async function sendWelcomeEmail(
 
 // Adminům: někdo požádal o členství na stránce /clenstvi.
 export async function sendAdminMembershipRequestEmail(r: { name: string; email: string; phone: string | null; message: string | null }) {
-  const subject = "Nová žádost o členství: " + r.name.slice(0, 60);
-  const html = wrap(`
-    <p><strong>Nová žádost o členství v klubu</strong></p>
-    <p>Jméno: ${escapeHtml(r.name)}<br>E-mail: <a href="mailto:${escapeHtml(r.email)}">${escapeHtml(r.email)}</a>${r.phone ? "<br>Telefon: " + escapeHtml(r.phone) : ""}</p>
-    ${r.message ? `<p style="white-space:pre-wrap;border-left:3px solid #ddd;margin:16px 0;padding:4px 0 4px 14px;">${escapeHtml(r.message)}</p>` : ""}
-    <p style="margin-top:20px;"><a href="${APP_URL}/admin" style="${BTN_FILLED}">Otevřít a schválit</a></p>
-    <p style="color:#888;font-size:13px;margin-top:10px;">V administraci otevřete Účty, nahoře uvidíte žádosti ke schválení.</p>
-  `);
-  await send(ADMIN_EMAILS, subject, html, { type: "membership_request", ...(r.email ? {} : {}) });
+  await sendFromTemplate(
+    "membership_request",
+    ADMIN_EMAILS,
+    {
+      name: escapeHtml(r.name),
+      email: `<a href="mailto:${escapeHtml(r.email)}">${escapeHtml(r.email)}</a>`,
+      phoneLine: r.phone ? "<br>Telefon: " + escapeHtml(r.phone) : "",
+      messageBlock: r.message ? `<p style="white-space:pre-wrap;border-left:3px solid #ddd;margin:16px 0;padding:4px 0 4px 14px;">${escapeHtml(r.message)}</p>` : "",
+      adminUrl: `${APP_URL}/admin`,
+    },
+    {}
+  );
 }
 
 // --- Adminům: nová žádost od veřejnosti (pronájem, nebo poptávka na kurz) ---
