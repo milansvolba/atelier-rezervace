@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 // POST /api/admin/membership-requests/:id { action: "approve" | "reject" } (jen admin)
 // approve: vytvoří účet člena a pošle e-mail s odkazem na první platbu. Vrací welcomeEmailSent,
 // aby administrace mohla ukázat, že e-mail opravdu odešel.
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { action } = await req.json().catch(() => ({ action: "" }));
   if (action !== "approve" && action !== "reject") {

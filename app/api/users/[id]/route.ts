@@ -3,7 +3,8 @@ import { users } from "@/lib/users";
 import { requireAdmin } from "@/lib/auth";
 
 // DELETE /api/users/:id — odebrat účet (jen admin, nejde smazat posledního admina)
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const target = await users.byId(params.id);
   if (!target) return NextResponse.json({ error: "účet nenalezen" }, { status: 404 });
@@ -19,7 +20,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 }
 
 // PATCH /api/users/:id { free } — přepnout členství zdarma / placené (jen admin)
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const target = await users.byId(params.id);
   if (!target) return NextResponse.json({ error: "účet nenalezen" }, { status: 404 });

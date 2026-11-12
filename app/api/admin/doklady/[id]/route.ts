@@ -5,7 +5,8 @@ import { invoiceStore } from "@/lib/invoices";
 export const dynamic = "force-dynamic";
 
 // PATCH /api/admin/doklady/:id — { action: "issued" | "reopen" | "correction_done", number?: string, url?: string }
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const body = (await req.json().catch(() => ({}))) as { action?: string; number?: string; url?: string };
   if (body.action === "issued") await invoiceStore.markIssued(params.id, body.number, body.url);

@@ -12,7 +12,8 @@ function canManage(session: { id: string; role: string }, existing: { userId?: s
 }
 
 // PATCH /api/bookings/:id — úprava existující rezervace (místo, čas, kdo, kontakt).
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const session = await requireUser(req);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
@@ -89,7 +90,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // DELETE /api/bookings/:id — smazání rezervace, volitelně s upozorněním žadatele.
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const session = await requireUser(req);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 

@@ -19,7 +19,8 @@ function suggestedPercent(date: string): number {
 }
 
 // GET /api/signups/:id/cancel — info pro storno: zaplacená částka, již vráceno, navržená vratka.
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const signup = await signupStore.byId(params.id);
   if (!signup) return NextResponse.json({ error: "přihláška nenalezena" }, { status: 404 });
@@ -33,7 +34,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 // POST /api/signups/:id/cancel  { refundCzk: number, notify: boolean }
 // Zruší potvrzenou přihlášku (místa se uvolní), případně vrátí část platby přes Stripe a pošle e-mail.
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const signup = await signupStore.byId(params.id);
