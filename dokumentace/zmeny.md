@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Admin: upozornění na nové žádosti o členství (rezervace, návrh k sloučení)
+- Na hlavní stránce administrace je žlutý box „Žádosti o členství v klubu“ se jmény žadatelů a tlačítkem „Otevřít a schválit“, u tlačítka „Účty“ je počet čekajících žádostí. Dosud byla žádost vidět jen uvnitř okna Účty (nález z testu 2026-11-12, žádost test9). Počet se obnoví po zavření okna Účty.
+
 ## 2026-11-12 — Ceník kurzů v samostatném souboru s návodem (rezervace, návrh k sloučení)
 - Ceny kurzů a odlitků jsou v souboru `lib/cenik.ts` s českým návodem nahoře (jak změnit cenu a jak přidat nový kurz). Funkce se nemění, jen se ceník přesunul z `lib/pricing.ts`, aby ho šlo editovat bez hledání (Milan 2026-11-12: chce zkusit editaci sám přes GitHub a pak ceny vrátit).
 - Cena kurzu z ceníku platí i pro starší termíny; změna ceny se projeví po nasazení, zaplacené objednávky se nemění.

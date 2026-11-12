@@ -1577,6 +1577,17 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     const [pickItems, setPickItems] = useState<Booking[] | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [showMembers, setShowMembers] = useState(false);
+  // Počet žádostí o členství čekajících na schválení (upozornění nahoře, viz box „Žádosti o členství“).
+  const [memberRequestNames, setMemberRequestNames] = useState<string[]>([]);
+  async function loadMemberRequests() {
+    if (session.role !== "admin") return;
+    try {
+      const res = await fetch("/api/admin/membership-requests");
+      if (res.ok) setMemberRequestNames(((await res.json()) as { name: string }[]).map((r) => r.name));
+    } catch {
+      // upozornění je jen doplněk, chyba se ignoruje
+    }
+  }
   const [showEmails, setShowEmails] = useState(false);
   const [showReferral, setShowReferral] = useState(false);
   const [members, setMembers] = useState<AppUser[]>([]);
@@ -1607,6 +1618,10 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
   const date = iso(anchor);
   const isAdmin = session.role === "admin";
+  useEffect(() => {
+    loadMemberRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   async function load() {
     const res = await fetch("/api/bookings");
@@ -1888,6 +1903,11 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           {isAdmin && (
             <button onClick={() => setShowMembers(true)} className="text-sm text-gray-500 hover:text-gray-800">
               Účty
+              {memberRequestNames.length > 0 && (
+                <span className="ml-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-amber-500 text-white text-xs font-bold">
+                  {memberRequestNames.length}
+                </span>
+              )}
             </button>
           )}
           {isAdmin && (
@@ -1957,6 +1977,20 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
       {/* Široká obrazovka: kalendář vlevo, co čeká na schválení a nejbližší akce vpravo. Na menších jeden sloupec jako dřív. */}
       <div className={`grid grid-cols-1 gap-6 items-start ${isAdmin || myBookings.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
       <div className={`lg:order-2 space-y-6 ${isAdmin || myBookings.length > 0 ? "" : "hidden"}`}>
+      {isAdmin && memberRequestNames.length > 0 && (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-full bg-amber-500 text-white text-xs font-bold">
+              {memberRequestNames.length}
+            </span>
+            <p className="font-semibold text-amber-900">Žádosti o členství v klubu</p>
+          </div>
+          <p className="text-sm text-amber-950 mb-3">{memberRequestNames.join(", ")}</p>
+          <button onClick={() => setShowMembers(true)} className="h-9 px-3 rounded-md bg-amber-500 text-white text-sm font-medium">
+            Otevřít a schválit
+          </button>
+        </div>
+      )}
       {isAdmin && pending.length > 0 && (
         <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
@@ -2592,7 +2626,14 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
             />
           )}
 
-      {showMembers && <MembersPanel onClose={() => setShowMembers(false)} />}
+      {showMembers && (
+        <MembersPanel
+          onClose={() => {
+            setShowMembers(false);
+            loadMemberRequests();
+          }}
+        />
+      )}
       {showEmails && <EmailsPanel onClose={() => setShowEmails(false)} />}
       {showReferral && <ReferralStatsPanel onClose={() => setShowReferral(false)} />}
 
