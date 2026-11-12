@@ -69,6 +69,9 @@ export async function POST(req: NextRequest) {
   const price = computeOrder(booking.price, seats, castings, castingPrice ?? 0);
   const billingCheck = parseBillingInput(billing, price.total);
   if (!billingCheck.ok) return NextResponse.json({ error: billingCheck.error }, { status: 400 });
+  if (billingCheck.value?.isCompany) {
+    return NextResponse.json({ error: "Firmy neplatí kartou. Odešlete prosím poptávku, ozveme se vám s nabídkou a fakturou." }, { status: 400 });
+  }
   const cleanedPhone = cleanPhone(phone);
   if (phone && String(phone).trim() && !cleanedPhone) {
     return NextResponse.json({ error: "Zkontrolujte prosím telefon (9 až 15 číslic)." }, { status: 400 });

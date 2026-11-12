@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Firmy: poptávka místo platby kartou (rezervace, platby, e-maily, návrh k sloučení)
+- Když zákazník v objednávce kurzu nebo dárkového poukazu zaškrtne „Nakupuji na firmu (faktura na IČO)“, tlačítko se změní na „Odeslat poptávku“ a místo Stripe odejde poptávka (nová cesta `/api/firm-inquiry`): adminům e-mail s rekapitulací (co, termín, počet osob, orientační cena, údaje firmy, kontakt; Reply-To je e-mail zákazníka, odpověď jde rovnou jemu) a zákazníkovi potvrzení z nové upravitelné šablony „Děkujeme za poptávku (firma, zákazník)“ (klíč `firm_inquiry_customer`, vykání, slib odpovědi do tří pracovních dní, většinou týž den). Místo ani poukaz se nerezervují a nezakládá se platba. Milan odpoví, vystaví fakturu v Caflou a místo si u firmy hlídá ručně (u kurzu pro firmu může vypsat termín a nastavit „obsazeno“).
+- Platební cesty (`/api/signups/checkout`, `/api/vouchers/checkout`) firmu nově odmítnou (pojistka na serveru). Soukromé osoby beze změny.
+- Platební e-mail členství (`membership_payment`): doplněna věta „Při platbě prosím použij stejný e-mail, který jsi uvedl v žádosti“ (člen při platbě ve Stripe zadal jiný e-mail, účet se pak založil pod ním; pozor: pokud je šablona upravená v adminu, výchozí text se nepřepíše a větu je třeba doplnit ručně v Šablonách).
+- Stripe (nastavení, dělá Milan): potvrzení o platbě zůstává, vypnout přílohy PDF faktur (Settings → Billing → Invoice), vypnout e-mailování finalizovaných faktur (Settings → Billing → Subscriptions and emails) a v zákaznickém portálu vypnout „Invoice history“. Faktura u členství ve Stripe vznikne vždy, jen se neposílá ani nestahuje. Návrh ke schválení.
+
 ## 2026-11-12 — „Doklad k vystavení“ jen pro firmy (rezervace, platby, návrh k sloučení)
 - Fronta „Doklad k vystavení“ v administraci a upozornění se nově zakládají **jen u plateb firem** (vyplněný název firmy, IČO nebo DIČ). Platby soukromých osob (kurzy, poukazy, měsíční členství) se do fronty nezapisují (stav `none`), protože stačí potvrzení ze Stripe. Vratka u soukromé osoby už nevytváří úkol „vystavit opravný doklad“, u firmy ano. E-mail „Doklad k vystavení“ byl už dřív jen pro firmy (PR #50), nově používá stejné společné pravidlo. Členství: člen je soukromá osoba, do fronty se tedy nedostane; pokud by členství chtěla firma, fakturuje se ručně. Starší testovací platby soukromých osob byly ve frontě označeny jako „mimo frontu“ (data, ne kód). Návrh ke schválení.
 

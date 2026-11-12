@@ -55,6 +55,7 @@ export default function KurzyPage() {
   const [signupPeople, setSignupPeople] = useState(1);
   const [signupNote, setSignupNote] = useState("");
   const [signupSent, setSignupSent] = useState<null | "ok" | "err">(null);
+  const [firmSent, setFirmSent] = useState(false);
   const [honeypot, setHoneypot] = useState("");
   const [tiers, setTiers] = useState<{ minFillPercent: number; discountPercent: number }[]>([]);
   const [topicFilter, setTopicFilter] = useState<string | null>(null);
@@ -166,6 +167,7 @@ export default function KurzyPage() {
     e.preventDefault();
     if (!signupFor) return;
     setSignupSent(null);
+    setFirmSent(false);
     // Kurz s cenou se platí hned přes Stripe Checkout (cenu i slevu počítá server).
     const course = courses.find((c) => c.id === signupFor);
     if (course?.price) {
@@ -285,6 +287,7 @@ export default function KurzyPage() {
     setSignupPeople(voucherMode ? voucherInfo?.people ?? 1 : 1);
     setCastings(voucherMode ? voucherInfo?.castingCount ?? 0 : 0);
     setSignupSent(null);
+    setFirmSent(false);
     setPayError("");
     requestAnimationFrame(() => {
       document.getElementById("course-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -423,7 +426,42 @@ export default function KurzyPage() {
       billing: selectedCourse.price ? billing : undefined,
     });
     try {
-      if (selectedCourse.price) {
+      if (selectedCourse.price && billing.isCompany) {
+        // Firma neplatí kartou: odešle se poptávka, Milan se ozve a vystaví fakturu.
+        const r = await fetch("/api/firm-inquiry", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "kurz",
+            bookingId: selectedCourse.id,
+            name: signupName,
+            email: signupContact,
+            phone: signupPhone,
+            note: signupNote,
+            people: signupPeople,
+            casting: Math.min(castings, signupPeople),
+            heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
+            billing,
+            honeypot,
+          }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (r.ok) {
+          setFirmSent(true);
+          setSignupName("");
+          setSignupContact("");
+          setSignupPhone("");
+          setSignupNote("");
+          setHeardAbout("");
+          setHeardAboutOther("");
+          setSignupPeople(1);
+          setBilling(emptyBilling);
+          setSignupFor(null);
+          setStep(2);
+        } else {
+          setPayError(data.error || "Poptávku se nepodařilo odeslat, zkuste to prosím znovu.");
+        }
+      } else if (selectedCourse.price) {
         const r = await fetch("/api/signups/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -566,6 +604,11 @@ export default function KurzyPage() {
         )}
         {signupSent === "ok" && !selectedCourse && (
           <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4">{t("kurzy.signup.ok")}</p>
+        )}
+        {firmSent && !selectedCourse && (
+          <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4">
+            Děkujeme za poptávku. Ozveme se vám s nabídkou a fakturou nejpozději do tří pracovních dní, většinou to stihneme ještě týž den. Potvrzení vám právě posíláme e-mailem.
+          </p>
         )}
         {voucherDone && !selectedCourse && (
           <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-4">{t("kurzy.voucher.ok")}</p>
@@ -882,10 +925,10 @@ export default function KurzyPage() {
                     disabled={payBusy}
                     className="h-10 px-5 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60"
                   >
-                    {voucherInfo ? (payBusy ? t("kurzy.voucher.busy") : t("kurzy.voucher.button")) : payBusy ? t(selectedCourse.price ? "kurzy.pay.busy" : "kurzy.signup.busy") : quote ? t("kurzy.pay.button", { total: num(quote.grand) }) : "Odeslat přihlášku"}
+                    {voucherInfo ? (payBusy ? t("kurzy.voucher.busy") : t("kurzy.voucher.button")) : payBusy ? (billing.isCompany && selectedCourse.price ? "Odesílám…" : t(selectedCourse.price ? "kurzy.pay.busy" : "kurzy.signup.busy")) : quote && billing.isCompany ? "Odeslat poptávku" : quote ? t("kurzy.pay.button", { total: num(quote.grand) }) : "Odeslat přihlášku"}
                   </button>
                 </div>
-                {quote && <p className="text-xs text-gray-500">{t("kurzy.pay.hint")}</p>}
+                {quote && !billing.isCompany && <p className="text-xs text-gray-500">{t("kurzy.pay.hint")}</p>}
                 {quote && (
                   <p className="text-xs text-gray-500">
                     {t("kurzy.terms.lead")}{" "}

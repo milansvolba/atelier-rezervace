@@ -636,3 +636,36 @@ export async function sendAdminInvoiceBasisEmail(item: InvoiceItem) {
   );
   await send(INVOICE_EMAILS, "Doklad k vystavení: " + who + ", " + fmtCzk(item.amountCzk) + (membership ? " (členství)" : ""), html, { type: "invoice_basis" });
 }
+
+
+// --- Poptávka od firmy (místo platby kartou) ---
+// Firma, která v objednávce zaškrtne „Nakupuji na firmu“, neplatí přes Stripe: odejde poptávka adminům
+// (Reply-To = e-mail zákazníka, odpověď jde rovnou jemu) a zákazník dostane potvrzení z upravitelné šablony.
+export async function sendFirmInquiryEmails(q: {
+  kindLabel: string; // „Kurz“ nebo „Dárkový poukaz“
+  lines: string[]; // rekapitulace (co, termín, počet osob, cena …)
+  company: string;
+  ico: string;
+  dic?: string;
+  address: string;
+  name: string;
+  email: string;
+  phone?: string;
+  note?: string;
+  heardAbout?: string;
+}): Promise<boolean> {
+  const list = q.lines.map((l) => `<li>${escapeHtml(l)}</li>`).join("");
+  const adminHtml = wrap(
+    `<p><strong>Poptávka od firmy: ${escapeHtml(q.kindLabel)}</strong></p>` +
+      `<ul style="padding-left:18px;margin:8px 0;">${list}</ul>` +
+      `<p>Firma: <strong>${escapeHtml(q.company)}</strong><br>IČO: ${escapeHtml(q.ico)}${q.dic ? "<br>DIČ: " + escapeHtml(q.dic) : ""}<br>Adresa: ${escapeHtml(q.address)}</p>` +
+      `<p>Kontakt: ${escapeHtml(q.name)}<br>E-mail: <a href="mailto:${escapeHtml(q.email)}">${escapeHtml(q.email)}</a>${q.phone ? "<br>Telefon: " + escapeHtml(q.phone) : ""}</p>` +
+      (q.note ? `<p style="white-space:pre-wrap;border-left:3px solid #ddd;margin:12px 0;padding:4px 0 4px 14px;">${escapeHtml(q.note)}</p>` : "") +
+      (q.heardAbout ? `<p style="color:#888;font-size:13px;">Odkud se dozvěděli: ${escapeHtml(q.heardAbout)}</p>` : "") +
+      `<p style="color:#888;font-size:13px;">Místo ani poukaz zatím nejsou rezervované. Odpovězte na tento e-mail (jde rovnou zákazníkovi), domluvte se a vystavte fakturu v Caflou.</p>`
+  );
+  const okAdmin = await send(ADMIN_EMAILS, "Poptávka od firmy: " + q.company.slice(0, 60) + " (" + q.kindLabel + ")", adminHtml, { type: "firm_inquiry_admin" }, { replyTo: q.email });
+  const summaryBlock = `<ul style="padding-left:18px;margin:8px 0;">${list}</ul>`;
+  await sendFromTemplate("firm_inquiry_customer", q.email, { name: escapeHtml(q.name), summaryBlock }, {}).catch(() => false);
+  return okAdmin;
+}
