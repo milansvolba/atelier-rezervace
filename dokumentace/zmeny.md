@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Členství: e-mail po zrušení předplatného (rezervace, e-maily, návrh k sloučení)
+- Když člen zruší předplatné (portál Stripe), dostane hned e-mail „Tvoje členství v Klubu na pobřeží skončí <datum>“: členství platí do konce zaplaceného období, další platba se nestrhne, zrušení jde vzít zpět ve správě předplatného a po skončení stačí znovu požádat o členství. Šablona je upravitelná v adminu (klíč `membership_cancelled`, tykání, text je návrh ke schválení). Posílá se jen jednou při prvním zaznamenaném zrušení (opakované události Stripe ho nezduplikují; pokud člen zrušení vezme zpět a zruší znovu, dostane e-mail znovu).
+
 ## 2026-11-12 — Firmy: poptávka místo platby kartou (rezervace, platby, e-maily, návrh k sloučení)
 - Když zákazník v objednávce kurzu nebo dárkového poukazu zaškrtne „Nakupuji na firmu (faktura na IČO)“, tlačítko se změní na „Odeslat poptávku“ a místo Stripe odejde poptávka (nová cesta `/api/firm-inquiry`): adminům e-mail s rekapitulací (co, termín, počet osob, orientační cena, údaje firmy, kontakt; Reply-To je e-mail zákazníka, odpověď jde rovnou jemu) a zákazníkovi potvrzení z nové upravitelné šablony „Děkujeme za poptávku (firma, zákazník)“ (klíč `firm_inquiry_customer`, vykání, slib odpovědi do tří pracovních dní, většinou týž den). Místo ani poukaz se nerezervují a nezakládá se platba. Milan odpoví, vystaví fakturu v Caflou a místo si u firmy hlídá ručně (u kurzu pro firmu může vypsat termín a nastavit „obsazeno“).
 - Platební cesty (`/api/signups/checkout`, `/api/vouchers/checkout`) firmu nově odmítnou (pojistka na serveru). Soukromé osoby beze změny.

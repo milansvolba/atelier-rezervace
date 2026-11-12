@@ -28,7 +28,8 @@ export type TemplateKey =
   | "membership_access"
   | "membership_request"
   | "membership_sms_admin"
-  | "firm_inquiry_customer";
+  | "firm_inquiry_customer"
+  | "membership_cancelled";
 
 export interface TemplateDef {
   label: string;
@@ -275,6 +276,17 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateDef> = {
 <p>děkujeme za vaši poptávku. Ozveme se vám s nabídkou a fakturou nejpozději do tří pracovních dní, většinou to ale stihneme ještě týž den. Místo zatím není rezervované, rezervujeme ho po domluvě.</p>
 {{summaryBlock}}
 <p>Kdybyste chtěli cokoliv doplnit, stačí odpovědět na tento e-mail.</p>`,
+  },
+  membership_cancelled: {
+    label: "Zrušení členství (člen)",
+    description: "Pošle se členovi hned po zrušení předplatného (jednou). Členství platí do konce zaplaceného období ({{endDate}}), další platba se už nestrhne. Tykání členům.",
+    vars: ["name", "endDate", "appUrl"],
+    subject: "Tvoje členství v Klubu na pobřeží skončí {{endDate}}",
+    body: `<p>Ahoj {{name}},</p>
+<p>zrušení tvého členství jsme přijali. Chápeme, že to tak někdy je, a děkujeme, že jsi s námi byl.</p>
+<p>Členství ti platí až do <strong>{{endDate}}</strong>. Do té doby můžeš ateliér využívat jako dosud a další platba se už nestrhne.</p>
+<p>Kdykoliv se rozmyslíš, můžeš zrušení vzít zpět ve správě předplatného v <a href="{{appUrl}}" style="color:#111;text-decoration:underline;">rezervačním systému</a>. A až členství skončí, stačí znovu požádat o členství a budeme rádi, když se vrátíš.</p>
+<p style="margin-top:20px;"><a href="{{appUrl}}" style="background:#fff;color:#111;border:2px solid #111;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">Otevřít rezervace</a></p>`,
   },
   membership_request: {
     label: "Nová žádost o členství (admin)",

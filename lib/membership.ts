@@ -1,6 +1,6 @@
 import { users, AppUser, MembershipStatus } from "./users";
 import { invoiceStore } from "./invoices";
-import { sendAdminInvoiceBasisEmail, sendMembershipAccessEmail, membershipLoginLink } from "./email";
+import { sendAdminInvoiceBasisEmail, sendMembershipAccessEmail, sendMembershipCancelledEmail, membershipLoginLink } from "./email";
 
 // Členství v klubu = měsíční předplatné ve Stripe (Checkout v režimu "subscription").
 // Cena se bere z proměnné STRIPE_MEMBERSHIP_PRICE_ID (ve sandboxu a v ostrém provozu je jiná).
@@ -155,7 +155,19 @@ export async function handleMembershipEvent(event: {
         typeof o.current_period_end === "number" ? o.current_period_end : items?.data?.[0]?.current_period_end;
       const cancelAt = typeof o.cancel_at === "number" ? o.cancel_at : undefined;
       const endTs = o.cancel_at_period_end ? cancelAt ?? periodEnd : cancelAt;
-      await users.setMembershipEnd(user.id, endTs ? new Date(endTs * 1000).toISOString() : null);
+      if (endTs) {
+        // První zaznamenané zrušení: členovi pošleme e-mail (jednou), další události Stripe už ne.
+        const isNew = await users.setMembershipEndIfNew(user.id, new Date(endTs * 1000).toISOString());
+        if (isNew) {
+          try {
+            await sendMembershipCancelledEmail(user, cz(endTs));
+          } catch (e) {
+            console.error("[stripe] E-mail o zrušení členství se nepodařilo odeslat:", e);
+          }
+        }
+      } else {
+        await users.setMembershipEnd(user.id, null);
+      }
     }
     return true;
   }
