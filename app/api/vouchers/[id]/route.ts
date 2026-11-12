@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 
 // PATCH /api/vouchers/:id — admin označí poukaz jako uplatněný (např. na místě) nebo ho vrátí do stavu aktivní.
 // Tělo: { status: "redeemed" | "active" }
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { status } = await req.json().catch(() => ({}));
   if (status !== "redeemed" && status !== "active") return NextResponse.json({ error: "neplatný stav" }, { status: 400 });

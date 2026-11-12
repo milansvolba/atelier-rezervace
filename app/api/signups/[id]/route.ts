@@ -5,7 +5,8 @@ import { requireAdmin } from "@/lib/auth";
 import { sendSignupDecisionEmail } from "@/lib/email";
 
 // PATCH /api/signups/:id  { action: "approve" | "reject" }
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { action } = await req.json();
   const signup = await signupStore.byId(params.id);

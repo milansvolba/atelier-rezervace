@@ -7,7 +7,8 @@ function isValidKey(key: string): key is TemplateKey {
 }
 
 // PATCH /api/admin/email-templates/:key  { subject, body } — uloží upravený text šablony.
-export async function PATCH(req: NextRequest, { params }: { params: { key: string } }) {
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ key: string }> }) {
+  const params = await ctx.params;
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   if (!isValidKey(params.key)) return NextResponse.json({ error: "neznámá šablona" }, { status: 404 });
 
@@ -19,7 +20,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { key: strin
 }
 
 // DELETE /api/admin/email-templates/:key — vrátí šablonu zpátky na výchozí text.
-export async function DELETE(req: NextRequest, { params }: { params: { key: string } }) {
+export async function DELETE(req: NextRequest, ctx: { params: Promise<{ key: string }> }) {
+  const params = await ctx.params;
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   if (!isValidKey(params.key)) return NextResponse.json({ error: "neznámá šablona" }, { status: 404 });
 

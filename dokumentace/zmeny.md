@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Povýšení na Next.js 15.5.29 (celý systém, návrh k sloučení)
+- Next.js 14.2.35 → 15.5.29 (poslední opravená větev 15.5). Tím odpadají všechny známé zranitelnosti Next.js z `npm audit` (kritické i vysoké). Zbývá jen postcss vnořený uvnitř Next (nástroj používaný při sestavování, ne za běhu webu), jeho oprava přijde až s Next 16.
+- Úprava kódu podle změn v Next 15: `params` v obsluze cest (`app/api/**/[id]|[key]/route.ts`, 15 míst) a `searchParams` na stránce `/clenstvi` jsou nově asynchronní. Funkce se nezměnila, jen se parametry načítají přes `await`.
+- Otestováno lokálně (Next 15 + testovací Postgres, ostrá data se nedotkla): webhook se špatným podpisem je odmítnut; stejná zaplacená událost doručená 2× = jedna přihláška, jedna platba; „pád“ mezi platbou a přihláškou se dodělá; dvojklik na storno = jedno projde, druhé ne; selhání Stripe při vratce vrátí přihlášku i částku zpět; firma kartou neprojde (400), poptávka firmy vytvoří e-maily adminovi i zákazníkovi; pokus o SQL injection nic nerozbil; bez přihlášení storno nejde. Prohlížeč (Playwright, mobil i počítač): soukromá osoba vidí „Objednat a zaplatit“, firma „Odeslat poptávku“ s upozorněním, bez chyb v konzoli.
+- Nezkoušeno lokálně (potřebuje ostrý Stripe): skutečné vrácení peněz a skutečná platba kartou. Zbývá ruční ověření po nasazení.
+
 ## 2026-11-12 — Bezpečnostní záplaty knihoven (celý systém, návrh k sloučení)
 - Next.js 14.2.5 → 14.2.35 (poslední vydání řady 14), jose 6.2.3 → 6.2.17, resend 6.17.2 → 6.38.0, postcss → 8.5.x (přímá závislost), `npm audit fix` pro vedlejší nástroje (browserslist, nanoid, source-map-js aj.).
 - `next.config.mjs`: `images.unoptimized: true`. Web nepoužívá optimalizaci obrázků (jediný obrázek je logo ve /public), vypnutím se zavírá koncový bod `/_next/image`, kolem kterého je několik kritických zranitelností Next.js.

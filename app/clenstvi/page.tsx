@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Členství — Ateliér na pobřeží" };
 
-export default function MembershipPage({ searchParams }: { searchParams: { token?: string; platba?: string } }) {
+export default async function MembershipPage(props: { searchParams: Promise<{ token?: string; platba?: string }> }) {
+  const searchParams = await props.searchParams;
   const token = searchParams.token;
   const payHref = token ? "/api/membership/manage?token=" + encodeURIComponent(token) : null;
   const paid = searchParams.platba === "ok";
