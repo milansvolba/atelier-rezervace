@@ -1916,6 +1916,17 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
             </button>
           )}
           {isAdmin && (
+            <a
+              href="https://github.com/milansvolba/atelier-rezervace/edit/main/lib/cenik.ts"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Otevře ceník na GitHubu k úpravě (ceny kurzů a odlitků)"
+              className="text-sm text-gray-500 hover:text-gray-800"
+            >
+              Ceník
+            </a>
+          )}
+          {isAdmin && (
             <button onClick={() => setShowReferral(true)} className="text-sm text-gray-500 hover:text-gray-800">
               Odkud nás znají
             </button>

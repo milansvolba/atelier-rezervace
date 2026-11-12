@@ -6,6 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Admin: odkaz „Ceník“ k úpravě cen (rezervace, návrh k sloučení)
+- V horní liště administrace (vedle Účty a E-maily) je odkaz „Ceník“, který otevře soubor s cenami kurzů a odlitků na GitHubu rovnou v režimu úprav (`lib/cenik.ts`). Po uložení a sloučení se cena nasadí sama (Milan 2026-11-12). Plná úprava cen přímo v administraci (bez GitHubu) je nabídnutá jako další krok (varianta B).
+
 ## 2026-11-12 — Admin: širší pracovní plocha na velkých monitorech (rezervace, návrh k sloučení)
 - Na velkých monitorech (od 1536 px šířky) je administrace široká až 1760 px místo dosavadních 1280 px, aby se méně zkracovaly a schovávaly texty (nápad Milana 2026-11-12). Na menších obrazovkách beze změny, web pro zákazníky se nemění.
 
