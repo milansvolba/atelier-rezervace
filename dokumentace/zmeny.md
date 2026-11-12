@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — „Včetně občerstvení“ v názvu položky na dokladu ze Stripe (platby, návrh k sloučení)
+- Název položky při platbě kurzu i dárkového poukazu ve Stripe nově končí „…, včetně občerstvení“ (např. „Modelování hlavy — 15. 11. 2026, 1 místo, včetně občerstvení“). Zobrazí se na platební stránce, v potvrzení o platbě a v exportu ze Stripe. Důvod: občerstvení je součástí ceny kurzu a doklad to má jasně říkat (opatření pro účetní uznání nákupu občerstvení a odpočet DPH; není to záruka, potvrdit s účetní Hanou).
+- Stránka Kurzy v aplikaci a e-maily po zaplacení už „V ceně: … občerstvení“ uváděly. Marketingový web (`kurz-modelovani-hlavy.php`, `kurz-relief.php`) tuto větu zatím nemá, navrženo doplnit přes FTP po schválení textu.
+
 ## 2026-11-12 — Platba kurzu: místa se rezervují dřív, než se ověří kapacita (rezervace, platby, návrh k sloučení)
 - Dřív se kapacita kontrolovala a teprve potom se zakládala rezervace míst, takže dva zákazníci, kteří kliknuli ve stejný okamžik na poslední místa, mohli oba dojít k platbě (přeprodání termínu). Nově se místa nejdřív zarezervují v databázi (dočasné ID `pending_…`), pak se kapacita ověří znovu včetně vlastní rezervace a až potom se vytvoří platba ve Stripe; dočasné ID se přepíše na skutečné ID session. Při souběhu radši neprojde žádný ze dvou (409 „není dost volných míst“), nikdy neprojdou oba. Když se platba nepodaří založit, rezervace se smaže.
 - Dřívější nedokončený pokus téhož zákazníka (stejný e-mail) se dál ukončuje automaticky, takže dvě otevřená platební okna téhož zákazníka se neplatí dvakrát.

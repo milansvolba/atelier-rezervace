@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
       extraItems: castings > 0 ? [{ name: "Betonový odlitek — " + course.title, amountCzk: course.castingPrice, quantity: castings }] : undefined,
       productName:
         "Dárkový poukaz — " + course.title + ", " + seats + " " + peopleWord(seats) +
-        (booking ? " (termín " + fmtDate(booking.date) + ")" : ""),
+        (booking ? " (termín " + fmtDate(booking.date) + ")" : "") + ", včetně občerstvení",
       customerEmail: email,
       metadata: {
         kind: "voucher",

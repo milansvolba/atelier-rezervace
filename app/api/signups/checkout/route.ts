@@ -96,7 +96,8 @@ export async function POST(req: NextRequest) {
     const session = await createCheckoutSession({
       amountCzk: price.courseAfter,
       extraItems: castings > 0 ? [{ name: "Betonový odlitek — " + booking.title, amountCzk: castingPrice as number, quantity: castings }] : undefined,
-      productName: booking.title + " — " + fmtDate(booking.date) + ", " + seats + " " + seatsWord(seats),
+      // „Včetně občerstvení“ je na dokladu ze Stripe záměrně: občerstvení je součástí ceny kurzu (účetní opatření, schváleno Milanem 2026-11-12).
+      productName: booking.title + " — " + fmtDate(booking.date) + ", " + seats + " " + seatsWord(seats) + ", včetně občerstvení",
       customerEmail: email,
       metadata: {
         bookingId: booking.id,
