@@ -93,6 +93,18 @@ export const paymentStore = {
     await sql`INSERT INTO payments (id, booking_id, people, status, billing_input, hold_key) VALUES (${sessionId}, ${bookingId}, ${people}, 'awaiting', ${billing ? JSON.stringify(billing) : null}, ${holdKey ?? null}) ON CONFLICT (id) DO NOTHING`;
   },
 
+  // Po vytvoření platební stránky přepíše dočasné ID rezervace míst na skutečné ID session ze Stripe.
+  async renameSession(oldId: string, newId: string): Promise<void> {
+    await ensureSchema();
+    await sql`UPDATE payments SET id = ${newId} WHERE id = ${oldId} AND status = 'awaiting'`;
+  },
+
+  // Smaže dosud nezaplacenou rezervaci míst (když se platba nepodařilo zahájit nebo není dost místa).
+  async removeAwaiting(id: string): Promise<void> {
+    await ensureSchema();
+    await sql`DELETE FROM payments WHERE id = ${id} AND status = 'awaiting'`;
+  },
+
   // Uvolní místa držená dřívějšími nedokončenými pokusy téhož zákazníka (stejný e-mail) na tomto termínu:
   // platební stránku ve Stripe předčasně ukončí a platbu označí jako vypršelou. Dokončenou platbu nikdy nezruší.
   async releaseHolds(bookingId: string, holdKey: string): Promise<number> {

@@ -79,6 +79,19 @@ export async function POST(req: NextRequest) {
   const contactStr = String(contact).trim();
   const email = contactStr.includes("@") ? contactStr : undefined;
 
+  // Místa si nejdřív zarezervujeme v databázi a teprve potom ověříme kapacitu: dva zákazníci, kteří klikli
+  // ve stejný okamžik na poslední místa, se tak nikdy nedostanou oba k platbě (při souběhu radši neprojde žádný).
+  const tmpId = "pending_" + crypto.randomUUID();
+  await paymentStore.addAwaiting(tmpId, booking.id, seats, billingCheck.value, holdKey);
+  if (booking.capacity) {
+    const confirmedNow = await signupStore.confirmedPeopleForBooking(booking.id);
+    const heldNow = await paymentStore.heldPeople(booking.id);
+    if (confirmedNow + heldNow > booking.capacity) {
+      await paymentStore.removeAwaiting(tmpId);
+      return NextResponse.json({ error: "Na tomto termínu už není dost volných míst." }, { status: 409 });
+    }
+  }
+
   try {
     const session = await createCheckoutSession({
       amountCzk: price.courseAfter,
@@ -98,10 +111,11 @@ export async function POST(req: NextRequest) {
       successUrl: APP_URL + "/dekujeme?termin=" + encodeURIComponent(booking.id),
       cancelUrl: APP_URL + "/kurzy?platba=zrusena",
     });
-    await paymentStore.addAwaiting(session.id, booking.id, seats, billingCheck.value, holdKey);
+    await paymentStore.renameSession(tmpId, session.id);
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("[stripe] Vytvoření platby selhalo:", err);
+    await paymentStore.removeAwaiting(tmpId).catch(() => undefined);
     return NextResponse.json({ error: "Platbu se nepodařilo zahájit, zkuste to prosím znovu." }, { status: 502 });
   }
 }
