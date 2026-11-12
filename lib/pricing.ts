@@ -64,8 +64,8 @@ export function computeOrder(pricePerPerson: number, people: number, castings: n
 // Kurzy, na které lze koupit dárkový poukaz: základní cena za 1 osobu (vc. DPH, bez slevy) a cena odlitku.
 // "match" slouží už jen jako záloha pro starší termíny bez typu (viz courseTypeKey).
 export const VOUCHER_COURSES = [
-  { key: "hlava", title: "Modelování hlavy", pricePerPerson: 8270, castingPrice: 3900, match: "hlav" },
-  { key: "relief", title: "Modelování reliéfu", pricePerPerson: 6470, castingPrice: 3100, match: "reli" },
+  { key: "hlava", title: "Modelování hlavy", pricePerPerson: 8270, castingPrice: 3490, match: "hlav" },
+  { key: "relief", title: "Modelování reliéfu", pricePerPerson: 6470, castingPrice: 2990, match: "reli" },
 ] as const;
 
 export function voucherCourse(key: string) {
