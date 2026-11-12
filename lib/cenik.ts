@@ -13,6 +13,6 @@
 // Slevy pro více lidí se nastavují jinde (GROUP_DISCOUNTS v lib/pricing.ts): 2 osoby 5 %, 3-4 osoby 10 %, 5 a více 15 %.
 
 export const CENIK = [
-  { key: "hlava", title: "Modelování hlavy", pricePerPerson: 8270, castingPrice: 3490, match: "hlav" },
-  { key: "relief", title: "Modelování reliéfu", pricePerPerson: 6470, castingPrice: 2990, match: "reli" },
+  { key: "hlava", title: "Modelování hlavy", pricePerPerson: 8270, castingPrice: 3900, match: "hlav" },
+  { key: "relief", title: "Modelování reliéfu", pricePerPerson: 6470, castingPrice: 3100, match: "reli" },
 ] as const;
