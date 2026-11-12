@@ -6,6 +6,11 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Platba kurzu: místa se rezervují dřív, než se ověří kapacita (rezervace, platby, návrh k sloučení)
+- Dřív se kapacita kontrolovala a teprve potom se zakládala rezervace míst, takže dva zákazníci, kteří kliknuli ve stejný okamžik na poslední místa, mohli oba dojít k platbě (přeprodání termínu). Nově se místa nejdřív zarezervují v databázi (dočasné ID `pending_…`), pak se kapacita ověří znovu včetně vlastní rezervace a až potom se vytvoří platba ve Stripe; dočasné ID se přepíše na skutečné ID session. Při souběhu radši neprojde žádný ze dvou (409 „není dost volných míst“), nikdy neprojdou oba. Když se platba nepodaří založit, rezervace se smaže.
+- Dřívější nedokončený pokus téhož zákazníka (stejný e-mail) se dál ukončuje automaticky, takže dvě otevřená platební okna téhož zákazníka se neplatí dvakrát.
+- Otestováno lokálně (Next 15, testovací Postgres): dva souběžné požadavky na poslední místa → 409/409, nikdy oba k platbě; po selhání Stripe nezůstane viset rezervace; 4 z 6 obsazeno + žádost o 3 → 409, o 2 → projde. Skutečná platba ve Stripe zbývá ověřit ručně po nasazení.
+
 ## 2026-11-12 — Povýšení na Next.js 15.5.29 (celý systém, návrh k sloučení)
 - Next.js 14.2.35 → 15.5.29 (poslední opravená větev 15.5). Tím odpadají všechny známé zranitelnosti Next.js z `npm audit` (kritické i vysoké). Zbývá jen postcss vnořený uvnitř Next (nástroj používaný při sestavování, ne za běhu webu), jeho oprava přijde až s Next 16.
 - Úprava kódu podle změn v Next 15: `params` v obsluze cest (`app/api/**/[id]|[key]/route.ts`, 15 míst) a `searchParams` na stránce `/clenstvi` jsou nově asynchronní. Funkce se nezměnila, jen se parametry načítají přes `await`.
