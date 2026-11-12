@@ -915,7 +915,11 @@ export default function KurzyPage() {
                       )}
                       <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">Kde</dt><dd>{t("kurzy.fact.place")}</dd></div>
                       <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">V ceně</dt><dd>{t("kurzy.fact.included")}</dd></div>
-                      {!voucherMode && <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">Zrušení</dt><dd>{t("kurzy.fact.cancel")}</dd></div>}
+                      {voucherMode ? (
+                        <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">Změna termínu</dt><dd>{t("kurzy.fact.cancelVoucher")}</dd></div>
+                      ) : (
+                        <div className="flex gap-2"><dt className="text-gray-500 w-20 shrink-0">Zrušení</dt><dd>{t("kurzy.fact.cancel")}</dd></div>
+                      )}
                     </dl>
                     {c.capacity && (
                       <p className="text-xs text-gray-400 mt-1">
