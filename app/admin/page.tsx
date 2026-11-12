@@ -2118,7 +2118,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="font-medium mb-1">Doklad k vystavení{doklady.open.length > 0 ? " (" + doklady.open.length + ")" : ""}</p>
           <p className="text-xs text-gray-500 mb-3">
-            Zaplacené kurzy, poukazy a měsíční členství, u kterých ještě není vystavený daňový doklad v Caflou. Datum uskutečnění plnění = datum přijetí platby. Po vystavení klikni na „Vystaveno“.
+            Zaplacené objednávky firem (nakupují na IČO), u kterých ještě není vystavená faktura v Caflou. Soukromým osobám se doklad nevystavuje, stačí jim potvrzení ze Stripe, proto se tu neukazují. Datum uskutečnění plnění = datum přijetí platby. Po vystavení klikni na „Vystaveno“.
           </p>
           {doklady.open.length === 0 && <p className="text-sm text-gray-400">Vše vystaveno.</p>}
           <div className="space-y-2">

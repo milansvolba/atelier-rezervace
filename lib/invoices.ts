@@ -1,5 +1,6 @@
 import { sql, ensureSchema } from "./db";
 import type { BillingInput } from "./billingInput";
+import { isCompanyBilling } from "./invoiceFormat";
 
 // Podklady pro daňové doklady. Doklad vystavuje Milan ručně v Caflou; aplikace po zaplacení uloží
 // fakturační údaje ze Stripe Checkout a hlídá, co ještě není vystavené. Data jsou v tabulce `payments`
@@ -138,9 +139,11 @@ export const invoiceStore = {
       input = null;
     }
     d = { ...d, billing: mergeBilling(d.billing, input, d.contactName) };
+    // Soukromá osoba: doklad se nevystavuje ('none' = mimo frontu), firma: čeká na vystavení ('pending').
+    const initialStatus = isCompanyBilling(d.billing) ? "pending" : "none";
     const rows = await sql`
       UPDATE payments SET kind = ${d.kind}, description = ${d.description}, billing = ${JSON.stringify(d.billing)},
-        amount_czk = ${Math.round(d.amountCzk)}, paid_at = COALESCE(paid_at, now()), invoice_status = COALESCE(invoice_status, 'pending')
+        amount_czk = ${Math.round(d.amountCzk)}, paid_at = COALESCE(paid_at, now()), invoice_status = COALESCE(invoice_status, ${initialStatus})
       WHERE id = ${sessionId}
       RETURNING *
     `;
@@ -151,9 +154,11 @@ export const invoiceStore = {
   // id = ID faktury Stripe (in_...), takže opakované doručení události nezaloží duplicitu (vrací null).
   async recordMembership(invoiceId: string, d: { description: string; amountHal: number; billing: BillingDetails; paidAt?: string }): Promise<InvoiceItem | null> {
     await ensureSchema();
+    // Člen je soukromá osoba (Stripe potvrzení stačí): do fronty „Doklad k vystavení“ jen když jsou u faktury údaje firmy.
+    const initialStatus = isCompanyBilling(d.billing) ? "pending" : "none";
     const rows = await sql`
       INSERT INTO payments (id, booking_id, people, status, kind, description, billing, amount_czk, amount_hal, paid_at, invoice_status)
-      VALUES (${invoiceId}, 'clenstvi', 0, 'paid', 'clenstvi', ${d.description}, ${JSON.stringify(d.billing)}, ${Math.round(d.amountHal / 100)}, ${Math.round(d.amountHal)}, ${d.paidAt ?? new Date().toISOString()}, 'pending')
+      VALUES (${invoiceId}, 'clenstvi', 0, 'paid', 'clenstvi', ${d.description}, ${JSON.stringify(d.billing)}, ${Math.round(d.amountHal / 100)}, ${Math.round(d.amountHal)}, ${d.paidAt ?? new Date().toISOString()}, ${initialStatus})
       ON CONFLICT (id) DO NOTHING
       RETURNING *
     `;

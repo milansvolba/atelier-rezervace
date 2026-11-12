@@ -5,7 +5,7 @@ import { logEmail } from "./emailLog";
 import type { Voucher } from "./vouchers";
 import { castingText } from "./voucherConfig";
 import type { InvoiceItem } from "./invoices";
-import { addressLine, idsLine, icoMissing } from "./invoiceFormat";
+import { addressLine, idsLine, icoMissing, isCompanyBilling } from "./invoiceFormat";
 import { signupNotifyTo } from "./signupContact";
 import { SIMPLIFIED_LIMIT_CZK } from "./billingInput";
 import { escapeHtml } from "./html";
@@ -620,7 +620,7 @@ function fmtCzk(n: number) {
 export async function sendAdminInvoiceBasisEmail(item: InvoiceItem) {
   const b = item.billing;
   // Soukromé osobě se daňový doklad nevystavuje (stačí potvrzení ze Stripe), upozornění jen u firmy (rozhodnutí Milana 2026-11-11).
-  if (!b?.company && !b?.ico && !b?.taxIds?.length) return;
+  if (!isCompanyBilling(b)) return;
   const addr = addressLine(b?.address);
   const ids = idsLine(b);
   const paid = item.paidAt ? fmtDate(item.paidAt.slice(0, 10)) : "";

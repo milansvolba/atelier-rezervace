@@ -55,3 +55,10 @@ export function spotsPhrase(n: number): { remaining: string; places: string } {
 export function icoMissing(b: BillingLike | null | undefined): boolean {
   return !!b && (!!b.company || b.taxIds.length > 0) && !b.ico;
 }
+
+// Daňový doklad (faktura) se vystavuje jen firmě: je vyplněný název firmy, IČO nebo DIČ.
+// Soukromé osobě stačí potvrzení o platbě ze Stripe, proto se u ní nic nezakládá do fronty „Doklad k vystavení“
+// a nechodí e-mail (rozhodnutí Milana 2026-11-11, upřesnění 2026-11-12).
+export function isCompanyBilling(b: BillingLike | null | undefined): boolean {
+  return !!b && (!!b.company || !!b.ico || (b.taxIds?.length ?? 0) > 0);
+}
