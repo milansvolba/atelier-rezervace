@@ -42,20 +42,35 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const pay = await paymentStore.bySignup(signup.id);
   const wanted = Math.max(0, Math.round(Number(body.refundCzk) || 0));
-  let refunded = 0;
   if (wanted > 0) {
     if (!pay || !pay.paymentIntent) return NextResponse.json({ error: "K přihlášce není online platba, vratku nelze poslat." }, { status: 400 });
     if (wanted > pay.amountCzk - pay.refundedCzk) return NextResponse.json({ error: "Vratka je vyšší než zaplacená částka." }, { status: 400 });
+  }
+
+  // Storno si nejdřív atomicky „zamkneme“: dvojí kliknutí nebo dvě okna nikdy neprojdou obě,
+  // takže se vratka pošle nejvýš jednou. Když vratka selže, stav se vrátí zpět.
+  const previous = await signupStore.cancelIfActive(params.id);
+  if (!previous) return NextResponse.json({ error: "Přihláška je už stornována." }, { status: 400 });
+
+  let refunded = 0;
+  if (wanted > 0 && pay && pay.paymentIntent) {
+    if (!(await paymentStore.reserveRefund(pay.id, wanted))) {
+      await signupStore.updateStatus(params.id, previous);
+      return NextResponse.json({ error: "Vratka je vyšší než zaplacená částka." }, { status: 400 });
+    }
     try {
-      await createRefund(pay.paymentIntent, wanted);
-      await paymentStore.addRefunded(pay.id, wanted);
+      // Klíč je vázaný na přihlášku a částku: opakování téhož požadavku nikdy nevrátí peníze dvakrát.
+      await createRefund(pay.paymentIntent, wanted, "cancel-" + signup.id + "-" + wanted);
+      await paymentStore.flagCorrection(pay.id);
       refunded = wanted;
     } catch (e) {
+      await paymentStore.releaseRefund(pay.id, wanted);
+      await signupStore.updateStatus(params.id, previous);
       return NextResponse.json({ error: String(e instanceof Error ? e.message : e) }, { status: 502 });
     }
   }
 
-  const updated = await signupStore.updateStatus(params.id, "cancelled");
+  const updated = await signupStore.byId(params.id);
   const booking = (await store.all()).find((b) => b.id === signup.bookingId);
   if (body.notify && booking && updated && signupNotifyTo(updated)) {
     await sendSignupCancelledEmail(booking, updated, refunded);

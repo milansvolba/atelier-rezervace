@@ -156,6 +156,27 @@ export const paymentStore = {
       correction_needed = correction_needed OR invoice_status IN ('pending', 'issued') WHERE id = ${sessionId}`;
   },
 
+  // Atomicky si „zarezervuje“ vratku v databázi (jen když zbývá dost zaplacené částky). Dvě souběžná volání
+  // tak nemohou dohromady vrátit víc, než bylo zaplaceno. Vrací false, pokud už nezbývá dost.
+  async reserveRefund(sessionId: string, czk: number): Promise<boolean> {
+    await ensureSchema();
+    const rows = await sql`UPDATE payments SET refunded_czk = refunded_czk + ${Math.round(czk)}
+      WHERE id = ${sessionId} AND amount_czk - refunded_czk >= ${Math.round(czk)} RETURNING id`;
+    return rows.length > 0;
+  },
+
+  // Vrátí rezervaci zpět, když Stripe vratku odmítl.
+  async releaseRefund(sessionId: string, czk: number): Promise<void> {
+    await ensureSchema();
+    await sql`UPDATE payments SET refunded_czk = GREATEST(0, refunded_czk - ${Math.round(czk)}) WHERE id = ${sessionId}`;
+  },
+
+  // Po úspěšné vratce: u firem je potřeba opravný doklad (u soukromých osob se nic nezakládá).
+  async flagCorrection(sessionId: string): Promise<void> {
+    await ensureSchema();
+    await sql`UPDATE payments SET correction_needed = correction_needed OR invoice_status IN ('pending', 'issued') WHERE id = ${sessionId}`;
+  },
+
   async markExpired(sessionId: string): Promise<void> {
     await ensureSchema();
     await sql`UPDATE payments SET status = 'expired' WHERE id = ${sessionId} AND status = 'awaiting'`;
@@ -182,12 +203,17 @@ export async function expireStripeSession(sessionId: string): Promise<boolean> {
 }
 
 // Vrácení části nebo celé platby přes Stripe Refunds API (částka v Kč).
-export async function createRefund(paymentIntent: string, amountCzk: number): Promise<{ id: string }> {
+// idempotencyKey: Stripe při stejném klíči nikdy nevrátí peníze dvakrát (opakování stejného požadavku vrátí původní výsledek).
+export async function createRefund(paymentIntent: string, amountCzk: number, idempotencyKey?: string): Promise<{ id: string }> {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Chybí STRIPE_SECRET_KEY");
   const res = await fetch(STRIPE_API + "/refunds", {
     method: "POST",
-    headers: { Authorization: "Bearer " + key, "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      Authorization: "Bearer " + key,
+      "Content-Type": "application/x-www-form-urlencoded",
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+    },
     body: form({ payment_intent: paymentIntent, amount: Math.round(amountCzk * 100) }),
   });
   const data = await res.json();

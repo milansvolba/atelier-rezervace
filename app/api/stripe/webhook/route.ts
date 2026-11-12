@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { CourseSignup } from "@/lib/types";
@@ -11,6 +12,12 @@ import { cleanPhone } from "@/lib/signupContact";
 import { sendAdminNewSignupEmail, sendVoucherEmail, sendAdminNewVoucherEmail, sendAdminInvoiceBasisEmail, sendCoursePaidEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
+
+// ID přihlášky odvozené z ID platby: jedna platba = nejvýš jedna přihláška (i při opakování webhooku).
+function signupIdForSession(sessionId: string): string {
+  const h = createHash("sha256").update("signup:" + sessionId).digest("hex");
+  return [h.slice(0, 8), h.slice(8, 12), "4" + h.slice(13, 16), "8" + h.slice(17, 20), h.slice(20, 32)].join("-");
+}
 
 // POST /api/stripe/webhook — Stripe sem posílá události o platbách.
 // Podpis se ověřuje přes STRIPE_WEBHOOK_SECRET (viz lib/stripe.ts). Po zaplacení se vytvoří
@@ -61,9 +68,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // true jen poprvé — Stripe může stejnou událost doručit opakovaně.
-    const first = await paymentStore.markPaid(sessionId, bookingId, people);
-    if (first) {
+    // Zápis platby je idempotentní (opakované doručení nevadí). O tom, jestli se má přihláška vytvořit a poslat
+    // e-maily, rozhoduje až samotné vložení přihlášky níže, ne tento krok: kdyby server spadl mezi platbou a přihláškou,
+    // Stripe událost zopakuje a přihláška se dodělá (dřív by se opakování přeskočilo a zákazník by zaplatil bez místa).
+    await paymentStore.markPaid(sessionId, bookingId, people);
+    {
       const booking = (await store.all()).find((b) => b.id === bookingId && b.category === "kurz");
       if (booking) {
         const details = (obj.customer_details ?? {}) as { email?: string };
@@ -76,7 +85,7 @@ export async function POST(req: NextRequest) {
           contact = details.email;
         }
         const signup: CourseSignup = {
-          id: crypto.randomUUID(),
+          id: signupIdForSession(sessionId),
           bookingId,
           name: meta.name || "",
           contact,
@@ -87,14 +96,17 @@ export async function POST(req: NextRequest) {
           heardAbout: meta.heardAbout?.trim() || undefined,
           phone: cleanPhone(meta.phone) ?? undefined,
         };
-        await signupStore.add(signup);
+        // true jen při skutečném vložení: souběžné nebo opakované doručení události druhou přihlášku nevytvoří.
+        const inserted = await signupStore.addIfNew(signup);
         try {
           await paymentStore.attach(sessionId, { paymentIntent: typeof obj.payment_intent === "string" ? obj.payment_intent : undefined, amountCzk: amount, signupId: signup.id });
         } catch (e) {
           console.error("[stripe] Nepodařilo se spojit platbu " + sessionId + " s přihláškou:", e);
         }
-        await Promise.all([sendAdminNewSignupEmail(booking, signup), sendCoursePaidEmail(booking, signup, amount, Number(meta.casting) || 0)]);
-        await queueInvoice(sessionId, obj, meta.name, "kurz", "Kurz " + booking.title + " " + czDate(booking.date) + ", " + people + " os.");
+        if (inserted) {
+          await Promise.all([sendAdminNewSignupEmail(booking, signup), sendCoursePaidEmail(booking, signup, amount, Number(meta.casting) || 0)]);
+          await queueInvoice(sessionId, obj, meta.name, "kurz", "Kurz " + booking.title + " " + czDate(booking.date) + ", " + people + " os.");
+        }
       } else {
         console.error("[stripe] Zaplacená session " + sessionId + ": kurz " + bookingId + " už neexistuje.");
       }
