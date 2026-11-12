@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-12 — Nové ceny odlitků (rezervace, platby, návrh k sloučení)
+- Betonový odlitek vč. DPH: hlava 3 490 Kč (dříve 3 900 Kč), relief 2 990 Kč (dříve 3 100 Kč), rozhodnutí Milana 2026-11-12. Změna v centrálním ceníku (`lib/pricing.ts`), platí pro kurzy i poukazy. Už zaplacené poukazy a přihlášky se nemění (cena odlitku je u nich uložená v době nákupu).
+- Pozor: marketingový web musí mít stejné ceny odlitků (ověřit stránky kurzů).
+
 ## 2026-11-12 — Centrální ceník kurzů: cena u termínu se už nezadává (rezervace, platby, návrh k sloučení)
 - Cena kurzu za osobu typu hlava (8 270 Kč) a relief (6 470 Kč) se bere z jednoho místa v kódu (`VOUCHER_COURSES` v `lib/pricing.ts`), stejného, ze kterého se počítají poukazy a odlitky. Platí pro stránku /kurzy, platbu i admin. V adminu je pole „Cena“ u těchto kurzů jen zobrazené a zamčené; cena uložená u termínu se pro ně nepoužívá. Důvod: nepůjde omylem zadat jinou cenu, než je na marketingovém webu (nápad Milana 2026-11-12).
 - Jednorázové kurzy mimo web (typ „jiný“) dál mají cenu zadanou u termínu. Starší termíny bez uloženého typu se rozpoznají podle názvu (hlava, reliéf), takže dostanou cenu z ceníku také.
