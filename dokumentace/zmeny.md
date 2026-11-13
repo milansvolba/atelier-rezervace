@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-13 — O ateliéru: tlačítko „Napsat nám“ vede na Kontakt (web)
+
+Tlačítko v banneru „Chcete se potkat?“ na `/o-atelieru` (`banner_lide_button`) vedlo na `/kurzy`. Cíl `banner_lide_button_target` přepnut na `kontakt` (přes `/save-text` s přihlášeným adminem). Ověřeno živě: veřejné HTML teď má `Napsat nám -> kontakt`, ostatní tlačítka na Domů, Pronájem a Kurzy beze změny. **Poučení:** uložení celého formuláře „Uložit seznamy a cíle“ v `admin.php` hosting odmítl (HTTP 403, pravděpodobně kvůli velikosti odesílaných dat). Jedno pole spolehlivě uloží `POST /save-text` s JSON `{"klíč":"hodnota"}`; pro změnu cíle tlačítka stačí klíč `<název>_target` s hodnotou z `internal_link_targets()`. Ověřit, jestli 403 u velkého formuláře není trvalý problém (úkol).
+
+---
+
 ## 2026-11-13 — Next.js 16.4.6, menu na mobilu, úklid (celý systém, PR #72 a #73 sloučeny a nasazeny)
 - **Horní menu na mobilu (PR #72):** na úzkém displeji se logo stlačilo a odkazy Rezervace / Kurzy / Přihlásit se k němu lepily a překrývaly. Hlavička se nově zalamuje: logo má pevnou velikost, menu přeskočí pod něj. Na šířce od cca 500 px beze změny. Ověřeno testem v prohlížeči (šířky 320, 360, 390, 768 px) a lokálně i v samotné aplikaci. Na živém webu čeká na pohled Milana na telefonu.
 - **Next.js 15.5.29 → 16.4.6 (PR #73, nahradil Dependabot PR #71):** uzavřel poslední 3 nálezy v postcssu vnořeném uvnitř Next, `npm audit`: 0 zranitelností. `app/favicon.ico` bylo třeba přegenerovat (obrázky uvnitř nově RGBA; Turbopack v Next 16 původní soubor odmítl a build padal). `tsconfig.json` a `next-env.d.ts` upravil automaticky Next 16. React zůstává 18.3.1 (Next 16 hlásí, že jeho podpora skončí v Next 17).
