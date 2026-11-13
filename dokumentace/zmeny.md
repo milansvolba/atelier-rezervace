@@ -6,6 +6,14 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-13 — Kurzy: nové pořadí sekcí a slider s referencemi; mobilní menu se zavírá klepnutím mimo (web)
+
+- `/kurzy`: sekce „Vyberte si kurz“ je nyní nad „Co vás čeká“ (střídání pozadí upraveno). Nová sekce se sliderem referencí (4 reference, šipky + swipe, odkaz „Všechny reference“) před bannerem. Nové texty `kurzy_reference_heading` a `kurzy_reference_link` jsou návrh ke schválení. Soubory: `kurzy.php`, `styles.css`.
+- Mobilní menu (`script.js`): zavře se klepnutím kamkoliv mimo menu (klepnutí nespustí odkaz pod ním), klávesou Esc i klepnutím na položku. Po otevření se hamburger změní na křížek (×), mění se i popisek pro čtečky (Otevřít/Zavřít menu).
+- Nahráno přes webové FTP (net2ftp), protože FTP plugin byl nedostupný. Ověřeno živě: pořadí sekcí, 4 slidy, funkčnost menu na 390 px. Pozn.: `script.js` nemá verzi v URL, vracející se návštěvníci mohou nový skript dostat se zpožděním.
+
+---
+
 ## 2026-11-13 — O ateliéru: tlačítko „Napsat nám“ vede na Kontakt (web)
 
 Tlačítko v banneru „Chcete se potkat?“ na `/o-atelieru` (`banner_lide_button`) vedlo na `/kurzy`. Cíl `banner_lide_button_target` přepnut na `kontakt` (přes `/save-text` s přihlášeným adminem). Ověřeno živě: veřejné HTML teď má `Napsat nám -> kontakt`, ostatní tlačítka na Domů, Pronájem a Kurzy beze změny. **Poučení:** uložení celého formuláře „Uložit seznamy a cíle“ v `admin.php` hosting odmítl (HTTP 403, pravděpodobně kvůli velikosti odesílaných dat). Jedno pole spolehlivě uloží `POST /save-text` s JSON `{"klíč":"hodnota"}`; pro změnu cíle tlačítka stačí klíč `<název>_target` s hodnotou z `internal_link_targets()`. Ověřit, jestli 403 u velkého formuláře není trvalý problém (úkol).
