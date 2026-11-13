@@ -11,6 +11,10 @@ Oba systémy jsou propojené: `kurzy.php` na hlavním webu si živě natahuje vy
 
 V repu `atelier-rezervace` je i starší návrhový dokument `kurzy-vouchery-specifikace.md` (plnohodnotný voucherový systém) — realizovaný byl jen jeho slevový tier systém, viz vysvětlení v `rezervace-system.md`.
 
+## Zásada: nejlepší rozumné a dostupné zabezpečení (Milan, 2026-11-13)
+
+Při každé změně webu, aplikace, plateb, přihlašování, databáze i e-mailů myslíme na nejlepší rozumné a dostupné zabezpečení. Rozumné = úměrné riziku a našim možnostem, ne dokonalost za každou cenu. V praxi: nejdřív co je zdarma a stačí zapnout (aktualizace knihoven, upozornění GitHubu, omezení oprávnění klíčů), u nových funkcí se ptát „co když to zneužije cizí člověk?“ a nálezy zapsat do `claude/zabezpeceni.md` v projektu. Platby, přihlašování a databáze vždy přes větev a pull request.
+
 ## [zmeny.md](./zmeny.md)
 
 Průběžný log novinek a změn — datované záznamy, co se kdy udělalo a proč. Nová položka se přidává při každé netriviální změně (nová funkce, oprava chyby, změna chování). Součástí skillu pro správu webu.
