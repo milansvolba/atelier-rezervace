@@ -32,8 +32,8 @@ return (
     <body className="min-h-screen font-body">
       <AppShell>
         <BackToSite />
-        <header className="flex items-center justify-between mb-6">
-          <LeaveLink href="https://ateliernapobrezi.cz" ariaLabel="Ateliér na pobřeží – hlavní web">
+        <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 mb-6">
+          <LeaveLink href="https://ateliernapobrezi.cz" ariaLabel="Ateliér na pobřeží – hlavní web" className="shrink-0">
             <img src="/logo.png" alt="Ateliér na pobřeží" className="h-10 w-auto" />
           </LeaveLink>
           <HeaderNav />
