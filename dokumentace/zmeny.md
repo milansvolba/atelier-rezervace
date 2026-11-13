@@ -6,6 +6,13 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-13 — Next.js 16.4.6, menu na mobilu, úklid (celý systém, PR #72 a #73 sloučeny a nasazeny)
+- **Horní menu na mobilu (PR #72):** na úzkém displeji se logo stlačilo a odkazy Rezervace / Kurzy / Přihlásit se k němu lepily a překrývaly. Hlavička se nově zalamuje: logo má pevnou velikost, menu přeskočí pod něj. Na šířce od cca 500 px beze změny. Ověřeno testem v prohlížeči (šířky 320, 360, 390, 768 px) a lokálně i v samotné aplikaci. Na živém webu čeká na pohled Milana na telefonu.
+- **Next.js 15.5.29 → 16.4.6 (PR #73, nahradil Dependabot PR #71):** uzavřel poslední 3 nálezy v postcssu vnořeném uvnitř Next, `npm audit`: 0 zranitelností. `app/favicon.ico` bylo třeba přegenerovat (obrázky uvnitř nově RGBA; Turbopack v Next 16 původní soubor odmítl a build padal). `tsconfig.json` a `next-env.d.ts` upravil automaticky Next 16. React zůstává 18.3.1 (Next 16 hlásí, že jeho podpora skončí v Next 17).
+- **Ověřeno:** lokálně (Next 16, testovací Postgres): tsc, build, naše testy plateb (webhook, pád mezi platbou a přihláškou, dvojklik na storno, selhání Stripe, firma kartou 400, souběh na poslední místa, SQL injection), stránky bez chyb v konzoli. Vercel náhled PR #73 prošel, produkční nasazení READY (commit 5c7ef9a), runtime chyby za první hodinu žádné. **Neověřeno:** skutečná platba a vratka ve Stripe na Next 16 (doporučena jedna zkušební platba za 15 Kč).
+- **Úklid (Milan odsouhlasil 2026-11-13):** smazáno 9 starých náhledových větví v Neonu (zůstala jen `main`), limit 10 větví tím nebrání novým náhledům. Smazán log odeslaných e-mailů v administraci (`email_log`, 32 testovacích záznamů z 12. 11.), takže od ostrého provozu se tam uvidí jen skutečné e-maily.
+- **Zabezpečení GitHubu (Milan):** Dependabot alerts, malware alerts a security updates, CodeQL (default) a Push protection (viz `claude/zabezpeceni.md`).
+
 ## 2026-11-12 — „Včetně občerstvení“ v názvu položky na dokladu ze Stripe (platby, PR #70 sloučeno a ověřeno živě)
 - Název položky při platbě kurzu i dárkového poukazu ve Stripe nově končí „…, včetně občerstvení“ (např. „Modelování hlavy — 15. 11. 2026, 1 místo, včetně občerstvení“). Zobrazí se na platební stránce, v potvrzení o platbě a v exportu ze Stripe. Důvod: občerstvení je součástí ceny kurzu a doklad to má jasně říkat (opatření pro účetní uznání nákupu občerstvení a odpočet DPH; není to záruka, potvrdit s účetní Hanou).
 - Stránka Kurzy v aplikaci a e-maily po zaplacení už „V ceně: … občerstvení“ uváděly. Marketingový web (`kurz-modelovani-hlavy.php`, `kurz-relief.php`) věta mít nemusí (rozhodnutí Milana 2026-11-12: stačí na potvrzeních, účtenkách a fakturách).
