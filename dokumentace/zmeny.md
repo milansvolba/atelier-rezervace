@@ -6,9 +6,9 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
-## 2026-11-14 — Firemní akce: boxy „V kostce“ a „Aktivity“ jdou upravit přímo na stránce (web)
+## 2026-11-14 — Inline editace seznamů a referencí (web)
 
-Položky seznamů `firemni_quickfacts` a `firemni_activities` (JSON v jednom klíči) se dřív daly měnit jen v administraci. Nová funkce `t_item()` v `inc/content.php` obalí každý nadpis a text položky do `.t-edit` s atributy `data-lkey/lidx/lfield`; lišta „Upravit texty“ při uložení složí celý seznam a pošle ho přes `/save-text`. Mimo administraci se vypisuje jen escapovaný text. Použito na `firemni-akce.php`; stejně lze převést další seznamy (přidat klíč do pole v `render_edit_toolbar()` a použít `t_item()`). FAQ (`firemni_faq`) zůstává jen v administraci (odpovědi s HTML). Ověřeno: lokálně Playwright, živě v administraci (14 editovatelných polí, uložení bez změny nechá seznamy beze změny). Zálohy původních souborů: `CLAUDOVO\inline-seznamy\orig`.
+Položky seznamů (JSON v jednom klíči) se dřív daly měnit jen v administraci. Nová funkce `t_item()` v `inc/content.php` obalí text položky do `.t-edit` s atributy `data-lkey/lidx/lfield`; lišta „Upravit texty“ při uložení složí celý seznam a pošle ho přes `/save-text`. Mimo administraci se vypisuje stejný text jako dřív. Režimy: prostý text, `markup` (odkazy `[text](cíl)` a **tučné**), `'html'` (odpovědi FAQ, v úpravách se ukáže zdrojové HTML). Seznamy v `render_edit_toolbar()`: `firemni_quickfacts`, `firemni_activities`, `pronajem_amenities`, `pronajem_audience`, `kontakt_cesta_cards`, `pronajem_faq`, `firemni_faq`, `kurzy_faq`. Nová `t_plain()` pro reference (`testimonialN_name/_text/_course`, upravitelné všude, kde se karta zobrazuje) a životopis lektora `person_petr_bio` (nově se vykreslí i **tučné** a odkazy; dřív se hvězdičky zobrazovaly doslova). Soubory: `inc/content.php`, `firemni-akce.php`, `pronajem.php`, `kontakt.php`, `kurzy.php`. Záměrně neřešeno: Obchodní podmínky a Ochrana osobních údajů (upravuje Milan v kódu). Ověřeno: lokálně Playwright (editace, uložení, ikony vybavení zachovány, veřejný výstup beze změny); živě: stránky vrací 200 bez PHP chyb, na Firemních akcích i v administraci uložení bez změny nechá seznamy stejné. Zálohy: `CLAUDOVO\inline-seznamy\orig*` a `forpsi-ftp-backups\20261114-1620*`.
 
 ---
 
