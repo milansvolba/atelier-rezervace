@@ -6,6 +6,18 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-14 (odpoledne) — O ateliéru: fotka v záhlaví a nový Příběh + Making of; oprava mobilního menu a obrázků; slider referencí na detailech kurzů (web)
+
+- **O ateliéru, záhlaví:** fotka přes celou šířku jako na Kontaktu (`hero-photo`, klíč `oat_hero_image`, nahrává se inline v administraci pod záhlavím). Bez fotky vypadá stránka jako dřív. Odkazy Petr/Milan v perexu jsou na fotce bílé (`.hero-photo p.lead a`).
+- **O ateliéru, Příběh + Making of:** text vlevo/fotka vedle přes celou výšku textu (`.story-photo`, klíč `people_group_photo`, zaoblení a stín); bez fotky se text vycentruje (`.story-grid-single`). Making of má malý štítek, velký nadpis `oat_makingof_heading` (h2), perex a video ve zaobleném rámu (`.story-video-frame`). Nový klíč `oat_makingof_eyebrow`. Bílé pozadí sekce zůstává.
+- **Mobilní menu:** rozbalené menu mělo pevnou výšku 320 px a ořezávalo „Kontakt“ → `max-height: calc(100dvh - 90px)` + scroll. Křížek se teď ukazuje i bez nového `script.js` (`.nav-wrap:has(.nav-links.open)`). **Příčina „menu se nezavírá klepnutím mimo“:** telefon měl v paměti starý `script.js`, protože odkaz nebyl verzovaný. Všechny stránky teď načítají `script.js?v=<filemtime>` (index, kurzy, pronajem, firemni-akce, o-atelieru, kontakt, reference, obchod, oba detaily kurzů; 404, dárkové poukazy, OP a GDPR ho měly už dřív). **Pravidlo: každý nový odkaz na `script.js` psát s `?v=filemtime`.**
+- **Obrázky v administraci:** po prvním nahrání obrázku se stránka sama obnoví (`inc/content.php`), takže se hned ukáže tlačítko „Odebrat obrázek“ a hero fotka se vykreslí správně.
+- **Detaily kurzů:** reference jako slider stejně jako na `/kurzy` (`.reviews-slider`, šipky, odkaz „Všechny reference“).
+- Ověřeno živě: 11 stránek 200 bez PHP chyb, všechny s verzovaným skriptem; detail kurzu se sliderem (4 reference); menu v okně 390 px: všech 6 položek viditelných, křížek (aria-expanded), zavření klepnutím mimo. Neověřeno: vzhled O ateliéru s reálnou fotkou v Příběhu (zatím provizorní), chování na skutečném telefonu po obnovení stránky.
+- Zálohy: `forpsi-ftp-backups\20261114-1646*` až `…1657*`; zdroje `CLAUDOVO\o-atelieru-foto`, `obrazek-reload`, `menu-oprava`, `slider-detail`.
+
+---
+
 ## 2026-11-14 — Kurzy: karty s ilustracemi a dvěma tlačítky; sekce o betonovém odlitku (web)
 
 `/kurzy`, karty „Vyberte si kurz“: nahoře ilustrace (inline SVG v `.course-illu`, profil hlavy a reliéfní destička s listem), dole primární tlačítko **Objednat** (`https://rezervace.ateliernapobrezi.cz/kurzy?kurz=hlava|relief`, předvýběr řeší PR #74) a textový odkaz **Zobrazit detail a termíny**. Texty tlačítek `kurzy_cta_objednat`, `kurzy_cta_detail` (inline editace). `kurz-modelovani-hlavy.php` a `kurz-relief.php`: nová sekce „Chcete si dílo odnést i v betonu?“ s cenou odlitku (hlava 3 900, reliéf 3 100 Kč vč. DPH; klíče `kurz_hlavy_odlitek_cena`, `kurz_relief_odlitek_cena`) a čtyřmi kroky (forma ze silikonu, odlití, vytvrdnutí, začištění a retuše); klíče `kurz_odlitek_*`, všechny upravitelné inline. **Ceny na webu jsou psané ručně; zdrojem pravdy je `lib/cenik.ts`, při změně ceny upravit obojí.** Texty jsou návrh ke schválení (Milan je doladí). CSS na konci `styles.css`. Ověřeno živě: ilustrace i tlačítka se vykreslují (barvy podle tokenů), mobil 390 px bez horizontálního posunu, karty stejně vysoké a tlačítka zarovnaná, ceny odlitků správně na obou detailech, PHP bez chyb. Neověřeno: inline editace nových polí (nejsem přihlášen), předvýběr kurzu přes „Objednat“ (není vypsaný žádný termín). Zálohy: `CLAUDOVO\karty-kurzu\orig`.
