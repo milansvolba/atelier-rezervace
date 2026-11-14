@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-14 — Firemní akce: boxy „V kostce“ a „Aktivity“ jdou upravit přímo na stránce (web)
+
+Položky seznamů `firemni_quickfacts` a `firemni_activities` (JSON v jednom klíči) se dřív daly měnit jen v administraci. Nová funkce `t_item()` v `inc/content.php` obalí každý nadpis a text položky do `.t-edit` s atributy `data-lkey/lidx/lfield`; lišta „Upravit texty“ při uložení složí celý seznam a pošle ho přes `/save-text`. Mimo administraci se vypisuje jen escapovaný text. Použito na `firemni-akce.php`; stejně lze převést další seznamy (přidat klíč do pole v `render_edit_toolbar()` a použít `t_item()`). FAQ (`firemni_faq`) zůstává jen v administraci (odpovědi s HTML). Ověřeno: lokálně Playwright, živě v administraci (14 editovatelných polí, uložení bez změny nechá seznamy beze změny). Zálohy původních souborů: `CLAUDOVO\inline-seznamy\orig`.
+
+---
+
 ## 2026-11-13 — Kurzy: nové pořadí sekcí a slider s referencemi; mobilní menu se zavírá klepnutím mimo (web)
 
 - `/kurzy`: sekce „Vyberte si kurz“ je nyní nad „Co vás čeká“ (střídání pozadí upraveno). Nová sekce se sliderem referencí (4 reference, šipky + swipe, odkaz „Všechny reference“) před bannerem. Nové texty `kurzy_reference_heading` a `kurzy_reference_link` jsou návrh ke schválení. Soubory: `kurzy.php`, `styles.css`.
