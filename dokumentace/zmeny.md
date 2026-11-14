@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-14 — Marketingový web: „Přihlásit se →“ vede na konkrétní termín (web)
+
+V `kurz-modelovani-hlavy.php` a `kurz-relief.php` odkaz „Přihlásit se →“ u vypsaného termínu míří na `https://rezervace.ateliernapobrezi.cz/kurzy?termin=<id>` (id z `/api/courses`; bez id zůstává `/kurzy`). Aplikace `?termin=` umí od dřív. Ověřeno: lokálně s ukázkovými termíny (správné id, mezera zakódovaná, bez id fallback); živě stránky vrací 200 bez chyb, ale žádný termín teď není vypsaný, takže se zobrazuje jen záložní odkaz. Živě ověřit po vypsání prvního termínu. Ceny odlitků (hlava 3 900, reliéf 3 100 Kč) odpovídají `lib/cenik.ts`; na marketingovém webu se neuvádějí. Zálohy: `CLAUDOVO\prihlasit-odkazy\orig`.
+
+---
+
 ## 2026-11-14 — Inline editace seznamů a referencí (web)
 
 Položky seznamů (JSON v jednom klíči) se dřív daly měnit jen v administraci. Nová funkce `t_item()` v `inc/content.php` obalí text položky do `.t-edit` s atributy `data-lkey/lidx/lfield`; lišta „Upravit texty“ při uložení složí celý seznam a pošle ho přes `/save-text`. Mimo administraci se vypisuje stejný text jako dřív. Režimy: prostý text, `markup` (odkazy `[text](cíl)` a **tučné**), `'html'` (odpovědi FAQ, v úpravách se ukáže zdrojové HTML). Seznamy v `render_edit_toolbar()`: `firemni_quickfacts`, `firemni_activities`, `pronajem_amenities`, `pronajem_audience`, `kontakt_cesta_cards`, `pronajem_faq`, `firemni_faq`, `kurzy_faq`. Nová `t_plain()` pro reference (`testimonialN_name/_text/_course`, upravitelné všude, kde se karta zobrazuje) a životopis lektora `person_petr_bio` (nově se vykreslí i **tučné** a odkazy; dřív se hvězdičky zobrazovaly doslova). Soubory: `inc/content.php`, `firemni-akce.php`, `pronajem.php`, `kontakt.php`, `kurzy.php`. Záměrně neřešeno: Obchodní podmínky a Ochrana osobních údajů (upravuje Milan v kódu). Ověřeno: lokálně Playwright (editace, uložení, ikony vybavení zachovány, veřejný výstup beze změny); živě: stránky vrací 200 bez PHP chyb, na Firemních akcích i v administraci uložení bez změny nechá seznamy stejné. Zálohy: `CLAUDOVO\inline-seznamy\orig*` a `forpsi-ftp-backups\20261114-1620*`.
