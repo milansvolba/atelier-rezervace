@@ -209,6 +209,12 @@ texty z webu, pokud není uvedeno `NÁVRH`.
 ### Stránka 404
 - Velké „404“ v akcentu, jedna věta, odkaz zpět na úvod.
 
+### Ikony sociálních sítí (`.social-links`)
+- Loga Instagramu, Facebooku a Pinterestu v originálních barvách, 52 × 52 px, mezera 24 px. Vždy jen oficiální soubory služeb (`images/social/`).
+- Výjimka z barevných tokenů: loga se nepřebarvují (vyžadují to pravidla služeb). Bez stínů, rámečků a slov vedle loga.
+- Každé logo je odkaz s `aria-label` „Ateliér na pobřeží na Instagramu (otevře se v novém okně)“, `target="_blank"`, `rel="noopener noreferrer"` a viditelným fokusem (`2px solid var(--color-sea)`, odsazení 4 px).
+- Umístění: patička (první sloupec) a Kontakt (řádek „Sociální sítě“). Seznam a pořadí se spravují v „Upravit patičku“.
+
 ## 6. Obsahová pravidla (UX writing)
 
 ### 6.1 Hlas
