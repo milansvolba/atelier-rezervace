@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-14 (večer) — Světlé záhlaví s fotkou přes celou šířku: Kurzy, Pronájem, Firemní akce (web)
+
+Fotka v záhlaví už není vedle textu (`hero-photo-frame`), ale přes celou šířku jako na Kontaktu, ve světlé variantě `hero hero-photo hero-photo-light` (`styles.css`, blok na konci). Vlevo plná barva pozadí `#f2f2f0` pod šedým textem, překryv je 97 % neprůhledný do 52 % šířky, pak se vytrácí (60 % v 68 %, 12 % v 86 %), fotka je vidět vpravo (`object-position: 70% 40%`). Text zůstává šedý/černý, nikoli bílý. Mobil: fotka 190 px nahoře, text pod ní. Bez fotky se stránka chová jako dřív; v administraci je pod záhlavím políčko pro nahrání (klíče `hero_kurzy_image`, `hero_pronajem_image`, `hero_firemni_image`). Kontakt a O ateliéru zůstávají tmavé varianty (`hero-photo`). Ověřeno: lokálně všechny tři stránky desktop i mobil, živě stránky 200 bez PHP chyb, třída světlého záhlaví na všech třech, vzhled Kurzů zkontrolován očima. Pronájem a Firemní akce vizuálně živě neprohlédnuty. Zálohy `forpsi-ftp-backups\20261114-1719*`, zdroj `CLAUDOVO\hero-svetle`.
+
+---
+
 ## 2026-11-14 (odpoledne) — O ateliéru: fotka v záhlaví a nový Příběh + Making of; oprava mobilního menu a obrázků; slider referencí na detailech kurzů (web)
 
 - **O ateliéru, záhlaví:** fotka přes celou šířku jako na Kontaktu (`hero-photo`, klíč `oat_hero_image`, nahrává se inline v administraci pod záhlavím). Bez fotky vypadá stránka jako dřív. Odkazy Petr/Milan v perexu jsou na fotce bílé (`.hero-photo p.lead a`).
