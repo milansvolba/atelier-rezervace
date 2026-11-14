@@ -123,6 +123,7 @@ export default function KurzyPage() {
 
   const [terminGone, setTerminGone] = useState(false);
   const [terminHandled, setTerminHandled] = useState(false);
+  const [kurzHandled, setKurzHandled] = useState(false);
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customDate, setCustomDate] = useState("");
   const [customName, setCustomName] = useState("");
@@ -308,6 +309,21 @@ export default function KurzyPage() {
     setTerminHandled(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, courses, terminHandled]);
+
+  // Odkaz z marketingového webu: /kurzy?kurz=hlava (nebo relief) předvybere filtr podle kurzu.
+  // Hodnota je klíč typu kurzu z ceníku. Když takový termín není vypsaný, zobrazí se všechny kurzy.
+  // Odkaz ?termin=ID má přednost (otevře přímo přihlášku).
+  useEffect(() => {
+    if (loading || kurzHandled) return;
+    const key = new URLSearchParams(window.location.search).get("kurz");
+    const hasTermin = !!new URLSearchParams(window.location.search).get("termin");
+    if (key && !hasTermin && !voucherFromLink) {
+      const match = courses.find((x) => x.courseType === key);
+      if (match) setTopicFilter(match.title);
+    }
+    setKurzHandled(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, courses, kurzHandled]);
 
   const selectedCourse = signupFor ? courses.find((c) => c.id === signupFor) ?? null : null;
   const maxSeats = selectedCourse ? Math.max(1, Math.min(6, selectedCourse.spotsLeft ?? 6)) : 6;

@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-14 — Rezervace: `/kurzy?kurz=hlava` předvybere kurz (návrh, větev `kurzy-predvyber-kurzu`)
+
+Odkaz z marketingového webu `/kurzy?kurz=<klíč typu kurzu>` (`hlava`, `relief` z `lib/cenik.ts`) po načtení termínů zapne filtr „podle kurzu“ na první termín daného typu. Bez shody (typ nemá vypsaný termín) se ukážou všechny kurzy. `?termin=<id>` a `?poukaz=KÓD` mají přednost a chovají se jako dřív. Změna je v `app/kurzy/page.tsx` (jeden `useEffect`, jeden stav). Ověřeno: `tsc --noEmit` bez chyb; živě se ověří po sloučení.
+
+---
+
 ## 2026-11-14 — Marketingový web: „Přihlásit se →“ vede na konkrétní termín (web)
 
 V `kurz-modelovani-hlavy.php` a `kurz-relief.php` odkaz „Přihlásit se →“ u vypsaného termínu míří na `https://rezervace.ateliernapobrezi.cz/kurzy?termin=<id>` (id z `/api/courses`; bez id zůstává `/kurzy`). Aplikace `?termin=` umí od dřív. Ověřeno: lokálně s ukázkovými termíny (správné id, mezera zakódovaná, bez id fallback); živě stránky vrací 200 bez chyb, ale žádný termín teď není vypsaný, takže se zobrazuje jen záložní odkaz. Živě ověřit po vypsání prvního termínu. Ceny odlitků (hlava 3 900, reliéf 3 100 Kč) odpovídají `lib/cenik.ts`; na marketingovém webu se neuvádějí. Zálohy: `CLAUDOVO\prihlasit-odkazy\orig`.
