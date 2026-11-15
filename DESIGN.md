@@ -350,5 +350,38 @@ Při tvorbě nebo úpravě stránky, komponenty či textu pro Ateliér:
 - Hodnoty tokenů jsou převzaté z produkčního `styles.css` (24. 10. 2026). Při změně CSS se mění i tady.
 
 ### Změny
+- 2026-11-15: nová sekce 10 Tištěné materiály (obecná pravidla pro tisk a PDF, dárkový poukaz).
 - 2026-10-25: stavy kalendáře opraveny podle kódu (tři veřejné stavy + příprava a úklid), upřesněn postup pro CMS pole a tlačítka, doplněny další překlepy z `content.json`.
 - 2026-10-24: první verze, sestavená z auditu živého webu a rezervačního systému.
+
+## 10. Tištěné materiály
+
+Platí pro vše, co se tiskne nebo posílá jako PDF (dárkový poukaz, později plakáty, vizitky, letáky). Tokeny barev a písma jsou stejné jako na webu (sekce 2 a 3). Texty vykají (sekce 6).
+
+### 10.1 Obecná pravidla
+- **Formát:** A4 na výšku, okraj 8 mm. Tisk na domácí nebo kancelářské tiskárně musí vypadat dobře, proto bílý podklad a žádný spad.
+- **Písma:** Comfortaa 500 a 700 (nadpisy, názvy), Work Sans 400 (běžný text). Písma se vkládají do PDF.
+- **Barvy:** bílé karty, text `ink` a `ink-soft`, zlatý akcent `accent` jen na linky, ornamenty a velká písmena nadpisů. Malý text se zlatou nikdy nepíše (kontrast, viz sekce 2).
+- **Karty:** stejné jednoduché boxy jako na webu (sekce 5, Karta): bílá plocha, jemná linka `line`, zaoblené rohy.
+- **Motiv:** vrstevnicové vlnky (kurz Modelování reliéfu) nebo hlava z vlnek (kurz Modelování hlavy). Nový kurz = nový motiv. Motiv ani pruh vlnek se **nikdy neořezává**, všechny linie končí uvnitř obrázku.
+- **Logo:** vždy z `lib/voucher-assets/logo.png`, nepřekreslovat.
+- **Podpis lektora:** je vymyšlený (`petr-podpis.png`), skutečný podpis se na tiskovinách nepoužívá.
+
+### 10.2 Texty
+- Za webovou adresou **nikdy tečka** (lidé ji opisují do prohlížeče).
+- Kód, který má člověk opsat, je vždy ve formátu `ATL-XXXX-XXXX` a vedle něj je QR kód.
+- Žádná cena a žádné IČO/DIČ na dárkovém poukazu.
+- Jméno obdarovaného se píše ve 4. pádu („Pro Annu Novákovou“). Když chybí, řádek „Pro“ se vynechá a obdarovaný si jméno dopíše rukou.
+- Věty zůstávají krátké a laskavé. Vlastní nové texty tiskovin se Milanovi dávají jako `NÁVRH`.
+
+### 10.3 Dárkový poukaz (schváleno 15. 11. 2026)
+- **Přední strana:** logo, motiv podle kurzu, zlatá linka s názvem kurzu, nadpis „Dárkový poukaz“, „Pro <jména>“, karta „V ceně poukazu“, karta „Termín kurzu“ (jen když je termín vybraný), věta „Těší se na Vás odborný lektor“ a podpis.
+- **Zadní strana:** karta s kódem, platností a QR kódem, pruh vlnek, návod „Jak poukaz využít“ (3 kroky) a karty „Kde nás najdete“ a „Potřebujete poradit?“.
+- **Obsah se mění podle objednávky:** název kurzu a motiv, jména, počet osob, věta o odlitku (jen když je objednaný), termín.
+- Podrobnosti, technické provedení a test jsou v `dokumentace/poukaz-pdf.md`.
+
+### 10.4 Jak přidat novou tiskovinu
+1. Navrhnout ji z tokenů a pravidel výše, ukázat Milanovi jako `NÁVRH`.
+2. Po schválení doplnit tuto sekci (nový odstavec 10.x) dřív, než se tiskovina nasadí.
+3. Zápis do `dokumentace/zmeny.md`.
+
