@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-15 (noc) — DESIGN.md: sekce Tištěné materiály (dokumentace)
+
+Do `DESIGN.md` přibyla sekce 10 „Tištěné materiály“: obecná pravidla pro tisk a PDF (A4, okraj 8 mm, písma, barvy, karty, motivy se neořezávají, žádná tečka za adresou, vymyšlený podpis), popis schváleného dárkového poukazu a postup pro novou tiskovinu. Zapsáno přímo do main (jen dokumentace), odkazuje na `dokumentace/poukaz-pdf.md`, která přibude po sloučení PR č. 75.
+
 ## 2026-11-15 (noc) — Dárkový poukaz jako PDF v příloze e-mailu (rezervace) — NÁVRH, čeká na sloučení
 
 Po zaplacení poukazu se vytvoří PDF (A4, 2 strany) a pošle se kupujícímu jako příloha e-mailu `voucher_buyer`. Vzhled schválil Milan 15. 11. (viz `dokumentace/poukaz-pdf.md`).
