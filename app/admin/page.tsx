@@ -1640,6 +1640,12 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     if (res.ok) setVouchers(await res.json());
   }
 
+  async function resendVoucher(id: string, email: string) {
+    if (!window.confirm("Poslat poukaz s PDF znovu na " + email + "?")) return;
+    const res = await fetch("/api/vouchers/" + id, { method: "POST" });
+    window.alert(res.ok ? "E-mail s poukazem byl odeslán." : "Odeslání se nepodařilo.");
+  }
+
   async function setVoucherStatus(id: string, status: "active" | "redeemed") {
     await fetch("/api/vouchers/" + id, {
       method: "PATCH",
@@ -2213,9 +2219,17 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                     </p>
                   )}
                 </div>
-                <button onClick={() => setVoucherStatus(v.id, v.status === "active" ? "redeemed" : "active")} className="h-8 px-3 rounded-md border border-gray-300 text-xs shrink-0">
-                  {v.status === "active" ? "Označit jako uplatněný" : "Vrátit mezi aktivní"}
-                </button>
+                <div className="flex gap-2 flex-wrap shrink-0">
+                  <a href={"/api/vouchers/pdf?id=" + v.id} target="_blank" rel="noreferrer" className="h-8 px-3 rounded-md border border-gray-300 text-xs inline-flex items-center">
+                    Stáhnout PDF
+                  </a>
+                  <button onClick={() => resendVoucher(v.id, v.buyerEmail)} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
+                    Poslat znovu
+                  </button>
+                  <button onClick={() => setVoucherStatus(v.id, v.status === "active" ? "redeemed" : "active")} className="h-8 px-3 rounded-md border border-gray-300 text-xs">
+                    {v.status === "active" ? "Označit jako uplatněný" : "Vrátit mezi aktivní"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

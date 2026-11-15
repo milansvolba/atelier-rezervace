@@ -68,6 +68,8 @@ export default function PoukazyPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Prázdné jméno není chyba, jen se zeptáme. Bez jména se na poukaze text „Pro …“ vynechá a jde dopsat ručně.
+    if (!recipientName.trim() && !window.confirm("Opravdu nechcete vyplnit jméno obdarovaného? Na poukazu pak žádné jméno nebude a půjde dopsat ručně.")) return;
     setBusy(true);
     setError("");
     try {
@@ -234,7 +236,11 @@ export default function PoukazyPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="text-sm">Jméno a příjmení<input required className={input} autoComplete="name" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} /></label>
           <label className="text-sm">Váš e-mail (pošleme na něj poukaz)<input required type="email" className={input} autoComplete="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} /></label>
-          <label className="text-sm">Jméno a příjmení obdarovaného (nepovinné)<input className={input} value={recipientName} onChange={(e) => setRecipientName(e.target.value)} /></label>
+          <label className="text-sm sm:col-span-2">
+            Jméno obdarovaného ve 4. pádu (nepovinné, vytiskne se na poukaz)
+            <input className={input} placeholder="např. Annu Novákovou" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} />
+            <span className="block text-xs text-gray-500 mt-1">Na poukazu se objeví „Pro Annu Novákovou“. Při více lidech jména oddělte čárkou, např. „Annu Novákovou, Petra Dvořáka“.</span>
+          </label>
         </div>
         {bookingId && (
           <div className="rounded-md border border-gray-200 bg-gray-50 p-3 space-y-3">

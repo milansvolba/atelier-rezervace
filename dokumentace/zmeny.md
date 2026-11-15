@@ -6,6 +6,19 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-15 (noc) — Dárkový poukaz jako PDF v příloze e-mailu (rezervace) — NÁVRH, čeká na sloučení
+
+Po zaplacení poukazu se vytvoří PDF (A4, 2 strany) a pošle se kupujícímu jako příloha e-mailu `voucher_buyer`. Vzhled schválil Milan 15. 11. (viz `dokumentace/poukaz-pdf.md`).
+
+- Nové soubory: `lib/voucherPdf.ts` (kreslení PDF přes `pdfkit`, QR přes `qrcode`), `lib/voucherMotifs.ts` (vlnité vrstevnice a hlava), `lib/voucher-assets/` (písma Comfortaa a Work Sans, logo, podpis). Nový odkaz `GET /api/vouchers/pdf?t=TOKEN` (kupující, tajný token z e-mailu) a `?id=` (admin).
+- `lib/email.ts`: `send()` umí přílohy. `sendVoucherEmail` PDF vytvoří v `try/catch`. Při chybě e-mail odejde bez přílohy a s tlačítkem „Stáhnout poukaz (PDF)“. Odkaz ke stažení je v e-mailu vždy.
+- Admin, Dárkové poukazy: nová tlačítka „Stáhnout PDF“ a „Poslat znovu“ (`POST /api/vouchers/:id`).
+- Objednávka `/poukazy`: pole obdarovaného je teď „Jméno obdarovaného ve 4. pádu“ (vytiskne se jako „Pro Annu Novákovou“) a při prázdném poli se zobrazí jen dotaz „Opravdu nechcete vyplnit jméno obdarovaného?“. Bez jména se na poukaz řádek „Pro“ nedá. Limit jména zvýšen ze 100 na 200 znaků.
+- `next.config.mjs`: `serverExternalPackages: ["pdfkit"]` a `outputFileTracingIncludes` pro soubory v `lib/voucher-assets`.
+- Pozor: jméno v poli je teď ve 4. pádu, takže ho vidí v tomto tvaru i admin (přehled poukazů, přihláška na pevný termín).
+
+---
+
 ## 2026-11-14 (večer) — Světlé záhlaví s fotkou přes celou šířku: Kurzy, Pronájem, Firemní akce (web)
 
 Fotka v záhlaví už není vedle textu (`hero-photo-frame`), ale přes celou šířku jako na Kontaktu, ve světlé variantě `hero hero-photo hero-photo-light` (`styles.css`, blok na konci). Vlevo plná barva pozadí `#f2f2f0` pod šedým textem, překryv je 97 % neprůhledný do 52 % šířky, pak se vytrácí (60 % v 68 %, 12 % v 86 %), fotka je vidět vpravo (`object-position: 70% 40%`). Text zůstává šedý/černý, nikoli bílý. Mobil: fotka 190 px nahoře, text pod ní. Bez fotky se stránka chová jako dřív; v administraci je pod záhlavím políčko pro nahrání (klíče `hero_kurzy_image`, `hero_pronajem_image`, `hero_firemni_image`). Kontakt a O ateliéru zůstávají tmavé varianty (`hero-photo`). Ověřeno: lokálně všechny tři stránky desktop i mobil, živě stránky 200 bez PHP chyb, třída světlého záhlaví na všech třech, vzhled Kurzů zkontrolován očima. Pronájem a Firemní akce vizuálně živě neprohlédnuty. Zálohy `forpsi-ftp-backups\20261114-1719*`, zdroj `CLAUDOVO\hero-svetle`.

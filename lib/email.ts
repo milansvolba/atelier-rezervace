@@ -1,3 +1,4 @@
+import { generateVoucherPdf, voucherPdfFilename } from "./voucherPdf";
 import { Resend } from "resend";
 import { Booking, CourseSignup, RESOURCE_LABELS } from "./types";
 import { getTemplate, renderTemplate } from "./emailTemplates";
@@ -48,7 +49,7 @@ async function send(
   subject: string,
   html: string,
   meta: { type: string; bookingId?: string; signupId?: string },
-  opts?: { replyTo?: string }
+  opts?: { replyTo?: string; attachments?: { filename: string; content: Buffer }[] }
 ): Promise<boolean> {
   const recipient = Array.isArray(to) ? to.join(", ") : to;
   const c = getClient();
@@ -60,7 +61,7 @@ async function send(
     return false;
   }
   try {
-    await c.emails.send({ from: FROM, to, subject, html, ...(opts?.replyTo ? { replyTo: opts.replyTo } : {}) });
+    await c.emails.send({ from: FROM, to, subject, html, ...(opts?.replyTo ? { replyTo: opts.replyTo } : {}), ...(opts?.attachments?.length ? { attachments: opts.attachments } : {}) });
     await logEmail({ ...meta, recipient, subject, status: "sent" });
     return true;
   } catch (err) {
@@ -91,12 +92,13 @@ async function sendFromTemplate(
   to: string | string[],
   vars: Record<string, string>,
   meta: { bookingId?: string; signupId?: string },
-  afterFooterHtml = ""
+  afterFooterHtml = "",
+  attachments?: { filename: string; content: Buffer }[]
 ): Promise<boolean> {
   const tpl = await getTemplate(key);
   const subject = renderTemplate(tpl.subject, vars);
   const html = wrap(renderTemplate(tpl.body, vars), afterFooterHtml);
-  return send(to, subject, html, { type: key, ...meta });
+  return send(to, subject, html, { type: key, ...meta }, attachments?.length ? { attachments } : undefined);
 }
 
 // --- Zpráva z kontaktního formuláře na webu ---
@@ -497,11 +499,24 @@ export async function sendVoucherEmail(v: Voucher, booking?: Booking) {
       emailButton(`${APP_URL}/kurzy?poukaz=${encodeURIComponent(v.code)}`, "Využít poukaz a vybrat termín") +
       `<p style="color:#666;font-size:13px;">Kdyby tlačítko nešlo otevřít, zadá kód <strong>${esc(v.code)}</strong> ručně na <a href="${APP_URL}/kurzy">rezervace.ateliernapobrezi.cz/kurzy</a>.</p>`;
   const msg = v.message ? `<p>Vzkaz od kupujícího:<br><em>${esc(v.message)}</em></p>` : "";
+  // Poukaz jako PDF v příloze. Chyba při tvorbě PDF nesmí zastavit e-mail, kód poukazu v něm je i bez přílohy.
+  let attachments: { filename: string; content: Buffer }[] | undefined;
+  try {
+    attachments = [{ filename: voucherPdfFilename(v), content: await generateVoucherPdf(v, booking) }];
+  } catch (e) {
+    console.error("[voucher] PDF poukazu " + v.code + " se nepodařilo vytvořit, e-mail odejde bez přílohy:", e);
+  }
+  const pdfLink = v.manageToken ? `${APP_URL}/api/vouchers/pdf?t=${encodeURIComponent(v.manageToken)}` : "";
+  const pdfBlock =
+    `<p>${attachments ? "<strong>Poukaz ve formátu PDF máte v příloze tohoto e-mailu.</strong> Vytiskněte ho (obě strany) nebo ho přepošlete obdarovanému." : "Poukaz ve formátu PDF si můžete stáhnout níže."}</p>` +
+    (pdfLink ? emailButton(pdfLink, "Stáhnout poukaz (PDF)") : "");
   await sendFromTemplate(
     "voucher_buyer",
     v.buyerEmail,
-    { amount: fmtKc(v.amountCzk), code: esc(v.code), summaryBlock: voucherSummaryHtml(v, booking), messageBlock: msg, redeemBlock: redeem },
-    { bookingId: booking?.id }
+    { amount: fmtKc(v.amountCzk), code: esc(v.code), summaryBlock: voucherSummaryHtml(v, booking), messageBlock: msg, redeemBlock: pdfBlock + redeem },
+    { bookingId: booking?.id },
+    "",
+    attachments
   );
 }
 
