@@ -12,6 +12,12 @@ Při vytvoření dávky jde vyplnit „Text na kupónu“ (např. „Pro účast
 
 ---
 
+## 2026-11-16 (poledne) — PDF poukazu: jméno obdarovaného a pevné mezery
+
+Na poukazu je „Pro: Anička Sojková“ (jméno tak, jak ho kupující zadal, bez skloňování). Nový `lib/typography.ts` vkládá pevné mezery (jednopísmenné předložky, „pro/až/do/od/za“ před číslem, číslo + slovo, data), takže se řádky nezalamují jako „pro / 1 osobu“. Použito v PDF poukazu; e-maily zatím ne (nízká priorita). Kde: rezervace. Ověřeno vykreslením PDF.
+
+---
+
 ## 2026-11-16 (odpoledne) — Slevové kódy: přehlednější administrace, oprava ceny v košíku
 
 Modál „Slevové kódy“ má dvě záložky: Přehled kódů (výchozí) a Vytvořit kódy. V přehledu jsou filtry Volné / Použité / Zrušené (zrušené jsou skryté, kódy se nemažou kvůli dohledatelnosti), dávka a tisk. Na stránce kurzů se pevná cena z kódu nově počítá za osobu (dřív košík ukazoval cenu jedné osoby u více míst) a zobrazí se upozornění, když je míst víc, než kód dovoluje. Kde: rezervace. Ověřeno lokálně (Playwright).

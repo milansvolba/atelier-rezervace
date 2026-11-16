@@ -371,7 +371,8 @@ Platí pro vše, co se tiskne nebo posílá jako PDF (dárkový poukaz, později
 - Za webovou adresou **nikdy tečka** (lidé ji opisují do prohlížeče).
 - Kód, který má člověk opsat, je vždy ve formátu `ATL-XXXX-XXXX` a vedle něj je QR kód.
 - Žádná cena a žádné IČO/DIČ na dárkovém poukazu.
-- Jméno obdarovaného se píše ve 4. pádu („Pro Annu Novákovou“). Když chybí, řádek „Pro“ se vynechá a obdarovaný si jméno dopíše rukou.
+- Jméno obdarovaného se píše tak, jak ho zadal kupující (1. pád), s dvojtečkou: „Pro: Anna Nováková“ (skloňování jmen automaticky nejde; změna 16. 11. 2026, dřív bylo požadováno 4. pád). Když chybí, řádek „Pro:“ se vynechá a obdarovaný si jméno dopíše rukou.
+- Pevné mezery: za k, s, v, z, o, u, a, i a za „pro, až, do, od, za“ před číslem, mezi číslem a slovem i v datech. Řeší `lib/typography.ts` (funkce `typo`), v PDF poukazu se použije automaticky.
 - Věty zůstávají krátké a laskavé. Vlastní nové texty tiskovin se Milanovi dávají jako `NÁVRH`.
 
 ### 10.3 Dárkový poukaz (schváleno 15. 11. 2026)
