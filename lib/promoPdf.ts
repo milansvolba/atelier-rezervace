@@ -26,18 +26,18 @@ const WEEK_FMT = (iso: string) => {
   return `${d}. ${m}. ${y}`;
 };
 
-export function promoQrUrl(code: string): string {
-  const base = (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "https://rezervace.ateliernapobrezi.cz").replace(/\/$/, "");
-  return `${base}/kurzy?sleva=${encodeURIComponent(code)}`;
+// QR vede na přehled kurzů na hlavním webu (v rezervacích jde vybrat jen vypsaný termín). Kód se nepřenáší v adrese.
+export function promoQrUrl(_code?: string): string {
+  return "https://www.ateliernapobrezi.cz/kurzy";
 }
 
 export function promoPdfTexts(p: PromoCode) {
   return {
-    headline: p.kind === "percent" ? `Sleva ${p.value} %` : `Kurz za ${p.value} Kč`,
+    headline: p.kind === "percent" ? `Sleva ${p.value} %` : `Kurz za ${p.value} Kč na osobu`,
     sub: p.scope === "poukaz" ? "na dárkový poukaz v Ateliéru na pobřeží" : "na kurz v Ateliéru na pobřeží",
     note: p.kind === "percent" ? "Sleva se týká ceny kurzu, ne odlitku." : "Cena se týká samotného kurzu.",
     valid: "Platí do " + WEEK_FMT(p.expiresAt),
-    how: "Kód opište při objednávce na rezervace.ateliernapobrezi.cz/kurzy, nebo naskenujte QR kód",
+    how: "Kód zadejte při objednávce kurzu na www.ateliernapobrezi.cz/kurzy (QR kód vás tam zavede)",
     rules: "Kód je jednorázový a nelze ho spojit s dárkovým poukazem.",
   };
 }
