@@ -10,6 +10,7 @@ const nextConfig = {
     "/api/stripe/webhook": ["./lib/voucher-assets/**/*"],
     "/api/vouchers/pdf": ["./lib/voucher-assets/**/*"],
     "/api/vouchers/[id]": ["./lib/voucher-assets/**/*"],
+    "/api/admin/promo/pdf": ["./lib/voucher-assets/**/*"],
   },
 };
 export default nextConfig;

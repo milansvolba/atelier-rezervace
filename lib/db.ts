@@ -236,6 +236,38 @@ await sql`
           updated_at timestamptz NOT NULL DEFAULT now()
         );
       `;
+      // Slevové promokódy (jednorázové, viz lib/promo.ts). Stav: active -> reserved (platba rozdělána, drží se 35 min) -> used;
+      // void = zrušený správcem. Kód se spotřebuje až po zaplacení (webhook).
+      await sql`
+        CREATE TABLE IF NOT EXISTS promo_codes (
+          id text PRIMARY KEY,
+          code text NOT NULL UNIQUE,
+          kind text NOT NULL,
+          value integer NOT NULL,
+          scope text NOT NULL DEFAULT 'kurz',
+          booking_id text,
+          label text,
+          expires_at timestamptz NOT NULL,
+          status text NOT NULL DEFAULT 'active',
+          reserved_token text,
+          reserved_by text,
+          reserved_until timestamptz,
+          used_session text,
+          used_at timestamptz,
+          created_at timestamptz NOT NULL DEFAULT now()
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS promo_codes_label_idx ON promo_codes (label)`;
+      // Pokusy o zadání kódu (kvůli omezení hádání kódů): jen nevratný otisk IP, bez kódu samotného.
+      await sql`
+        CREATE TABLE IF NOT EXISTS promo_attempts (
+          id bigserial PRIMARY KEY,
+          ip_hash text,
+          ok boolean NOT NULL,
+          created_at timestamptz NOT NULL DEFAULT now()
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS promo_attempts_created_idx ON promo_attempts (created_at DESC)`;
       const existingTiers = await sql`SELECT COUNT(*)::int AS count FROM discount_tiers`;
       if (Number(existingTiers[0]?.count ?? 0) === 0) {
         await sql`

@@ -43,6 +43,11 @@ export default function PoukazyPage() {
   const [heardAboutOther, setHeardAboutOther] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [billing, setBilling] = useState<BillingInput>(emptyBilling);
+  // Slevový promokód (jednorázový, lib/promo.ts): ověří se na serveru, cena se při platbě počítá znovu.
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<null | { code: string; kind: "percent" | "fixed_price"; value: number; text: string }>(null);
+  const [promoErr, setPromoErr] = useState("");
   useEffect(() => {
     setError("");
   }, [billing, people, topic, buyerEmail]);
@@ -64,7 +69,23 @@ export default function PoukazyPage() {
 
   const course = VOUCHER_COURSES.find((c) => c.key === topic) ?? VOUCHER_COURSES[0];
   const courseTerms = terms.filter((t) => t.courseType === course.key && (t.spotsLeft === null || t.spotsLeft >= people));
-  const price = computeOrder(course.pricePerPerson, people, Math.min(castings, people), course.castingPrice);
+  const price = computeOrder(course.pricePerPerson, people, Math.min(castings, people), course.castingPrice, promo);
+
+  async function checkPromo() {
+    setPromoErr("");
+    try {
+      const r = await fetch("/api/promo/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoInput, scope: "poukaz", bookingId: bookingId || undefined, email: buyerEmail || undefined }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.ok) setPromo({ code: data.code, kind: data.kind, value: Number(data.value), text: String(data.text || "") });
+      else setPromoErr(data.error || "Kód se nepodařilo ověřit, zkuste to prosím znovu.");
+    } catch {
+      setPromoErr("Kód se nepodařilo ověřit, zkuste to prosím znovu.");
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -121,6 +142,7 @@ export default function PoukazyPage() {
           heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
           honeypot,
           billing,
+          promoCode: promo ? promo.code : undefined,
         }),
       });
       const data = await r.json().catch(() => ({}));
@@ -271,6 +293,30 @@ export default function PoukazyPage() {
           <input className={input} maxLength={300} value={message} onChange={(e) => setMessage(e.target.value)} />
         </label>
         <BillingFields value={billing} onChange={setBilling} />
+        <div className="rounded-md border border-gray-200 p-3 space-y-2">
+          {promo ? (
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span>
+                Slevový kód <strong>{promo.code}</strong>: {promo.text}
+                {!price.promoApplied && <span className="block text-xs text-amber-800">U vaší objednávky je výhodnější množstevní sleva, kód se proto nepoužije a zůstane vám.</span>}
+              </span>
+              <button type="button" onClick={() => { setPromo(null); setPromoInput(""); }} className="text-xs underline shrink-0">Odebrat</button>
+            </div>
+          ) : !promoOpen ? (
+            <button type="button" onClick={() => setPromoOpen(true)} className="text-sm underline">Máte slevový kód?</button>
+          ) : (
+            <>
+              <label className="block text-sm">
+                Slevový kód
+                <input className={input + " uppercase"} placeholder="SLEVA-XXXX-XXXX" autoComplete="off" maxLength={40} value={promoInput} onChange={(e) => setPromoInput(e.target.value)} />
+              </label>
+              {promoErr && <p className="text-sm text-red-700">{promoErr}</p>}
+              <button type="button" disabled={busy || !promoInput.trim()} onClick={checkPromo} className="h-9 px-4 rounded-md border border-gray-300 text-sm disabled:opacity-50">
+                Použít kód
+              </button>
+            </>
+          )}
+        </div>
         <HeardAboutField
           value={heardAbout}
           onChange={setHeardAbout}
@@ -280,8 +326,11 @@ export default function PoukazyPage() {
 
         <div className="border-t border-gray-100 pt-3 text-sm space-y-1">
           <div className="flex justify-between"><span>{people} × {kc(course.pricePerPerson)}</span><span>{kc(price.courseBefore)}</span></div>
-          {price.discountPercent > 0 && (
+          {price.discountPercent > 0 && !price.promoApplied && (
             <div className="flex justify-between text-green-700"><span>Skupinová sleva {price.discountPercent} %</span><span>−{kc(price.courseBefore - price.courseAfter)}</span></div>
+          )}
+          {price.promoApplied && (
+            <div className="flex justify-between text-green-700"><span>Slevový kód</span><span>−{kc(price.courseBefore - price.courseAfter)}</span></div>
           )}
           {price.castingTotal > 0 && (
             <div className="flex justify-between"><span>{Math.min(castings, people)} × betonový odlitek</span><span>{kc(price.castingTotal)}</span></div>

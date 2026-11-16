@@ -74,6 +74,11 @@ export default function KurzyPage() {
   const [heardAboutOther, setHeardAboutOther] = useState("");
   const [castings, setCastings] = useState(0); // počet odlitků (0 až počet míst)
   // Uplatnění dárkového poukazu (kód se ověří na serveru, poukaz určuje počet osob a odlitek).
+  // Slevový promokód (jednorázový, lib/promo.ts): zadá se při objednávce, ověří se na serveru, cena se při platbě počítá znovu.
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<null | { code: string; kind: "percent" | "fixed_price"; value: number; text: string }>(null);
+  const [promoErr, setPromoErr] = useState("");
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherInfo, setVoucherInfo] = useState<null | { code: string; people: number; castingCount: number }>(null);
@@ -112,6 +117,15 @@ export default function KurzyPage() {
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Odkaz ze slevového kupónu (/kurzy?sleva=SLEVA-XXXX-XXXX): kód se předvyplní, ověří se tlačítkem u objednávky.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("sleva");
+    if (code && /^[A-Za-z0-9 -]{6,24}$/.test(code)) {
+      setPromoInput(code.toUpperCase());
+      setPromoOpen(true);
+    }
   }, []);
 
   // Návrat ze Stripe Checkout (success_url / cancel_url vedou na /kurzy?platba=...).
@@ -332,9 +346,18 @@ export default function KurzyPage() {
     if (!c.price) return null;
     const discount = discountFor(n, c.capacity);
     const total = c.price * n;
-    const totalAfter = Math.round(total * (1 - discount / 100));
+    let totalAfter = Math.round(total * (1 - discount / 100));
+    // Slevový kód se nesčítá s množstevní slevou: platí výhodnější z obou (stejně jako na serveru, lib/pricing.ts).
+    let promoApplied = false;
+    if (promo) {
+      const promoAfter = promo.kind === "percent" ? Math.round(total * (1 - Math.min(100, promo.value) / 100)) : Math.max(0, Math.round(promo.value));
+      if (promoAfter < totalAfter) {
+        promoApplied = true;
+        totalAfter = promoAfter;
+      }
+    }
     const casting = c.castingPrice ? c.castingPrice * Math.min(castings, n) : 0;
-    return { discount, total, totalAfter, casting, grand: totalAfter + casting };
+    return { discount: promoApplied ? 0 : discount, total, totalAfter, casting, grand: totalAfter + casting, promoApplied, promoSaving: total - totalAfter };
   }
   const quote = selectedCourse && !voucherInfo ? quoteFor(selectedCourse, signupPeople) : null;
 
@@ -358,6 +381,31 @@ export default function KurzyPage() {
     setVoucherCode("");
     setVoucherInfo(null);
     setVoucherErr("");
+  }
+
+  // Kód patří k ověřenému termínu: při změně vybraného kurzu se ověření zruší.
+  useEffect(() => {
+    setPromo(null);
+    setPromoErr("");
+  }, [signupFor]);
+
+  async function checkPromo() {
+    if (!selectedCourse) return;
+    setPayBusy(true);
+    setPromoErr("");
+    try {
+      const r = await fetch("/api/promo/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoInput, scope: "kurz", bookingId: selectedCourse.id, email: signupContact.includes("@") ? signupContact : undefined }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.ok) setPromo({ code: data.code, kind: data.kind, value: Number(data.value), text: String(data.text || "") });
+      else setPromoErr(data.error || "Kód se nepodařilo ověřit, zkuste to prosím znovu.");
+    } catch {
+      setPromoErr("Kód se nepodařilo ověřit, zkuste to prosím znovu.");
+    }
+    setPayBusy(false);
   }
 
   async function checkVoucher() {
@@ -440,6 +488,7 @@ export default function KurzyPage() {
       casting: Math.min(castings, signupPeople),
       heardAbout: resolveHeardAbout(heardAbout, heardAboutOther),
       billing: selectedCourse.price ? billing : undefined,
+      promoCode: promo ? promo.code : undefined,
     });
     try {
       if (selectedCourse.price && billing.isCompany) {
@@ -710,6 +759,48 @@ export default function KurzyPage() {
                     </div>
                   )
                 ) : null}
+                {!voucherInfo && selectedCourse.price && (
+                  <div className="rounded-md border border-gray-200 p-3 space-y-2">
+                    {promo ? (
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span>
+                          Slevový kód <strong>{promo.code}</strong>: {promo.text}
+                          {quote && !quote.promoApplied && <span className="block text-xs text-amber-800">U vaší objednávky je výhodnější množstevní sleva, kód se proto nepoužije a zůstane vám.</span>}
+                        </span>
+                        <button type="button" onClick={() => { setPromo(null); setPromoInput(""); }} className="text-xs underline shrink-0">
+                          Odebrat
+                        </button>
+                      </div>
+                    ) : !promoOpen ? (
+                      <button type="button" onClick={() => setPromoOpen(true)} className="text-sm underline">
+                        Máte slevový kód?
+                      </button>
+                    ) : (
+                      <>
+                        <label className="block text-sm">
+                          Slevový kód
+                          <input
+                            className="mt-1 w-full h-10 border border-gray-300 rounded-md px-2 uppercase"
+                            placeholder="SLEVA-XXXX-XXXX"
+                            autoComplete="off"
+                            maxLength={40}
+                            value={promoInput}
+                            onChange={(e) => setPromoInput(e.target.value)}
+                          />
+                        </label>
+                        {promoErr && <p className="text-sm text-red-700">{promoErr}</p>}
+                        <button
+                          type="button"
+                          disabled={payBusy || !promoInput.trim()}
+                          onClick={checkPromo}
+                          className="h-9 px-4 rounded-md border border-gray-300 text-sm disabled:opacity-50"
+                        >
+                          Použít kód
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
                 {!voucherInfo && (
                   <div className="rounded-md border border-gray-200 p-3 space-y-2">
                     {!voucherOpen ? (
@@ -912,6 +1003,12 @@ export default function KurzyPage() {
                       <div className="flex justify-between text-green-700">
                         <span>{t("kurzy.summary.discount", { percent: String(quote.discount) })}</span>
                         <span>−{kc(quote.total - quote.totalAfter)}</span>
+                      </div>
+                    )}
+                    {quote.promoApplied && (
+                      <div className="flex justify-between text-green-700">
+                        <span>Slevový kód</span>
+                        <span>−{kc(quote.promoSaving)}</span>
                       </div>
                     )}
                     {quote.casting > 0 && (

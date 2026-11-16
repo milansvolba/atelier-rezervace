@@ -6,6 +6,7 @@ import { computeOrder, voucherCourse, clampCastings, courseTypeKey } from "@/lib
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
 import { parseBillingInput } from "@/lib/billingInput";
 import { cleanPhone, validEmail } from "@/lib/signupContact";
+import { promoStore, promoRateLimited, recordPromoAttempt, clientIpHash, GENERIC_PROMO_ERROR, PROMO_MIN_FIXED_PRICE, type PromoCode } from "@/lib/promo";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ function peopleWord(n: number) {
 // bookingId je volitelný pevný termín; bez něj si obdarovaný termín vybere sám později.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { topic, people, casting, bookingId, buyerName, buyerEmail, buyerPhone, recipientName, recipientEmail, recipientPhone, message, heardAbout, honeypot, billing } = body;
+  const { topic, people, casting, bookingId, buyerName, buyerEmail, buyerPhone, recipientName, recipientEmail, recipientPhone, message, heardAbout, honeypot, billing, promoCode } = body;
 
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
@@ -95,12 +96,36 @@ export async function POST(req: NextRequest) {
 
   // Množstevní sleva podle počtu osob + volitelný betonový odlitek pro každou osobu (lib/pricing.ts).
   const castings = clampCastings(casting, seats);
-  const price = computeOrder(course.pricePerPerson, seats, castings, course.castingPrice);
+
+  // Volitelný jednorázový slevový kód (lib/promo.ts). Jen pro čtení; zarezervuje se až těsně před platbou.
+  let promo: PromoCode | null = null;
+  const promoRaw = typeof promoCode === "string" ? promoCode.trim() : "";
+  if (promoRaw) {
+    const ipHash = clientIpHash(req);
+    if (await promoRateLimited(ipHash)) {
+      return NextResponse.json({ error: "Zadáno příliš mnoho neplatných kódů. Zkuste to prosím za chvíli, nebo nám napište." }, { status: 429 });
+    }
+    promo = await promoStore.validate(promoRaw, { scope: "poukaz", bookingId: booking ? booking.id : undefined }, email.toLowerCase());
+    await recordPromoAttempt(ipHash, !!promo);
+    if (!promo) return NextResponse.json({ error: GENERIC_PROMO_ERROR }, { status: 400 });
+  }
+  const price = computeOrder(course.pricePerPerson, seats, castings, course.castingPrice, promo);
+  if (promo && !price.promoApplied) {
+    return NextResponse.json({ error: "U vaší objednávky je výhodnější množstevní sleva, kód proto nepoužijeme (zůstává platný). Odeberte ho prosím z objednávky." }, { status: 400 });
+  }
+  if (promo && price.courseAfter + price.castingTotal < PROMO_MIN_FIXED_PRICE) {
+    return NextResponse.json({ error: "Po uplatnění kódu je cena pod minimem pro platbu kartou. Napište nám prosím." }, { status: 400 });
+  }
 
   const billingCheck = parseBillingInput(billing, price.total);
   if (!billingCheck.ok) return NextResponse.json({ error: billingCheck.error }, { status: 400 });
   if (billingCheck.value?.isCompany) {
     return NextResponse.json({ error: "Firmy neplatí kartou. Odešlete prosím poptávku, ozveme se vám s nabídkou a fakturou." }, { status: 400 });
+  }
+
+  const promoToken = "promo_" + crypto.randomUUID();
+  if (promo && !(await promoStore.reserve(promo.code, { scope: "poukaz", bookingId: booking ? booking.id : undefined }, promoToken, email.toLowerCase()))) {
+    return NextResponse.json({ error: GENERIC_PROMO_ERROR }, { status: 409 });
   }
 
   try {
@@ -109,7 +134,7 @@ export async function POST(req: NextRequest) {
       extraItems: castings > 0 ? [{ name: "Betonový odlitek — " + course.title, amountCzk: course.castingPrice, quantity: castings }] : undefined,
       productName:
         "Dárkový poukaz — " + course.title + ", " + seats + " " + peopleWord(seats) +
-        (booking ? " (termín " + fmtDate(booking.date) + ")" : "") + ", včetně občerstvení",
+        (booking ? " (termín " + fmtDate(booking.date) + ")" : "") + ", včetně občerstvení" + (promo ? " (po slevě kódem)" : ""),
       customerEmail: email,
       metadata: {
         kind: "voucher",
@@ -125,15 +150,18 @@ export async function POST(req: NextRequest) {
         recipientPhone: bookingId ? cleanPhone(rPhoneRaw) ?? "" : "",
         message: String(message ?? "").trim().slice(0, 300),
         heardAbout: String(heardAbout ?? "").trim().slice(0, 200),
+        promo: promo ? promo.code : "",
       },
       successUrl: APP_URL + "/poukazy?platba=ok",
       cancelUrl: APP_URL + "/poukazy?platba=zrusena",
     });
     // U pevného termínu se místa po dobu platby drží; bez termínu jde jen o záznam platby (idempotence webhooku).
     await paymentStore.addAwaiting(session.id, booking ? booking.id : "voucher", seats, billingCheck.value, email.toLowerCase());
+    if (promo) await promoStore.attachSession(promoToken, session.id);
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("[stripe] Vytvoření platby poukazu selhalo:", err);
+    if (promo) await promoStore.release(promoToken).catch(() => undefined);
     return NextResponse.json({ error: "Platbu se nepodařilo zahájit, zkuste to prosím znovu." }, { status: 502 });
   }
 }
