@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
         bookingId: booking ? booking.id : "",
         buyerName: name.slice(0, 200),
         buyerEmail: email.slice(0, 200),
-        recipientName: String(recipientName ?? "").trim().slice(0, 100),
+        recipientName: String(recipientName ?? "").trim().slice(0, 200),
         buyerPhone: bookingId ? phone ?? "" : "",
         recipientEmail: bookingId && validEmail(rEmailRaw) ? rEmailRaw.slice(0, 200) : "",
         recipientPhone: bookingId ? cleanPhone(rPhoneRaw) ?? "" : "",
