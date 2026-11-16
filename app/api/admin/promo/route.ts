@@ -51,8 +51,9 @@ export async function POST(req: NextRequest) {
   }
   const maxPeople = b.maxPeople === undefined ? 1 : Math.floor(Number(b.maxPeople));
   if (!(maxPeople >= 1 && maxPeople <= 6)) return NextResponse.json({ error: "Nejvýš míst na kód musí být 1 až 6." }, { status: 400 });
+  const printText = typeof b.printText === "string" ? b.printText.trim().replace(/\s+/g, " ").slice(0, 60) : "";
   const label = typeof b.label === "string" ? b.label.trim().slice(0, 80) : "";
-  const created = await promoStore.createBatch({ count, kind, value, scope, bookingId, label: label || undefined, maxPeople, expiresAt });
+  const created = await promoStore.createBatch({ count, kind, value, scope, bookingId, label: label || undefined, printText: printText || undefined, maxPeople, expiresAt });
   return NextResponse.json(created, { status: 201 });
 }
 
