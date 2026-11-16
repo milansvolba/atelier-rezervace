@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-16 (dopoledne) — Tlačítka „Koupit kurz jako dárek“ a světlé záhlaví Dárkových poukazů
+
+Tlačítko (text editovatelný, klíč `cta_koupit_darek`) vede na `rezervace…/poukazy` (u kurzů s `?kurz=hlava|relief`). Je na stránce Kurzy (záhlaví, obě karty) a na detailech kurzů (záhlaví, sekce Termíny, nový pruh „Hledáte dárek?“ – texty `gift_strip_title`, `gift_strip_text`, návrh ke schválení). Dárkové poukazy: fotka přes celé světlé záhlaví jako ostatní stránky (třída `hero-photo-poukazy`). Soubory: kurzy.php, kurz-relief.php, kurz-modelovani-hlavy.php, darkove-poukazy.php, styles.css. Kde: web. Ověřeno živě (obsah a vzhled Dárkových poukazů).
+
 ## 2026-11-16 (odpoledne 2) — Slevové kódy: text na kupónu a tisk hned po vytvoření
 
 Při vytvoření dávky jde vyplnit „Text na kupónu“ (např. „Pro účastníky Vánočního coworkshopu“, max. 60 znaků); vytiskne se pod nadpisem slevy místo „na kurz v Ateliéru na pobřeží“. Název dávky zůstává interní a netiskne se. Po vytvoření se v přehledu objeví zelený pruh s tlačítkem „Vytisknout kupóny (PDF)“ jen pro právě vytvořené kódy. Nový sloupec `promo_codes.print_text`. Kde: rezervace. Ověřeno vykreslením PDF a kontrolou typů.
