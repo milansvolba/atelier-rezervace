@@ -1,3 +1,4 @@
+import { typo } from "./typography";
 import fs from "fs";
 import path from "path";
 import PDFDocument from "pdfkit";
@@ -108,12 +109,12 @@ function cardFrame(doc: Doc) {
 
 function textMm(doc: Doc, s: string, x: number, y: number, o: { font: string; size: number; color: string; width?: number; align?: "left" | "center"; spacing?: number; lineGap?: number }) {
   doc.font(o.font).fontSize(o.size).fillColor(o.color);
-  doc.text(s, mm(OX + x), mm(OY + y), { width: o.width !== undefined ? mm(o.width) : undefined, align: o.align ?? "left", characterSpacing: o.spacing ?? 0, lineGap: o.lineGap ?? 0 });
+  doc.text(typo(s), mm(OX + x), mm(OY + y), { width: o.width !== undefined ? mm(o.width) : undefined, align: o.align ?? "left", characterSpacing: o.spacing ?? 0, lineGap: o.lineGap ?? 0 });
 }
 
 function heightMm(doc: Doc, s: string, o: { font: string; size: number; width: number; spacing?: number; lineGap?: number }): number {
   doc.font(o.font).fontSize(o.size);
-  return doc.heightOfString(s, { width: mm(o.width), characterSpacing: o.spacing ?? 0, lineGap: o.lineGap ?? 0 }) / MM;
+  return doc.heightOfString(typo(s), { width: mm(o.width), characterSpacing: o.spacing ?? 0, lineGap: o.lineGap ?? 0 }) / MM;
 }
 
 function roundRectMm(doc: Doc, x: number, y: number, w: number, h: number, r: number, o: { fill?: string; stroke?: string; lw?: number }) {
@@ -175,8 +176,8 @@ function front(doc: Doc, v: Voucher, t: ReturnType<typeof voucherPdfTexts>) {
   let afterNames = 160;
   if (t.recipient) {
     doc.font("Work400").fontSize(11).fillColor(C.soft);
-    doc.text("Pro ", mm(OX + LEFT), mm(OY + 160), { width: mm(INNER_W), continued: true, lineGap: 2 });
-    doc.font("Comfortaa500").fontSize(16).fillColor(C.sea).text(t.recipient, { continued: false, lineGap: 2 });
+    doc.text("Pro: ", mm(OX + LEFT), mm(OY + 160), { width: mm(INNER_W), continued: true, lineGap: 2 });
+    doc.font("Comfortaa500").fontSize(16).fillColor(C.sea).text(typo(t.recipient), { continued: false, lineGap: 2 });
     afterNames = doc.y / MM - OY;
   }
 
