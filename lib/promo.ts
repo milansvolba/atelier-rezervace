@@ -23,6 +23,7 @@ export interface PromoCode extends PromoDiscount {
   scope: PromoScope;
   bookingId?: string;
   label?: string;
+  printText?: string;
   maxPeople: number; // nejvýš kolik míst smí kód slevnit
   usedEmail?: string;
   expiresAt: string;
@@ -70,6 +71,7 @@ function rowToPromo(r: Record<string, unknown>): PromoCode {
     scope: r.scope as PromoScope,
     bookingId: (r.booking_id as string) ?? undefined,
     label: (r.label as string) ?? undefined,
+    printText: (r.print_text as string) ?? undefined,
     maxPeople: Number(r.max_people) > 0 ? Number(r.max_people) : 1,
     usedEmail: (r.used_email as string) ?? undefined,
     expiresAt: iso(r.expires_at),
@@ -105,6 +107,7 @@ export const promoStore = {
     scope: PromoScope;
     bookingId?: string | null;
     label?: string;
+    printText?: string;
     maxPeople: number;
     expiresAt: Date;
   }): Promise<PromoCode[]> {
@@ -113,8 +116,8 @@ export const promoStore = {
     for (let i = 0; i < input.count; i++) {
       for (let attempt = 0; attempt < 5; attempt++) {
         const rows = await sql`
-          INSERT INTO promo_codes (id, code, kind, value, scope, booking_id, label, max_people, expires_at)
-          VALUES (${crypto.randomUUID()}, ${generatePromoCode()}, ${input.kind}, ${input.value}, ${input.scope}, ${input.bookingId ?? null}, ${input.label ?? null}, ${input.maxPeople}, ${input.expiresAt.toISOString()})
+          INSERT INTO promo_codes (id, code, kind, value, scope, booking_id, label, print_text, max_people, expires_at)
+          VALUES (${crypto.randomUUID()}, ${generatePromoCode()}, ${input.kind}, ${input.value}, ${input.scope}, ${input.bookingId ?? null}, ${input.label ?? null}, ${input.printText ?? null}, ${input.maxPeople}, ${input.expiresAt.toISOString()})
           ON CONFLICT (code) DO NOTHING
           RETURNING *
         `;

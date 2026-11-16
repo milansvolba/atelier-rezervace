@@ -6,6 +6,12 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-16 (odpoledne 2) — Slevové kódy: text na kupónu a tisk hned po vytvoření
+
+Při vytvoření dávky jde vyplnit „Text na kupónu“ (např. „Pro účastníky Vánočního coworkshopu“, max. 60 znaků); vytiskne se pod nadpisem slevy místo „na kurz v Ateliéru na pobřeží“. Název dávky zůstává interní a netiskne se. Po vytvoření se v přehledu objeví zelený pruh s tlačítkem „Vytisknout kupóny (PDF)“ jen pro právě vytvořené kódy. Nový sloupec `promo_codes.print_text`. Kde: rezervace. Ověřeno vykreslením PDF a kontrolou typů.
+
+---
+
 ## 2026-11-16 (odpoledne) — Slevové kódy: přehlednější administrace, oprava ceny v košíku
 
 Modál „Slevové kódy“ má dvě záložky: Přehled kódů (výchozí) a Vytvořit kódy. V přehledu jsou filtry Volné / Použité / Zrušené (zrušené jsou skryté, kódy se nemažou kvůli dohledatelnosti), dávka a tisk. Na stránce kurzů se pevná cena z kódu nově počítá za osobu (dřív košík ukazoval cenu jedné osoby u více míst) a zobrazí se upozornění, když je míst víc, než kód dovoluje. Kde: rezervace. Ověřeno lokálně (Playwright).

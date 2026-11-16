@@ -261,6 +261,8 @@ await sql`
       // Nejvýš kolik míst smí kód slevnit (výchozí 1, aby jeden kupón nezaplatil celou skupinu) a e-mail toho, kdo kód použil.
       await sql`ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS max_people integer NOT NULL DEFAULT 1`;
       await sql`ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS used_email text`;
+      // Volitelný text, který se vytiskne na kupón (např. „Pro účastníky Vánočního coworkshopu“).
+      await sql`ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS print_text text`;
       // Pokusy o zadání kódu (kvůli omezení hádání kódů): jen nevratný otisk IP, bez kódu samotného.
       await sql`
         CREATE TABLE IF NOT EXISTS promo_attempts (

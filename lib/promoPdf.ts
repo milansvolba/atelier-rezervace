@@ -34,7 +34,7 @@ export function promoQrUrl(_code?: string): string {
 export function promoPdfTexts(p: PromoCode) {
   return {
     headline: p.kind === "percent" ? `Sleva ${p.value} %` : `Kurz za ${p.value} Kč na osobu`,
-    sub: p.scope === "poukaz" ? "na dárkový poukaz v Ateliéru na pobřeží" : "na kurz v Ateliéru na pobřeží",
+    sub: p.printText ? p.printText : p.scope === "poukaz" ? "na dárkový poukaz v Ateliéru na pobřeží" : "na kurz v Ateliéru na pobřeží",
     note: p.kind === "percent" ? "Sleva se týká ceny kurzu, ne odlitku." : "Cena se týká samotného kurzu.",
     valid: "Platí do " + WEEK_FMT(p.expiresAt),
     how: "Kód zadejte při objednávce kurzu na www.ateliernapobrezi.cz/kurzy (QR kód vás tam zavede)",

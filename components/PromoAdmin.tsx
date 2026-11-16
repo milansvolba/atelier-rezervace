@@ -19,6 +19,7 @@ interface PromoRow {
   usedAt?: string;
   usedEmail?: string;
   maxPeople?: number;
+  printText?: string;
 }
 
 const STATUS_LABEL: Record<PromoRow["status"], string> = { active: "volný", reserved: "rozdělaná platba", used: "použitý", void: "zrušený" };
@@ -41,6 +42,8 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
   const [scope, setScope] = useState<"kurz" | "poukaz" | "oboje">("kurz");
   const [expiresOn, setExpiresOn] = useState("2027-01-31");
   const [label, setLabel] = useState("");
+  const [printText, setPrintText] = useState("");
+  const [created, setCreated] = useState<{ n: number; ids: string[] } | null>(null);
   const [filter, setFilter] = useState("");
   const [bookingId, setBookingId] = useState("");
   const [tab, setTab] = useState<"prehled" | "vytvorit">("prehled");
@@ -73,7 +76,7 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
     const r = await fetch("/api/admin/promo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ count: n, kind, value: Number(value), scope, maxPeople: Number(maxPeople), expiresOn, label: label.trim() || undefined, bookingId: scope !== "poukaz" && bookingId ? bookingId : undefined }),
+      body: JSON.stringify({ count: n, kind, value: Number(value), scope, maxPeople: Number(maxPeople), expiresOn, label: label.trim() || undefined, printText: printText.trim() || undefined, bookingId: scope !== "poukaz" && bookingId ? bookingId : undefined }),
     });
     const d = await r.json().catch(() => ({}));
     setBusy(false);
@@ -82,6 +85,7 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
       return;
     }
     await load();
+    setCreated({ n, ids: Array.isArray(d) ? d.map((c: { id: string }) => c.id) : [] });
     if (label.trim()) setFilter(label.trim());
     setShow({ free: true, used: true, void: false });
     setTab("prehled");
@@ -157,6 +161,9 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
           <label className="text-sm">Název dávky (pro vás)
             <input className={input} maxLength={80} placeholder="např. Firemní akce 26. 11." value={label} onChange={(e) => setLabel(e.target.value)} />
           </label>
+          <label className="text-sm col-span-2 md:col-span-3">Text na kupónu (nepovinné, vytiskne se pod slevou)
+            <input className={input} maxLength={60} placeholder="např. Pro účastníky Vánočního coworkshopu" value={printText} onChange={(e) => setPrintText(e.target.value)} />
+          </label>
           <div className="col-span-2 md:col-span-3 flex items-center gap-3">
             <button disabled={busy} className="h-9 px-4 rounded-md bg-gray-900 text-white text-sm disabled:opacity-60">{busy ? "Vytvářím…" : "Vytvořit kódy"}</button>
             {error && <span className="text-sm text-red-700">{error}</span>}
@@ -166,6 +173,15 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
 
         {tab === "prehled" && (<>
         {error && <p className="text-sm text-red-700">{error}</p>}
+        {created && (
+          <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm flex items-center justify-between gap-3 flex-wrap">
+            <span>Vytvořeno {created.n} kódů.</span>
+            <a className="h-8 px-3 rounded-md bg-gray-900 text-white inline-flex items-center" target="_blank" rel="noreferrer"
+              href={"/api/admin/promo/pdf?ids=" + created.ids.slice(0, 200).join(",")}>
+              Vytisknout kupóny (PDF)
+            </a>
+          </div>
+        )}
         <div className="flex items-center gap-2 flex-wrap text-sm">
           {([["free", "Volné", n.free], ["used", "Použité", n.used], ["void", "Zrušené", n.void]] as const).map(([k, t, c]) => (
             <button key={k} type="button" onClick={() => setShow({ ...show, [k]: !show[k] })} aria-pressed={show[k]}
