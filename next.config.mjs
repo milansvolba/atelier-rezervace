@@ -12,5 +12,21 @@ const nextConfig = {
     "/api/vouchers/[id]": ["./lib/voucher-assets/**/*"],
     "/api/admin/promo/pdf": ["./lib/voucher-assets/**/*"],
   },
+  // Bezpečnostní hlavičky pro všechny stránky a rozhraní. Úplnou Content-Security-Policy (zdroje skriptů) zatím nezapínáme,
+  // aby nerozbila Stripe a Google Analytics; tady jsou jen pravidla, která nic nerozbijí (ochrana před vložením do cizího rámu).
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'" },
+        ],
+      },
+    ];
+  },
 };
 export default nextConfig;

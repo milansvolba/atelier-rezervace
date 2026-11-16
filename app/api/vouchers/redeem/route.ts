@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ipLimited, TOO_MANY } from "@/lib/rateLimit";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
@@ -17,6 +18,8 @@ export const dynamic = "force-dynamic";
 //  - dryRun: true → jen ověří kód a termín a vrátí údaje poukazu (počet osob, odlitek), nic nezapisuje.
 //  - jinak: poukaz atomicky označí jako uplatněný a vytvoří potvrzenou přihlášku na celý počet osob poukazu.
 export async function POST(req: NextRequest) {
+  // Omezení počtu požadavků z jedné IP (spam, zahlcení e-mailů, blokování míst).
+  if (await ipLimited(req, "vouchers-redeem", { max: 30, windowSec: 600 })) return NextResponse.json({ error: TOO_MANY }, { status: 429 });
   const body = await req.json().catch(() => ({}));
   const { code, bookingId, name, contact, phone, note, dryRun, honeypot } = body;
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });

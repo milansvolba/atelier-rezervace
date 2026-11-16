@@ -35,6 +35,13 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     if (!isValidCourseType(courseType)) return NextResponse.json({ error: "Neznámý typ kurzu." }, { status: 400 });
   }
 
+  // Kategorii, kapacitu a cenu (z rezervace by se stal veřejný kurz, na který jde platit) mění jen admin.
+  // Pole poslané členem se tiše ignorují, členovi zůstávají původní hodnoty.
+  const isAdmin = session.role === "admin";
+  const nextCategory = isAdmin ? category : undefined;
+  const nextCapacity = isAdmin ? capacity : undefined;
+  const nextPrice = isAdmin ? price : undefined;
+
   const nextResource = resource ?? existing.resource;
   const nextDate = date ?? existing.date;
   const nextStart = startTime ?? existing.startTime;
@@ -68,9 +75,9 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     endTime: nextEnd,
     title,
     requesterContact,
-    category,
-    capacity: capacity === "" || capacity === undefined ? undefined : Number(capacity),
-    price: price === "" || price === undefined ? undefined : Number(price),
+    category: nextCategory,
+    capacity: nextCapacity === "" || nextCapacity === undefined ? undefined : Number(nextCapacity),
+    price: nextPrice === "" || nextPrice === undefined ? undefined : Number(nextPrice),
     courseType: courseType === "" ? undefined : courseType,
   });
 

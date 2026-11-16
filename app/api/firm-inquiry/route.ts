@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ipLimited, TOO_MANY } from "@/lib/rateLimit";
 import { store } from "@/lib/data";
 import { courseFlags } from "@/lib/courseFlags";
 import { computeOrder, voucherCourse, castingPriceFor, clampCastings } from "@/lib/pricing";
@@ -25,6 +26,8 @@ function kc(n: number) {
 // Tělo: { kind: "kurz"|"poukaz", bookingId? (kurz, nebo pevný termín u poukazu), topic? (poukaz), people, casting?,
 //         name, email, phone?, note?, heardAbout?, billing (isCompany musí být true), honeypot? }
 export async function POST(req: NextRequest) {
+  // Omezení počtu požadavků z jedné IP (spam, zahlcení e-mailů, blokování míst).
+  if (await ipLimited(req, "firm-inquiry", { max: 5, windowSec: 3600 })) return NextResponse.json({ error: TOO_MANY }, { status: 429 });
   const origin = req.headers.get("origin");
   const host = req.headers.get("host");
   const sameSite = !!origin && (ALLOWED_ORIGINS.has(origin) || (host && origin.endsWith("//" + host)));

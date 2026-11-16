@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ipLimited, TOO_MANY } from "@/lib/rateLimit";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
@@ -30,6 +31,8 @@ function peopleWord(n: number) {
 //         recipientName?, message?, honeypot? }
 // bookingId je volitelný pevný termín; bez něj si obdarovaný termín vybere sám později.
 export async function POST(req: NextRequest) {
+  // Omezení počtu požadavků z jedné IP (spam, zahlcení e-mailů, blokování míst).
+  if (await ipLimited(req, "vouchers-checkout", { max: 10, windowSec: 1800 })) return NextResponse.json({ error: TOO_MANY }, { status: 429 });
   const body = await req.json();
   const { topic, people, casting, bookingId, buyerName, buyerEmail, buyerPhone, recipientName, recipientEmail, recipientPhone, message, heardAbout, honeypot, billing, promoCode } = body;
 

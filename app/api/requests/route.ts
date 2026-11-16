@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ipLimited, TOO_MANY } from "@/lib/rateLimit";
 import { store, findConflict, findPrepConflictFor } from "@/lib/data";
 import { prepMessage } from "@/lib/prep";
 import { Booking } from "@/lib/types";
@@ -7,6 +8,8 @@ import { sendAdminNewRequestEmail, sendRequesterReceivedEmail } from "@/lib/emai
 // POST /api/requests — veřejný formulář žádosti o pronájem ateliéru / rezervaci místa.
 // Nevytváří potvrzenou rezervaci, jen "pending" záznam čekající na schválení adminem.
 export async function POST(req: NextRequest) {
+  // Omezení počtu požadavků z jedné IP (spam, zahlcení e-mailů, blokování míst).
+  if (await ipLimited(req, "requests", { max: 10, windowSec: 3600 })) return NextResponse.json({ error: TOO_MANY }, { status: 429 });
   const body = await req.json();
   const { resource, date, startTime, endTime, title, requesterName, requesterContact, note, category, heardAbout, honeypot } = body;
 

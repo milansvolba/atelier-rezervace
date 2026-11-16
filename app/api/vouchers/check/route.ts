@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ipLimited, TOO_MANY } from "@/lib/rateLimit";
 import { voucherCourse } from "@/lib/pricing";
 import { voucherStore, isExpired } from "@/lib/vouchers";
 
@@ -7,6 +8,8 @@ export const dynamic = "force-dynamic";
 // POST /api/vouchers/check — ověří kód poukazu bez vybraného termínu (odkaz z e-mailu: /kurzy?poukaz=KÓD).
 // Tělo: { code }. Nic nezapisuje. Vrací počet osob, odlitky a typ kurzu poukazu (klíč), podle kterého se filtrují termíny.
 export async function POST(req: NextRequest) {
+  // Omezení počtu požadavků z jedné IP (spam, zahlcení e-mailů, blokování míst).
+  if (await ipLimited(req, "vouchers-check", { max: 30, windowSec: 600 })) return NextResponse.json({ error: TOO_MANY }, { status: 429 });
   const body = await req.json().catch(() => ({}));
   const bad = (error: string, status = 400) => NextResponse.json({ error }, { status });
   const voucher = body.code ? await voucherStore.byCode(String(body.code)) : null;

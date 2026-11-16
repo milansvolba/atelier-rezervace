@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ipLimited, TOO_MANY } from "@/lib/rateLimit";
 import { validateRequest, looksLikeSpam, hashIp, membershipRequests } from "@/lib/membershipRequests";
 import { sendAdminMembershipRequestEmail } from "@/lib/email";
 
@@ -10,6 +11,8 @@ export const dynamic = "force-dynamic";
 const ALLOWED_ORIGINS = new Set(["https://rezervace.ateliernapobrezi.cz"]);
 
 export async function POST(req: NextRequest) {
+  // Omezení počtu požadavků z jedné IP (spam, zahlcení e-mailů, blokování míst).
+  if (await ipLimited(req, "membership-request", { max: 5, windowSec: 3600 })) return NextResponse.json({ error: TOO_MANY }, { status: 429 });
   const origin = req.headers.get("origin");
   const host = req.headers.get("host");
   const sameSite = !!origin && (ALLOWED_ORIGINS.has(origin) || (host && origin.endsWith("//" + host)));
