@@ -6,6 +6,14 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-16 (odpoledne) — Bezpečnost hlavního webu: S-05 a S-10 (web, Forpsi)
+
+- **S-05:** nový soubor `/www/.user.ini` (cookie relace PHPSESSID má HttpOnly, Secure a SameSite=Lax). Ověřeno živě: skript v prohlížeči už cookie nevidí.
+- **S-10:** `/www/admin.php` nahrán novou verzí a vznikl `/www/data/admin_recovery_emails.php` (adresa `rezervace@ateliernapobrezi.cz`). Návod k obnově hesla se už nezobrazuje veřejně, posílá se e-mailem (max. 3 za hodinu). Odpověď formuláře je stejná pro správnou i cizí adresu (ověřeno). Původní admin.php je v záloze `C:\Users\milan\forpsi-ftp-backups\20261116-143006\www\admin.php`. Doručení e-mailu přes `mail()` čeká na ověření (schránka rezervace@ včetně spamu).
+- Poznámka: lockout přihlášení je společný pro všechny (kdokoli může správce na 5 min zamknout). Nápad: omezit podle IP.
+
+---
+
 ## 2026-11-16 (odpoledne) — Bezpečnost: opravy středních nálezů z auditu (S-01 až S-04, S-06, S-07)
 
 Větev `bezpecnost-stredni-nalezy` (Pull request ke schválení Milanem). Tabulka nálezů: https://claude.ai/artifact/5Fk5YcSbFJXsrZf5jiWMte, rozbor v `claude/pentest-2026-11-16.md`.
