@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-16 (dopoledne 2) — Náhledy při sdílení odkazů (og:image s logem)
+
+Každá stránka (Úvod, Kurzy, oba detaily kurzů, Pronájem, Firemní akce, O ateliéru, Kontakt, Dárkové poukazy) má vlastní obrázek 1200×630 s logem ve složce `/images/og/<stránka>.jpg` a vlastní titulek a popisek při sdílení. Značky generuje nový `inc/og-tags.php` (mapa stránka → titulek a popisek, texty napevno, návrh ke schválení), do stránek vložen include před `favicon-tags.php`; úvodní stránka má obrázek přepsaný. Výměna obrázku = přepsat soubor se stejným názvem. Poučení: Facebook si náhled drží v paměti, u už sdílených odkazů je potřeba v Sharing Debuggeru dát „Scrape again“. Kde: web. Ověřeno živě (každá stránka má jednu značku og:image a obrázek se načítá).
+
 ## 2026-11-16 (dopoledne) — Tlačítka „Koupit kurz jako dárek“ a světlé záhlaví Dárkových poukazů
 
 Tlačítko (text editovatelný, klíč `cta_koupit_darek`) vede na `rezervace…/poukazy` (u kurzů s `?kurz=hlava|relief`). Je na stránce Kurzy (záhlaví, obě karty) a na detailech kurzů (záhlaví, sekce Termíny, nový pruh „Hledáte dárek?“ – texty `gift_strip_title`, `gift_strip_text`, návrh ke schválení). Dárkové poukazy: fotka přes celé světlé záhlaví jako ostatní stránky (třída `hero-photo-poukazy`). Soubory: kurzy.php, kurz-relief.php, kurz-modelovani-hlavy.php, darkove-poukazy.php, styles.css. Kde: web. Ověřeno živě (obsah a vzhled Dárkových poukazů).
