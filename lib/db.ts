@@ -273,6 +273,16 @@ await sql`
         )
       `;
       await sql`CREATE INDEX IF NOT EXISTS promo_attempts_created_idx ON promo_attempts (created_at DESC)`;
+      // Obecné omezení počtu požadavků (lib/rateLimit.ts): jen nevratný otisk IP nebo e-mailu, bez osobních údajů.
+      await sql`
+        CREATE TABLE IF NOT EXISTS rate_hits (
+          id bigserial PRIMARY KEY,
+          scope text NOT NULL,
+          key_hash text NOT NULL,
+          created_at timestamptz NOT NULL DEFAULT now()
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS rate_hits_lookup_idx ON rate_hits (scope, key_hash, created_at DESC)`;
       const existingTiers = await sql`SELECT COUNT(*)::int AS count FROM discount_tiers`;
       if (Number(existingTiers[0]?.count ?? 0) === 0) {
         await sql`

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ipLimited, TOO_MANY } from "@/lib/rateLimit";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { voucherStore } from "@/lib/vouchers";
@@ -35,6 +36,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/vouchers/contact — tělo: { t, recipientName?, recipientEmail?, recipientPhone? }; aspoň e-mail nebo telefon.
 export async function POST(req: NextRequest) {
+  // Omezení počtu požadavků z jedné IP (spam, zahlcení e-mailů, blokování míst).
+  if (await ipLimited(req, "vouchers-contact", { max: 20, windowSec: 3600 })) return NextResponse.json({ error: TOO_MANY }, { status: 429 });
   const body = await req.json().catch(() => ({}));
   const found = await loadVoucher(String(body.t ?? ""));
   if (!found) return NextResponse.json({ error: "Odkaz není platný." }, { status: 404 });

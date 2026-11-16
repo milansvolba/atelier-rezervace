@@ -269,7 +269,10 @@ function LoginForm() {
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
           <p className="font-medium">Zkontrolujte e-mail</p>
           <p className="text-sm text-gray-500">
-            Na <strong>{email}</strong> jsme poslali přihlašovací odkaz. Klikněte na něj — platí 15 minut.
+            Pokud je <strong>{email}</strong> u nás veden, poslali jsme na něj přihlašovací odkaz. Klikněte na něj — platí 15 minut.
+          </p>
+          <p className="text-xs text-gray-500">
+            Nepřišel? Podívejte se do nevyžádané pošty, nebo se ozvěte Milanovi nebo Petrovi.
           </p>
         </div>
       </main>

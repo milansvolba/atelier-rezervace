@@ -1,5 +1,6 @@
 import { courseFlags } from "@/lib/courseFlags";
 import { NextRequest, NextResponse } from "next/server";
+import { ipLimited, TOO_MANY } from "@/lib/rateLimit";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { CourseSignup } from "@/lib/types";
@@ -9,6 +10,8 @@ import { sendAdminNewSignupEmail, sendSignupReceivedEmail } from "@/lib/email";
 
 // POST /api/signups — veřejný formulář přihlášky na vypsaný termín kurzu.
 export async function POST(req: NextRequest) {
+  // Omezení počtu požadavků z jedné IP (spam, zahlcení e-mailů, blokování míst).
+  if (await ipLimited(req, "signups", { max: 10, windowSec: 3600 })) return NextResponse.json({ error: TOO_MANY }, { status: 429 });
   const body = await req.json();
   const { bookingId, name, contact, people, note, phone, heardAbout, honeypot } = body;
 
@@ -17,6 +20,10 @@ export async function POST(req: NextRequest) {
 
   if (!bookingId || !name || !contact) {
     return NextResponse.json({ error: "chybí povinné údaje" }, { status: 400 });
+  }
+  // Rozumné délky polí (jinak by šla databáze i e-maily plnit libovolně dlouhým textem).
+  if (String(name).length > 200 || String(contact).length > 200 || String(note ?? "").length > 2000) {
+    return NextResponse.json({ error: "Některé pole je příliš dlouhé." }, { status: 400 });
   }
   // Telefon je nepovinný, ale když ho zákazník vyplní, musí dávat smysl.
   const cleanedPhone = cleanPhone(phone);
@@ -36,7 +43,7 @@ export async function POST(req: NextRequest) {
     bookingId,
     name,
     contact,
-    people: people ? Math.max(1, Number(people)) : 1,
+    people: people ? Math.min(20, Math.max(1, Math.floor(Number(people)) || 1)) : 1,
     note,
     phone: cleanedPhone ?? undefined,
     status: "pending",

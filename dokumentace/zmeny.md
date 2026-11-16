@@ -6,6 +6,19 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-16 (odpoledne) — Bezpečnost: opravy středních nálezů z auditu (S-01 až S-04, S-06, S-07)
+
+Větev `bezpecnost-stredni-nalezy` (Pull request ke schválení Milanem). Tabulka nálezů: https://claude.ai/artifact/5Fk5YcSbFJXsrZf5jiWMte, rozbor v `claude/pentest-2026-11-16.md`.
+- **S-01:** člen už nemůže u své rezervace měnit kategorii, kapacitu ani cenu (ignoruje se, mění jen admin).
+- **S-02:** přihlášení (`/api/auth/request-link`) odpovídá vždy stejně (ok), neprozradí, jestli e-mail v systému je; omezení 10 požadavků na IP / 10 min a 3 odkazy na e-mail / 10 min. Text po odeslání na přihlašovací stránce změněn (návrh ke schválení).
+- **S-03:** platba kurzu max. 8 pokusů na IP za 30 min (blokování míst).
+- **S-04:** `getSession` ověřuje účet a roli v databázi při každém požadavku, smazaný člen nebo admin přestane fungovat hned. Magic link zůstává použitelný opakovaně do 15 min (jednorázový zatím ne).
+- **S-06:** bezpečnostní hlavičky (nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, CSP jen s frame-ancestors, base-uri, object-src). Plná CSP se zdroji skriptů zatím ne (Stripe, Google Analytics).
+- **S-07:** nový obecný limit (`lib/rateLimit.ts`, tabulka `rate_hits`) na přihlášky, poptávky, firemní poptávky, žádosti o členství, objednávky poukazů, ověření a uplatnění poukazů a kontakt u poukazu; délky polí u přihlášky.
+Pozor: appka po nasazení vytvoří novou tabulku `rate_hits` (sama při prvním dotazu). Kde: rezervace. Ověřeno: kontrola typů (tsc) prošla; plný build lokálně nejde (stahuje písma z Google), ověří Vercel náhled.
+
+---
+
 ## 2026-11-16 (dopoledne 2) — Náhledy při sdílení odkazů (og:image s logem)
 
 Každá stránka (Úvod, Kurzy, oba detaily kurzů, Pronájem, Firemní akce, O ateliéru, Kontakt, Dárkové poukazy) má vlastní obrázek 1200×630 s logem ve složce `/images/og/<stránka>.jpg` a vlastní titulek a popisek při sdílení. Značky generuje nový `inc/og-tags.php` (mapa stránka → titulek a popisek, texty napevno, návrh ke schválení), do stránek vložen include před `favicon-tags.php`; úvodní stránka má obrázek přepsaný. Výměna obrázku = přepsat soubor se stejným názvem. Poučení: Facebook si náhled drží v paměti, u už sdílených odkazů je potřeba v Sharing Debuggeru dát „Scrape again“. Kde: web. Ověřeno živě (každá stránka má jednu značku og:image a obrázek se načítá).

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { SignJWT, jwtVerify } from "jose";
+import { users } from "@/lib/users";
 
 // Jmenné účty s přihlášením přes "magic link" e-mailem — žádná hesla se
 // nikde neukládají. Session je podepsané JWT v httpOnly cookie (90 dní,
@@ -52,10 +53,22 @@ export async function verifySessionToken(token: string): Promise<SessionUser | n
   }
 }
 
+// Podpis session ještě neříká, že účet existuje a má pořád tu samou roli: smazaný člen nebo admin by jinak zůstal
+// přihlášený až do vypršení (90 dní). Proto se účet i role při každém požadavku berou z databáze, ne z tokenu.
+// Když databáze selže, přihlášení se bere jako neplatné (bezpečnější než tiše propustit).
 export async function getSession(req: NextRequest): Promise<SessionUser | null> {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  return verifySessionToken(token);
+  const claims = await verifySessionToken(token);
+  if (!claims || typeof claims.id !== "string") return null;
+  try {
+    const u = await users.byId(claims.id);
+    if (!u) return null;
+    return { id: u.id, name: u.name, email: u.email, role: u.role };
+  } catch (e) {
+    console.error("[auth] Ověření účtu v databázi selhalo:", e);
+    return null;
+  }
 }
 
 // Vrátí přihlášeného uživatele, pokud je admin — jinak null.

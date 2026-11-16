@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ipLimited, TOO_MANY } from "@/lib/rateLimit";
 import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
@@ -27,6 +28,8 @@ function seatsWord(n: number) {
 // klient nikdy neposílá částku. Místa se po dobu platby drží (tabulka payments), přihláška
 // (course_signups) vznikne až po zaplacení ve webhooku /api/stripe/webhook.
 export async function POST(req: NextRequest) {
+  // Omezení počtu požadavků z jedné IP (spam, zahlcení e-mailů, blokování míst).
+  if (await ipLimited(req, "signups-checkout", { max: 8, windowSec: 1800 })) return NextResponse.json({ error: TOO_MANY }, { status: 429 });
   const body = await req.json();
   const { bookingId, name, contact, people, note, phone, honeypot, casting, heardAbout, billing, promoCode } = body;
 
