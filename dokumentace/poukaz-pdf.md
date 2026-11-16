@@ -20,4 +20,4 @@ Stav: připraveno k nasazení po sloučení Pull requestu (15. 11. 2026). Schvá
 - Podpis na poukazu je vymyšlený (`lib/voucher-assets/petr-podpis.png`), ne skutečný. Nepoužívat skutečný podpis.
 
 ## Test
-Lokálně: `npx tsx` skript, který zavolá `generateVoucherPdf` s ukázkovým poukazem (s termínem, bez, 6 jmen, bez jména) a výstup převede na obrázek. Na Vercel preview: koupit poukaz se Stripe testovacími klíči a zkontrolovat přílohu v e-mailu.
+Lokálně: `npx tsx` skript, který zavolá `generateVoucherPdf` s ukázkovým poukazem (s termínem, bez, 6 jmen, bez jména) a výstup převede na obrázek. Na Vercel preview se platit nedá: klíče Stripe, Resend a přihlášení jsou ve Vercelu jen pro Production (ověřeno 16. 11. 2026) a Stripe je od 13. 11. ostrý. Bezplatný test po sloučení: v administraci „Poslat znovu“ u existujícího poukazu (e-mail jde na adresu kupujícího, proto jen u poukazu s adresou Milana). Test celé platby: vlastní kartou a hned vratka přes admin, nebo test klíče nastavené i pro Preview.
