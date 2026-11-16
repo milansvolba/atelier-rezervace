@@ -12,6 +12,12 @@ Na poukazu je „Pro: Anička Sojková“ (jméno tak, jak ho kupující zadal, 
 
 ---
 
+## 2026-11-16 (odpoledne) — Slevové kódy: přehlednější administrace, oprava ceny v košíku
+
+Modál „Slevové kódy“ má dvě záložky: Přehled kódů (výchozí) a Vytvořit kódy. V přehledu jsou filtry Volné / Použité / Zrušené (zrušené jsou skryté, kódy se nemažou kvůli dohledatelnosti), dávka a tisk. Na stránce kurzů se pevná cena z kódu nově počítá za osobu (dřív košík ukazoval cenu jedné osoby u více míst) a zobrazí se upozornění, když je míst víc, než kód dovoluje. Kde: rezervace. Ověřeno lokálně (Playwright).
+
+---
+
 ## 2026-11-16 — Slevové promo kódy (rezervace, platby, admin) + PDF poukazu
 
 Nový systém jednorázových slevových kódů `SLEVA-XXXX-XXXX` (tabulky `promo_codes`, `promo_attempts`). Kód: procenta z ceny kurzu nebo pevná cena kurzu ZA OSOBU; platí pro kurz, poukaz nebo oboje; volitelně jen na jeden termín; max. míst na kód (výchozí 1); platnost do zadaného data. Sleva se týká jen ceny kurzu (ne odlitků), nesčítá se s množstevní slevou (platí výhodnější) a nespojí se s dárkovým poukazem. Cena se vždy počítá na serveru; kód se při platbě na 35 min zarezervuje, spotřebuje se až webhookem po zaplacení. Při opakovaném pokusu téhož zákazníka se jeho stará platební stránka ve Stripe ukončí; převzetí propadlé rezervace je možné jen po ověření stavu platby ve Stripe. Hádání kódů brzdí limit na IP (IPv6 po /64). Administrace: „Slevové kódy“ (vytvoření dávky, seznam, zrušení, kdo kód použil, tisk kupónů 4× A4). Při druhé platbě téhož kódu přijde správcům e-mail.

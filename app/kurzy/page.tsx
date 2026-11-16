@@ -77,7 +77,7 @@ export default function KurzyPage() {
   // Slevový promokód (jednorázový, lib/promo.ts): zadá se při objednávce, ověří se na serveru, cena se při platbě počítá znovu.
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoInput, setPromoInput] = useState("");
-  const [promo, setPromo] = useState<null | { code: string; kind: "percent" | "fixed_price"; value: number; text: string }>(null);
+  const [promo, setPromo] = useState<null | { code: string; kind: "percent" | "fixed_price"; value: number; text: string; maxPeople: number }>(null);
   const [promoErr, setPromoErr] = useState("");
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [voucherCode, setVoucherCode] = useState("");
@@ -352,7 +352,7 @@ export default function KurzyPage() {
     // Slevový kód se nesčítá s množstevní slevou: platí výhodnější z obou (stejně jako na serveru, lib/pricing.ts).
     let promoApplied = false;
     if (promo) {
-      const promoAfter = promo.kind === "percent" ? Math.round(total * (1 - Math.min(100, promo.value) / 100)) : Math.max(0, Math.round(promo.value));
+      const promoAfter = promo.kind === "percent" ? Math.round(total * (1 - Math.min(100, promo.value) / 100)) : Math.max(0, Math.round(promo.value)) * n; // pevná cena kurzu je za osobu
       if (promoAfter < totalAfter) {
         promoApplied = true;
         totalAfter = promoAfter;
@@ -402,7 +402,7 @@ export default function KurzyPage() {
         body: JSON.stringify({ code: promoInput, scope: "kurz", bookingId: selectedCourse.id }),
       });
       const data = await r.json().catch(() => ({}));
-      if (r.ok && data.ok) setPromo({ code: data.code, kind: data.kind, value: Number(data.value), text: String(data.text || "") });
+      if (r.ok && data.ok) setPromo({ code: data.code, kind: data.kind, value: Number(data.value), text: String(data.text || ""), maxPeople: Number(data.maxPeople) > 0 ? Number(data.maxPeople) : 1 });
       else setPromoErr(data.error || "Kód se nepodařilo ověřit, zkuste to prosím znovu.");
     } catch {
       setPromoErr("Kód se nepodařilo ověřit, zkuste to prosím znovu.");
@@ -767,6 +767,7 @@ export default function KurzyPage() {
                       <div className="flex items-center justify-between gap-3 text-sm">
                         <span>
                           Slevový kód <strong>{promo.code}</strong>: {promo.text}
+                          {signupPeople > promo.maxPeople && <span className="block text-xs text-amber-800">Tento kód platí nejvýše pro {promo.maxPeople} {promo.maxPeople === 1 ? "místo" : promo.maxPeople <= 4 ? "místa" : "míst"}. Snižte prosím počet míst, jinak objednávku nepůjde dokončit.</span>}
                           {quote && !quote.promoApplied && <span className="block text-xs text-amber-800">U vaší objednávky je výhodnější množstevní sleva, kód se proto nepoužije a zůstane vám.</span>}
                         </span>
                         <button type="button" onClick={() => { setPromo(null); setPromoInput(""); }} className="text-xs underline shrink-0">
