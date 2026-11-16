@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 // Správa slevových promokódů (jen admin): vytvoření dávky jedinečných kódů, přehled, zrušení a tisk kupónů (4 na A4).
-// Pravidla viz lib/promo.ts. Použitý kód zrušit nejde. Kód se spotřebuje až po zaplacení.
+// Dvě záložky: Přehled kódů (výchozí; filtr Volné / Použité / Zrušené, zrušené jsou ve výchozím stavu skryté) a Vytvořit kódy.
+// Kódy se nemažou, jen ruší (kvůli dohledatelnosti a aby se kód nikdy nepoužil znovu). Použitý kód zrušit nejde.
 
 interface PromoRow {
   id: string;
@@ -42,6 +43,8 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
   const [label, setLabel] = useState("");
   const [filter, setFilter] = useState("");
   const [bookingId, setBookingId] = useState("");
+  const [tab, setTab] = useState<"prehled" | "vytvorit">("prehled");
+  const [show, setShow] = useState<{ free: boolean; used: boolean; void: boolean }>({ free: true, used: true, void: false });
   const [terms, setTerms] = useState<{ id: string; title: string; date: string }[]>([]);
 
   async function load() {
@@ -80,6 +83,8 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
     }
     await load();
     if (label.trim()) setFilter(label.trim());
+    setShow({ free: true, used: true, void: false });
+    setTab("prehled");
   }
 
   async function voidOne(id: string) {
@@ -90,8 +95,11 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
   }
 
   const labels = Array.from(new Set(rows.map((r) => r.label).filter(Boolean))) as string[];
-  const shown = filter ? rows.filter((r) => r.label === filter) : rows;
-  const printable = shown.filter((r) => r.status === "active" || r.status === "reserved");
+  const inBatch = filter ? rows.filter((r) => r.label === filter) : rows;
+  const isFree = (r: PromoRow) => r.status === "active" || r.status === "reserved";
+  const n = { free: inBatch.filter(isFree).length, used: inBatch.filter((r) => r.status === "used").length, void: inBatch.filter((r) => r.status === "void").length };
+  const shown = inBatch.filter((r) => (isFree(r) && show.free) || (r.status === "used" && show.used) || (r.status === "void" && show.void));
+  const printable = inBatch.filter(isFree);
 
   const input = "mt-1 w-full h-9 border border-gray-300 rounded-md px-2 text-sm";
   return (
@@ -105,6 +113,15 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
           Každý kód jde použít jen jednou a spotřebuje se až po zaplacení. Sleva se týká jen ceny kurzu (ne odlitků) a nesčítá se s množstevní slevou: platí výhodnější. S dárkovým poukazem se kód nespojí.
         </p>
 
+        <div className="flex gap-1 border-b border-gray-200">
+          {([["prehled", "Přehled kódů"], ["vytvorit", "Vytvořit kódy"]] as const).map(([k, t]) => (
+            <button key={k} type="button" onClick={() => setTab(k)} className={"px-3 py-2 text-sm -mb-px border-b-2 " + (tab === k ? "border-gray-900 font-medium" : "border-transparent text-gray-500 hover:text-gray-800")}>
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {tab === "vytvorit" && (
         <form onSubmit={create} className="grid grid-cols-2 md:grid-cols-3 gap-3 border border-gray-200 rounded-md p-3">
           <label className="text-sm">Počet kódů
             <input className={input} type="number" min={1} max={200} value={count} onChange={(e) => setCount(e.target.value)} />
@@ -145,7 +162,18 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
             {error && <span className="text-sm text-red-700">{error}</span>}
           </div>
         </form>
+        )}
 
+        {tab === "prehled" && (<>
+        {error && <p className="text-sm text-red-700">{error}</p>}
+        <div className="flex items-center gap-2 flex-wrap text-sm">
+          {([["free", "Volné", n.free], ["used", "Použité", n.used], ["void", "Zrušené", n.void]] as const).map(([k, t, c]) => (
+            <button key={k} type="button" onClick={() => setShow({ ...show, [k]: !show[k] })} aria-pressed={show[k]}
+              className={"h-8 px-3 rounded-full border " + (show[k] ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-300")}>
+              {t} ({c})
+            </button>
+          ))}
+        </div>
         <div className="flex items-center gap-3 flex-wrap text-sm">
           <label className="flex items-center gap-2">Dávka:
             <select className="h-8 border border-gray-300 rounded-md px-2" value={filter} onChange={(e) => setFilter(e.target.value)}>
@@ -153,7 +181,7 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
               {labels.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
           </label>
-          <span className="text-gray-500">{shown.length} kódů, volných {shown.filter((r) => r.status === "active").length}</span>
+          <span className="text-gray-500">Zobrazeno {shown.length} z {inBatch.length}</span>
           {printable.length > 0 && (
             <a
               className="h-8 px-3 rounded-md border border-gray-300 inline-flex items-center"
@@ -167,21 +195,24 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
         </div>
 
         {loading && <p className="text-sm text-gray-400">Načítám…</p>}
-        {!loading && shown.length === 0 && <p className="text-sm text-gray-400">Zatím žádné kódy.</p>}
+        {!loading && shown.length === 0 && <p className="text-sm text-gray-400">{rows.length === 0 ? "Zatím žádné kódy. Vytvoříte je v záložce „Vytvořit kódy“." : "Žádné kódy neodpovídají filtru."}</p>}
         <div className="space-y-1">
           {shown.map((r) => (
-            <div key={r.id} className="flex items-center justify-between gap-3 text-sm border-t border-gray-100 pt-1.5">
-              <span className="font-mono">{r.code}</span>
-              <span className="text-gray-600 flex-1 min-w-0 truncate">
-                {r.kind === "percent" ? r.value + " %" : "kurz za " + r.value + " Kč"} · {SCOPE_LABEL[r.scope]} · do {fmtD(r.expiresAt)}{r.bookingId ? " · jen na termín" : ""}{r.label ? " · " + r.label : ""}
-              </span>
-              <span className={r.status === "used" ? "text-gray-400" : r.status === "void" ? "text-gray-400 line-through" : "text-green-700"}>{STATUS_LABEL[r.status]}{r.usedAt ? " " + fmtD(r.usedAt) : ""}{r.usedEmail ? " (" + r.usedEmail + ")" : ""}</span>
-              {(r.status === "active" || r.status === "reserved") && (
-                <button onClick={() => voidOne(r.id)} className="text-xs underline text-gray-500">Zrušit</button>
-              )}
+            <div key={r.id} className="border-t border-gray-100 pt-1.5 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className={"font-mono flex-1 " + (r.status === "void" ? "text-gray-400 line-through" : "")}>{r.code}</span>
+                <span className={"text-right " + (r.status === "used" ? "text-gray-500" : r.status === "void" ? "text-gray-400" : "text-green-700")}>{STATUS_LABEL[r.status]}{r.usedAt ? " " + fmtD(r.usedAt) : ""}</span>
+                {(r.status === "active" || r.status === "reserved") && (
+                  <button onClick={() => voidOne(r.id)} className="text-xs underline text-gray-500">Zrušit</button>
+                )}
+              </div>
+              <div className="text-xs text-gray-500">
+                {r.kind === "percent" ? r.value + " %" : "kurz za " + r.value + " Kč"} · {SCOPE_LABEL[r.scope]} · do {fmtD(r.expiresAt)}{r.bookingId ? " · jen na termín" : ""}{r.label ? " · " + r.label : ""}{r.usedEmail ? " · použil(a) " + r.usedEmail : ""}
+              </div>
             </div>
           ))}
         </div>
+        </>)}
       </div>
     </div>
   );
