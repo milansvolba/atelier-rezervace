@@ -6,6 +6,8 @@ import { cleanPhone } from "@/lib/signupContact";
 import { computeOrder, castingPriceFor, clampCastings } from "@/lib/pricing";
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
 import { parseBillingInput } from "@/lib/billingInput";
+import { promoStore, promoAttemptStart, promoAttemptSucceeded, clientIpHash, maxPeopleMessage, GENERIC_PROMO_ERROR, PROMO_MIN_FIXED_PRICE, type PromoCode } from "@/lib/promo";
+import { expireStripeSession } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +28,7 @@ function seatsWord(n: number) {
 // (course_signups) vznikne až po zaplacení ve webhooku /api/stripe/webhook.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { bookingId, name, contact, people, note, phone, honeypot, casting, heardAbout, billing } = body;
+  const { bookingId, name, contact, people, note, phone, honeypot, casting, heardAbout, billing, promoCode } = body;
 
   if (honeypot) return NextResponse.json({ ok: true }, { status: 201 });
 
@@ -66,7 +68,27 @@ export async function POST(req: NextRequest) {
   // Množstevní sleva podle počtu lidí + volitelný betonový odlitek pro každého účastníka (lib/pricing.ts).
   const castingPrice = castingPriceFor(booking);
   const castings = castingPrice !== null ? clampCastings(casting, seats) : 0;
-  const price = computeOrder(booking.price, seats, castings, castingPrice ?? 0);
+
+  // Volitelný jednorázový slevový kód (lib/promo.ts). Jen pro čtení; zarezervuje se až těsně před platbou.
+  let promo: PromoCode | null = null;
+  const promoRaw = typeof promoCode === "string" ? promoCode.trim() : "";
+  if (promoRaw) {
+    const attempt = await promoAttemptStart(clientIpHash(req));
+    if (attempt.blocked) {
+      return NextResponse.json({ error: "Zadáno příliš mnoho neplatných kódů. Zkuste to prosím za chvíli, nebo nám napište." }, { status: 429 });
+    }
+    promo = await promoStore.validate(promoRaw, { scope: "kurz", bookingId: booking.id }, holdKey);
+    if (!promo) return NextResponse.json({ error: GENERIC_PROMO_ERROR }, { status: 400 });
+    await promoAttemptSucceeded(attempt.id);
+    if (seats > promo.maxPeople) return NextResponse.json({ error: maxPeopleMessage(promo.maxPeople) }, { status: 400 });
+  }
+  const price = computeOrder(booking.price, seats, castings, castingPrice ?? 0, promo);
+  if (promo && !price.promoApplied) {
+    return NextResponse.json({ error: "U vaší objednávky je výhodnější množstevní sleva, kód proto nepoužijeme (zůstává platný). Odeberte ho prosím z objednávky." }, { status: 400 });
+  }
+  if (promo && price.courseAfter + price.castingTotal < PROMO_MIN_FIXED_PRICE) {
+    return NextResponse.json({ error: "Po uplatnění kódu je cena pod minimem pro platbu kartou. Napište nám prosím." }, { status: 400 });
+  }
   const billingCheck = parseBillingInput(billing, price.total);
   if (!billingCheck.ok) return NextResponse.json({ error: billingCheck.error }, { status: 400 });
   if (billingCheck.value?.isCompany) {
@@ -92,12 +114,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Kód se zarezervuje atomicky těsně před platbou: dva souběžné pokusy se stejným kódem neprojdou oba.
+  if (promo && !(await promoStore.reserveForCheckout(promo.code, { scope: "kurz", bookingId: booking.id }, tmpId, holdKey))) {
+    await paymentStore.removeAwaiting(tmpId).catch(() => undefined);
+    return NextResponse.json({ error: GENERIC_PROMO_ERROR }, { status: 409 });
+  }
+
+  let createdSession: string | null = null;
   try {
     const session = await createCheckoutSession({
       amountCzk: price.courseAfter,
       extraItems: castings > 0 ? [{ name: "Betonový odlitek — " + booking.title, amountCzk: castingPrice as number, quantity: castings }] : undefined,
       // „Včetně občerstvení“ je na dokladu ze Stripe záměrně: občerstvení je součástí ceny kurzu (účetní opatření, schváleno Milanem 2026-11-12).
-      productName: booking.title + " — " + fmtDate(booking.date) + ", " + seats + " " + seatsWord(seats) + ", včetně občerstvení",
+      productName: booking.title + " — " + fmtDate(booking.date) + ", " + seats + " " + seatsWord(seats) + ", včetně občerstvení" + (promo ? " (po slevě kódem)" : ""),
       customerEmail: email,
       metadata: {
         bookingId: booking.id,
@@ -108,15 +137,23 @@ export async function POST(req: NextRequest) {
         casting: String(castings),
         note: String(note ?? "").slice(0, 300),
         heardAbout: String(heardAbout ?? "").trim().slice(0, 200),
+        promo: promo ? promo.code : "",
       },
       successUrl: APP_URL + "/dekujeme?termin=" + encodeURIComponent(booking.id),
       cancelUrl: APP_URL + "/kurzy?platba=zrusena",
     });
+    createdSession = session.id;
     await paymentStore.renameSession(tmpId, session.id);
+    if (promo) await promoStore.attachSession(tmpId, session.id);
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("[stripe] Vytvoření platby selhalo:", err);
     await paymentStore.removeAwaiting(tmpId).catch(() => undefined);
+    // Platební stránka už mohla vzniknout: nejdřív ji ukončíme, teprve potom smí být kód zase volný.
+    if (promo) {
+      if (createdSession) await expireStripeSession(createdSession).catch(() => false);
+      await promoStore.release(createdSession ?? tmpId).catch(() => undefined);
+    }
     return NextResponse.json({ error: "Platbu se nepodařilo zahájit, zkuste to prosím znovu." }, { status: 502 });
   }
 }

@@ -21,6 +21,7 @@ import {
 import { windowsOnDate, restrictedInWindow } from "@/lib/prep";
 import { VOUCHER_COURSES, COURSE_TYPE_NONE, courseTypeKey, centralCoursePrice } from "@/lib/pricing";
 import { addressLine, idsLine, icoMissing } from "@/lib/invoiceFormat";
+import PromoAdmin from "@/components/PromoAdmin";
 
 type ViewMode = "day" | "week" | "month" | "quarter" | "year";
 type Role = "admin" | "member";
@@ -1589,6 +1590,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
     }
   }
   const [showEmails, setShowEmails] = useState(false);
+  const [showPromo, setShowPromo] = useState(false);
   const [showReferral, setShowReferral] = useState(false);
   const [members, setMembers] = useState<AppUser[]>([]);
   const [matchedMemberId, setMatchedMemberId] = useState<string | null>(null);
@@ -1919,6 +1921,11 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           {isAdmin && (
             <button onClick={() => setShowEmails(true)} className="text-sm text-gray-500 hover:text-gray-800">
               E-maily
+            </button>
+          )}
+          {isAdmin && (
+            <button onClick={() => setShowPromo(true)} className="text-sm text-gray-500 hover:text-gray-800">
+              Slevové kódy
             </button>
           )}
           {isAdmin && (
@@ -2660,6 +2667,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
         />
       )}
       {showEmails && <EmailsPanel onClose={() => setShowEmails(false)} />}
+      {showPromo && <PromoAdmin onClose={() => setShowPromo(false)} />}
       {showReferral && <ReferralStatsPanel onClose={() => setShowReferral(false)} />}
 
     {toastMsg && (

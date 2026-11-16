@@ -180,7 +180,7 @@ function front(doc: Doc, v: Voucher, t: ReturnType<typeof voucherPdfTexts>) {
     afterNames = doc.y / MM - OY;
   }
 
-  const cards: Card[] = [{ tag: "V ceně poukazu", title: `Kurz pro ${t.people}`, text: t.includes }];
+  const cards: Card[] = [{ tag: "V ceně poukazu", title: `Kurz ${t.course} pro ${t.people}`, text: t.includes }];
   if (t.term) cards.push({ tag: "Termín kurzu", title: t.term, text: "Místo je pro Vás už rezervované." });
   const gap = 4;
   const cw = (INNER_W - gap * (cards.length - 1)) / cards.length;

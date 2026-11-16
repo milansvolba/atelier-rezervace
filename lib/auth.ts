@@ -6,10 +6,15 @@ import { SignJWT, jwtVerify } from "jose";
 // "zapamatuj toto zařízení"), magic-link token je krátkodobé JWT (15 min)
 // poslané v odkazu e-mailem.
 //
-// AUTH_SECRET musí být nastavený ve Vercel Environment Variables — bez něj
-// appka běží jen s nouzovým lokálním klíčem (nepoužívat takhle naostro).
+// AUTH_SECRET musí být nastavený ve Vercel Environment Variables (Production i Preview). Bez něj aplikace
+// na serveru (NODE_ENV=production, tj. i Vercel náhledy) odmítne podepisovat a ověřovat přihlášení: veřejný záložní
+// klíč by dovolil komukoli vyrobit si správcovské přihlášení. Záložní klíč zůstává jen pro lokální vývoj.
 function secretKey() {
-  const secret = process.env.AUTH_SECRET || "dev-insecure-secret-change-me";
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production" || process.env.VERCEL) throw new Error("Chybí AUTH_SECRET.");
+    return new TextEncoder().encode("dev-insecure-secret-change-me");
+  }
   return new TextEncoder().encode(secret);
 }
 
@@ -62,6 +67,21 @@ export async function requireAdmin(req: NextRequest): Promise<SessionUser | null
 // Vrátí jakéhokoli přihlášeného uživatele (admin i člen) — jinak null.
 export async function requireUser(req: NextRequest): Promise<SessionUser | null> {
   return getSession(req);
+}
+
+// Ochrana proti CSRF u změn v administraci: požadavek z prohlížeče musí přijít z téhož webu (hlavička Origin).
+// Cookie má SameSite=Lax, ale hlavní web ateliéru sdílí doménu, proto kontrolujeme navíc i původ a typ obsahu.
+export function sameOriginOk(req: NextRequest): boolean {
+  const origin = req.headers.get("origin");
+  if (origin) {
+    try {
+      if (new URL(origin).host !== req.headers.get("host")) return false;
+    } catch {
+      return false;
+    }
+  }
+  const ct = req.headers.get("content-type") || "";
+  return ct.toLowerCase().includes("application/json");
 }
 
 export function sessionCookieOptions() {

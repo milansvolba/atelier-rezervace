@@ -232,3 +232,17 @@ export async function createRefund(paymentIntent: string, amountCzk: number, ide
   if (!res.ok) throw new Error("Stripe: " + (data?.error?.message ?? res.status));
   return { id: data.id as string };
 }
+
+// Stav platební stránky ve Stripe (pro rozhodnutí, zda lze uvolnit držený slevový kód). null = nepodařilo se zjistit.
+export async function getCheckoutSessionState(sessionId: string): Promise<{ status: string; paymentStatus: string } | null> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(STRIPE_API + "/checkout/sessions/" + encodeURIComponent(sessionId), { headers: { Authorization: "Bearer " + key } });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return { status: String(d.status ?? ""), paymentStatus: String(d.payment_status ?? "") };
+  } catch {
+    return null;
+  }
+}

@@ -45,6 +45,15 @@ export interface OrderPrice {
   courseAfter: number;
   castingTotal: number;
   total: number;
+  // Slevový promokód (lib/promo.ts): true, když byl kód výhodnější než množstevní sleva a snížil cenu kurzu.
+  promoApplied: boolean;
+  promoSaving: number; // o kolik Kč kód snížil cenu kurzu oproti množstevní slevě
+}
+
+// Slevový kód pro výpočet ceny (jen cena kurzu, odlitky se nesleví). Nesčítá se s množstevní slevou: platí výhodnější.
+export interface PromoForPrice {
+  kind: "percent" | "fixed_price";
+  value: number;
 }
 
 // Slevu dostává jen cena kurzu; odlitek se počítá za každý objednaný kus (0 až počet osob) bez slevy.
@@ -55,12 +64,24 @@ export function clampCastings(raw: unknown, people: number): number {
   return Math.max(0, Math.min(people, n));
 }
 
-export function computeOrder(pricePerPerson: number, people: number, castings: number, castingPrice: number): OrderPrice {
+export function computeOrder(pricePerPerson: number, people: number, castings: number, castingPrice: number, promo?: PromoForPrice | null): OrderPrice {
   const discountPercent = groupDiscountPercent(people);
   const courseBefore = pricePerPerson * people;
-  const courseAfter = Math.round(courseBefore * (1 - discountPercent / 100));
+  const groupAfter = Math.round(courseBefore * (1 - discountPercent / 100));
+  let courseAfter = groupAfter;
+  let promoApplied = false;
+  if (promo) {
+    const promoAfter =
+      promo.kind === "percent"
+        ? Math.round(courseBefore * (1 - Math.max(0, Math.min(100, promo.value)) / 100))
+        : Math.max(0, Math.round(promo.value)) * people; // pevná cena kurzu je ZA OSOBU
+    if (promoAfter < groupAfter) {
+      courseAfter = promoAfter;
+      promoApplied = true;
+    }
+  }
   const castingTotal = castingPrice * Math.max(0, Math.min(people, castings));
-  return { discountPercent, courseBefore, courseAfter, castingTotal, total: courseAfter + castingTotal };
+  return { discountPercent, courseBefore, courseAfter, castingTotal, total: courseAfter + castingTotal, promoApplied, promoSaving: groupAfter - courseAfter };
 }
 
 // Kurzy, na které lze koupit dárkový poukaz: základní cena za 1 osobu (vč. DPH, bez slevy) a cena odlitku.
