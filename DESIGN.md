@@ -380,6 +380,10 @@ Platí pro vše, co se tiskne nebo posílá jako PDF (dárkový poukaz, později
 - **Obsah se mění podle objednávky:** název kurzu a motiv, jména, počet osob, věta o odlitku (jen když je objednaný), termín.
 - Podrobnosti, technické provedení a test jsou v `dokumentace/poukaz-pdf.md`.
 
+### 10.3a Slevový kupón (návrh ke schválení, 16. 11. 2026)
+
+4 kupóny na A4 (A6 každý, čárkované linky pro střih), vlnový motiv, logo, štítek „SLEVOVÝ KÓD“, nadpis („Sleva 20 %“ / „Cena kurzu 30 Kč za osobu“), kód ve zvýrazněném poli, QR na `/kurzy?sleva=KÓD`, text „Platí do …“ a „Kód je jednorázový a nelze ho spojit s dárkovým poukazem.“ Generuje `lib/promoPdf.ts`.
+
 ### 10.4 Jak přidat novou tiskovinu
 1. Navrhnout ji z tokenů a pravidel výše, ukázat Milanovi jako `NÁVRH`.
 2. Po schválení doplnit tuto sekci (nový odstavec 10.x) dřív, než se tiskovina nasadí.

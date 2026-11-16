@@ -689,3 +689,12 @@ export async function sendFirmInquiryEmails(q: {
   await sendFromTemplate("firm_inquiry_customer", q.email, { name: escapeHtml(q.name), summaryBlock }, {}).catch(() => false);
   return okAdmin;
 }
+
+// Upozornění správcům na neobvyklou událost kolem slevového kódu (např. kód zaplacen podruhé). Nikdy nehází výjimku.
+export async function sendAdminAlertEmail(subject: string, text: string) {
+  try {
+    await send(ADMIN_EMAILS, subject, wrap("<p>" + esc(text) + "</p>" + emailButton(APP_URL + "/admin", "Otevřít administraci")), { type: "promo_alert" });
+  } catch (e) {
+    console.error("[email] Upozornění správci selhalo:", e);
+  }
+}

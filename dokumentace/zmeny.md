@@ -6,6 +6,18 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-16 — Slevové promo kódy (rezervace, platby, admin) + PDF poukazu
+
+Nový systém jednorázových slevových kódů `SLEVA-XXXX-XXXX` (tabulky `promo_codes`, `promo_attempts`). Kód: procenta z ceny kurzu nebo pevná cena kurzu ZA OSOBU; platí pro kurz, poukaz nebo oboje; volitelně jen na jeden termín; max. míst na kód (výchozí 1); platnost do zadaného data. Sleva se týká jen ceny kurzu (ne odlitků), nesčítá se s množstevní slevou (platí výhodnější) a nespojí se s dárkovým poukazem. Cena se vždy počítá na serveru; kód se při platbě na 35 min zarezervuje, spotřebuje se až webhookem po zaplacení. Při opakovaném pokusu téhož zákazníka se jeho stará platební stránka ve Stripe ukončí; převzetí propadlé rezervace je možné jen po ověření stavu platby ve Stripe. Hádání kódů brzdí limit na IP (IPv6 po /64). Administrace: „Slevové kódy“ (vytvoření dávky, seznam, zrušení, kdo kód použil, tisk kupónů 4× A4). Při druhé platbě téhož kódu přijde správcům e-mail.
+
+Bezpečnost (nezávislá kontrola): `AUTH_SECRET` je na serveru povinný (bez něj se přihlášení nespustí, dřív existoval veřejný záložní klíč); změny v administraci kontrolují Origin a typ obsahu; `?sleva=` se z adresy po načtení maže.
+
+PDF poukazu: karta „Kurz pro 1 osobu“ je nově „Kurz Modelování hlavy pro 1 osobu“ (název kurzu).
+
+Kde: rezervace. Testováno lokálně: 64 kontrol API, průchod v prohlížeči (Playwright). Neověřeno: skutečná platba a e-maily (nutný test kódem za 30 Kč na ostrém webu).
+
+---
+
 ## 2026-11-15 (noc) — DESIGN.md: sekce Tištěné materiály (dokumentace)
 
 Do `DESIGN.md` přibyla sekce 10 „Tištěné materiály“: obecná pravidla pro tisk a PDF (A4, okraj 8 mm, písma, barvy, karty, motivy se neořezávají, žádná tečka za adresou, vymyšlený podpis), popis schváleného dárkového poukazu a postup pro novou tiskovinu. Zapsáno přímo do main (jen dokumentace), odkazuje na `dokumentace/poukaz-pdf.md`, která přibude po sloučení PR č. 75.

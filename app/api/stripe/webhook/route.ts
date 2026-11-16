@@ -7,6 +7,7 @@ import { verifyStripeSignature, paymentStore } from "@/lib/stripe";
 import { handleMembershipEvent } from "@/lib/membership";
 import { handleVoucherPaid } from "@/lib/vouchers";
 import { promoStore } from "@/lib/promo";
+import { sendAdminAlertEmail } from "@/lib/email";
 import { invoiceStore, billingFromSession } from "@/lib/invoices";
 import { czDate } from "@/lib/invoiceFormat";
 import { cleanPhone } from "@/lib/signupContact";
@@ -43,7 +44,11 @@ export async function POST(req: NextRequest) {
   // Slevový kód (metadata promo z checkoutu kurzu i poukazu): po zaplacení se spotřebuje. Idempotentní; při chybě
   // vrátí webhook 500 a Stripe událost zopakuje.
   if (event.type === "checkout.session.completed" && obj.payment_status === "paid" && meta.promo) {
-    await promoStore.markUsed(meta.promo, sessionId);
+    const payerEmail = ((obj.customer_details ?? {}) as { email?: string }).email;
+    const res = await promoStore.markUsed(meta.promo, sessionId, payerEmail);
+    if (res === "conflict") {
+      await sendAdminAlertEmail("Slevový kód byl zaplacen podruhé", "Kód " + meta.promo + " už byl dříve použit jinou platbou a teď byl zaplacen znovu (platba " + sessionId + "). Zkontrolujte v administraci a Stripe, případně platbu vraťte.");
+    }
   }
 
   // Dárkový poukaz (metadata kind=voucher z /api/vouchers/checkout): po zaplacení vznikne poukaz s kódem

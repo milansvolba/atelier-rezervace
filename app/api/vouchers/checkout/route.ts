@@ -3,10 +3,10 @@ import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
 import { computeOrder, voucherCourse, clampCastings, courseTypeKey } from "@/lib/pricing";
-import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
+import { createCheckoutSession, expireStripeSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
 import { parseBillingInput } from "@/lib/billingInput";
 import { cleanPhone, validEmail } from "@/lib/signupContact";
-import { promoStore, promoRateLimited, recordPromoAttempt, clientIpHash, GENERIC_PROMO_ERROR, PROMO_MIN_FIXED_PRICE, type PromoCode } from "@/lib/promo";
+import { promoStore, promoAttemptStart, promoAttemptSucceeded, clientIpHash, maxPeopleMessage, GENERIC_PROMO_ERROR, PROMO_MIN_FIXED_PRICE, type PromoCode } from "@/lib/promo";
 
 export const dynamic = "force-dynamic";
 
@@ -101,13 +101,14 @@ export async function POST(req: NextRequest) {
   let promo: PromoCode | null = null;
   const promoRaw = typeof promoCode === "string" ? promoCode.trim() : "";
   if (promoRaw) {
-    const ipHash = clientIpHash(req);
-    if (await promoRateLimited(ipHash)) {
+    const attempt = await promoAttemptStart(clientIpHash(req));
+    if (attempt.blocked) {
       return NextResponse.json({ error: "Zadáno příliš mnoho neplatných kódů. Zkuste to prosím za chvíli, nebo nám napište." }, { status: 429 });
     }
     promo = await promoStore.validate(promoRaw, { scope: "poukaz", bookingId: booking ? booking.id : undefined }, email.toLowerCase());
-    await recordPromoAttempt(ipHash, !!promo);
     if (!promo) return NextResponse.json({ error: GENERIC_PROMO_ERROR }, { status: 400 });
+    await promoAttemptSucceeded(attempt.id);
+    if (seats > promo.maxPeople) return NextResponse.json({ error: maxPeopleMessage(promo.maxPeople) }, { status: 400 });
   }
   const price = computeOrder(course.pricePerPerson, seats, castings, course.castingPrice, promo);
   if (promo && !price.promoApplied) {
@@ -124,10 +125,11 @@ export async function POST(req: NextRequest) {
   }
 
   const promoToken = "promo_" + crypto.randomUUID();
-  if (promo && !(await promoStore.reserve(promo.code, { scope: "poukaz", bookingId: booking ? booking.id : undefined }, promoToken, email.toLowerCase()))) {
+  if (promo && !(await promoStore.reserveForCheckout(promo.code, { scope: "poukaz", bookingId: booking ? booking.id : undefined }, promoToken, email.toLowerCase()))) {
     return NextResponse.json({ error: GENERIC_PROMO_ERROR }, { status: 409 });
   }
 
+  let createdSession: string | null = null;
   try {
     const session = await createCheckoutSession({
       amountCzk: price.courseAfter,
@@ -155,13 +157,18 @@ export async function POST(req: NextRequest) {
       successUrl: APP_URL + "/poukazy?platba=ok",
       cancelUrl: APP_URL + "/poukazy?platba=zrusena",
     });
+    createdSession = session.id;
     // U pevného termínu se místa po dobu platby drží; bez termínu jde jen o záznam platby (idempotence webhooku).
     await paymentStore.addAwaiting(session.id, booking ? booking.id : "voucher", seats, billingCheck.value, email.toLowerCase());
     if (promo) await promoStore.attachSession(promoToken, session.id);
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("[stripe] Vytvoření platby poukazu selhalo:", err);
-    if (promo) await promoStore.release(promoToken).catch(() => undefined);
+    // Platební stránka už mohla vzniknout: nejdřív ji ukončíme, teprve potom smí být kód zase volný.
+    if (promo) {
+      if (createdSession) await expireStripeSession(createdSession).catch(() => false);
+      await promoStore.release(createdSession ?? promoToken).catch(() => undefined);
+    }
     return NextResponse.json({ error: "Platbu se nepodařilo zahájit, zkuste to prosím znovu." }, { status: 502 });
   }
 }

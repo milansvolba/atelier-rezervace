@@ -125,6 +125,8 @@ export default function KurzyPage() {
     if (code && /^[A-Za-z0-9 -]{6,24}$/.test(code)) {
       setPromoInput(code.toUpperCase());
       setPromoOpen(true);
+      // Kód neponecháváme v adrese (historie, sdílení odkazu, Referer).
+      try { window.history.replaceState(null, "", window.location.pathname + window.location.hash); } catch { /* nevadí */ }
     }
   }, []);
 
@@ -397,7 +399,7 @@ export default function KurzyPage() {
       const r = await fetch("/api/promo/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: promoInput, scope: "kurz", bookingId: selectedCourse.id, email: signupContact.includes("@") ? signupContact : undefined }),
+        body: JSON.stringify({ code: promoInput, scope: "kurz", bookingId: selectedCourse.id }),
       });
       const data = await r.json().catch(() => ({}));
       if (r.ok && data.ok) setPromo({ code: data.code, kind: data.kind, value: Number(data.value), text: String(data.text || "") });

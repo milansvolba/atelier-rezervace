@@ -258,6 +258,9 @@ await sql`
         )
       `;
       await sql`CREATE INDEX IF NOT EXISTS promo_codes_label_idx ON promo_codes (label)`;
+      // Nejvýš kolik míst smí kód slevnit (výchozí 1, aby jeden kupón nezaplatil celou skupinu) a e-mail toho, kdo kód použil.
+      await sql`ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS max_people integer NOT NULL DEFAULT 1`;
+      await sql`ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS used_email text`;
       // Pokusy o zadání kódu (kvůli omezení hádání kódů): jen nevratný otisk IP, bez kódu samotného.
       await sql`
         CREATE TABLE IF NOT EXISTS promo_attempts (

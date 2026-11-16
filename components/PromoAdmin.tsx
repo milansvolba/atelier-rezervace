@@ -16,6 +16,8 @@ interface PromoRow {
   expiresAt: string;
   status: "active" | "reserved" | "used" | "void";
   usedAt?: string;
+  usedEmail?: string;
+  maxPeople?: number;
 }
 
 const STATUS_LABEL: Record<PromoRow["status"], string> = { active: "volný", reserved: "rozdělaná platba", used: "použitý", void: "zrušený" };
@@ -32,12 +34,15 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [count, setCount] = useState("16");
+  const [maxPeople, setMaxPeople] = useState("1");
   const [kind, setKind] = useState<"percent" | "fixed_price">("percent");
   const [value, setValue] = useState("20");
   const [scope, setScope] = useState<"kurz" | "poukaz" | "oboje">("kurz");
   const [expiresOn, setExpiresOn] = useState("2027-01-31");
   const [label, setLabel] = useState("");
   const [filter, setFilter] = useState("");
+  const [bookingId, setBookingId] = useState("");
+  const [terms, setTerms] = useState<{ id: string; title: string; date: string }[]>([]);
 
   async function load() {
     setLoading(true);
@@ -48,6 +53,11 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
   }
   useEffect(() => {
     load();
+    // Termíny kurzů pro volitelné omezení kódu (veřejný seznam, jen budoucí).
+    fetch("/api/courses")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => setTerms(Array.isArray(d) ? d.map((c: { id: string; title: string; date: string }) => ({ id: c.id, title: c.title, date: c.date })) : []))
+      .catch(() => setTerms([]));
   }, []);
 
   async function create(e: React.FormEvent) {
@@ -55,12 +65,12 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
     setError("");
     const n = Number(count);
     // Potvrzení, ať se omylem nevytvoří desítky kódů (kódy se pak jen ruší, nemažou).
-    if (!window.confirm("Vytvořit " + n + " jednorázových kódů (" + (kind === "percent" ? "sleva " + value + " %" : "kurz za " + value + " Kč") + ", platnost do " + fmtD(expiresOn) + ")?")) return;
+    if (!window.confirm("Vytvořit " + n + " jednorázových kódů (" + (kind === "percent" ? "sleva " + value + " %" : "kurz za " + value + " Kč") + ", platnost do " + fmtD(expiresOn) + (bookingId && scope !== "poukaz" ? ", jen na vybraný termín" : "") + ")?")) return;
     setBusy(true);
     const r = await fetch("/api/admin/promo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ count: n, kind, value: Number(value), scope, expiresOn, label: label.trim() || undefined }),
+      body: JSON.stringify({ count: n, kind, value: Number(value), scope, maxPeople: Number(maxPeople), expiresOn, label: label.trim() || undefined, bookingId: scope !== "poukaz" && bookingId ? bookingId : undefined }),
     });
     const d = await r.json().catch(() => ({}));
     setBusy(false);
@@ -99,10 +109,13 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
           <label className="text-sm">Počet kódů
             <input className={input} type="number" min={1} max={200} value={count} onChange={(e) => setCount(e.target.value)} />
           </label>
+          <label className="text-sm">Nejvýš míst na kód
+            <input className={input} type="number" min={1} max={6} value={maxPeople} onChange={(e) => setMaxPeople(e.target.value)} />
+          </label>
           <label className="text-sm">Typ slevy
             <select className={input} value={kind} onChange={(e) => { const k = e.target.value as "percent" | "fixed_price"; setKind(k); setValue(k === "percent" ? "20" : "30"); }}>
               <option value="percent">Procenta z ceny kurzu</option>
-              <option value="fixed_price">Pevná cena kurzu (Kč)</option>
+              <option value="fixed_price">Pevná cena kurzu za osobu (Kč)</option>
             </select>
           </label>
           <label className="text-sm">{kind === "percent" ? "Sleva (%)" : "Výsledná cena kurzu (Kč, min. 15)"}
@@ -113,6 +126,12 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
               <option value="kurz">Jen kurz</option>
               <option value="poukaz">Jen dárkový poukaz</option>
               <option value="oboje">Kurz i poukaz</option>
+            </select>
+          </label>
+          <label className="text-sm">Jen na termín (nepovinné)
+            <select className={input} disabled={scope === "poukaz"} value={scope === "poukaz" ? "" : bookingId} onChange={(e) => setBookingId(e.target.value)}>
+              <option value="">Všechny termíny</option>
+              {terms.map((t) => <option key={t.id} value={t.id}>{t.title} · {fmtD(t.date)}</option>)}
             </select>
           </label>
           <label className="text-sm">Platí do (včetně)
@@ -154,9 +173,9 @@ export default function PromoAdmin({ onClose }: { onClose: () => void }) {
             <div key={r.id} className="flex items-center justify-between gap-3 text-sm border-t border-gray-100 pt-1.5">
               <span className="font-mono">{r.code}</span>
               <span className="text-gray-600 flex-1 min-w-0 truncate">
-                {r.kind === "percent" ? r.value + " %" : "kurz za " + r.value + " Kč"} · {SCOPE_LABEL[r.scope]} · do {fmtD(r.expiresAt)}{r.label ? " · " + r.label : ""}
+                {r.kind === "percent" ? r.value + " %" : "kurz za " + r.value + " Kč"} · {SCOPE_LABEL[r.scope]} · do {fmtD(r.expiresAt)}{r.bookingId ? " · jen na termín" : ""}{r.label ? " · " + r.label : ""}
               </span>
-              <span className={r.status === "used" ? "text-gray-400" : r.status === "void" ? "text-gray-400 line-through" : "text-green-700"}>{STATUS_LABEL[r.status]}{r.usedAt ? " " + fmtD(r.usedAt) : ""}</span>
+              <span className={r.status === "used" ? "text-gray-400" : r.status === "void" ? "text-gray-400 line-through" : "text-green-700"}>{STATUS_LABEL[r.status]}{r.usedAt ? " " + fmtD(r.usedAt) : ""}{r.usedEmail ? " (" + r.usedEmail + ")" : ""}</span>
               {(r.status === "active" || r.status === "reserved") && (
                 <button onClick={() => voidOne(r.id)} className="text-xs underline text-gray-500">Zrušit</button>
               )}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, sameOriginOk } from "@/lib/auth";
 import { promoStore, PROMO_MAX_BATCH, PROMO_MIN_FIXED_PRICE, type PromoKind, type PromoScope } from "@/lib/promo";
 import { store } from "@/lib/data";
 
@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
 // Tělo: { count, kind: "percent"|"fixed_price", value, scope: "kurz"|"poukaz"|"oboje", expiresOn: "YYYY-MM-DD", label?, bookingId? }
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Přístup jen pro správce." }, { status: 403 });
+  if (!sameOriginOk(req)) return NextResponse.json({ error: "Požadavek z cizího původu." }, { status: 403 });
   const b = await req.json().catch(() => null);
   if (!b || typeof b !== "object") return NextResponse.json({ error: "Neplatný požadavek." }, { status: 400 });
 
@@ -48,17 +49,23 @@ export async function POST(req: NextRequest) {
     if (scope === "poukaz") return NextResponse.json({ error: "Kód omezený na termín nemůže platit pro poukaz." }, { status: 400 });
     bookingId = booking.id;
   }
+  const maxPeople = b.maxPeople === undefined ? 1 : Math.floor(Number(b.maxPeople));
+  if (!(maxPeople >= 1 && maxPeople <= 6)) return NextResponse.json({ error: "Nejvýš míst na kód musí být 1 až 6." }, { status: 400 });
   const label = typeof b.label === "string" ? b.label.trim().slice(0, 80) : "";
-  const created = await promoStore.createBatch({ count, kind, value, scope, bookingId, label: label || undefined, expiresAt });
+  const created = await promoStore.createBatch({ count, kind, value, scope, bookingId, label: label || undefined, maxPeople, expiresAt });
   return NextResponse.json(created, { status: 201 });
 }
 
 // PATCH /api/admin/promo — zruší nepoužité kódy. Tělo: { ids: string[] }. Použité kódy zrušit nejde.
 export async function PATCH(req: NextRequest) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Přístup jen pro správce." }, { status: 403 });
+  if (!sameOriginOk(req)) return NextResponse.json({ error: "Požadavek z cizího původu." }, { status: 403 });
   const b = await req.json().catch(() => null);
   const ids: string[] = Array.isArray(b?.ids) ? b.ids.filter((x: unknown) => typeof x === "string").slice(0, 500) : [];
   if (ids.length === 0) return NextResponse.json({ error: "Nic k zrušení." }, { status: 400 });
-  const n = await promoStore.voidCodes(ids);
-  return NextResponse.json({ voided: n });
+  const r = await promoStore.voidCodes(ids);
+  if (r.voided === 0 && r.skipped > 0) {
+    return NextResponse.json({ error: "Kód se nepodařilo zrušit: platba s ním už probíhá nebo je zaplacená.", ...r }, { status: 409 });
+  }
+  return NextResponse.json(r);
 }

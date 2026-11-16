@@ -74,7 +74,7 @@ export function computeOrder(pricePerPerson: number, people: number, castings: n
     const promoAfter =
       promo.kind === "percent"
         ? Math.round(courseBefore * (1 - Math.max(0, Math.min(100, promo.value)) / 100))
-        : Math.max(0, Math.round(promo.value));
+        : Math.max(0, Math.round(promo.value)) * people; // pevná cena kurzu je ZA OSOBU
     if (promoAfter < groupAfter) {
       courseAfter = promoAfter;
       promoApplied = true;
