@@ -283,6 +283,13 @@ await sql`
         )
       `;
       await sql`CREATE INDEX IF NOT EXISTS rate_hits_lookup_idx ON rate_hits (scope, key_hash, created_at DESC)`;
+      // Jednorázové přihlašovací odkazy (lib/auth.ts): každý odkaz má své id a po použití se zapíše sem.
+      await sql`
+        CREATE TABLE IF NOT EXISTS used_login_tokens (
+          jti text PRIMARY KEY,
+          used_at timestamptz NOT NULL DEFAULT now()
+        )
+      `;
       const existingTiers = await sql`SELECT COUNT(*)::int AS count FROM discount_tiers`;
       if (Number(existingTiers[0]?.count ?? 0) === 0) {
         await sql`
