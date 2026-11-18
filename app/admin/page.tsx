@@ -1888,7 +1888,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
   return (
     <main className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex gap-1 bg-gray-100 rounded-md p-1 text-xs">
           {(["day", "week", "month", "quarter", "year"] as ViewMode[]).map((v) => (
             <button
@@ -1900,7 +1900,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="flex items-center gap-1 text-xs text-gray-400">
             <svg
               aria-hidden="true"
@@ -1964,8 +1964,8 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setAnchor((a) => shiftAnchor(view, a, -1))}
             className="h-8 w-8 rounded-md border border-gray-300 text-sm"
@@ -1973,7 +1973,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
           >
             ‹
           </button>
-          <p className="font-medium min-w-[220px]">{rangeLabel(view, anchor)}</p>
+          <p className="font-medium sm:min-w-[220px]">{rangeLabel(view, anchor)}</p>
           <button
             onClick={() => setAnchor((a) => shiftAnchor(view, a, 1))}
             className="h-8 w-8 rounded-md border border-gray-300 text-sm"
@@ -2007,9 +2007,24 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
 
       {error && <div className="bg-white border border-red-200 text-red-600 rounded-xl p-3 text-sm">{error}</div>}
 
+      {isAdmin && memberRequestNames.length + pending.length + pendingSignups.length > 0 && (
+        <a
+          href="#cekajici-a-nejblizsi"
+          className="lg:hidden flex items-center justify-between gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm"
+        >
+          <span>
+            <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 mr-2 rounded-full bg-amber-500 text-white text-xs font-bold">
+              {memberRequestNames.length + pending.length + pendingSignups.length}
+            </span>
+            Čeká na vyřízení
+          </span>
+          <span className="text-gray-600">Zobrazit ↓</span>
+        </a>
+      )}
+
       {/* Široká obrazovka: kalendář vlevo, co čeká na schválení a nejbližší akce vpravo. Na menších jeden sloupec jako dřív. */}
       <div className={`grid grid-cols-1 gap-6 items-start ${isAdmin || myBookings.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
-      <div className={`lg:order-2 space-y-6 ${isAdmin || myBookings.length > 0 ? "" : "hidden"}`}>
+      <div id="cekajici-a-nejblizsi" className={`order-2 space-y-6 ${isAdmin || myBookings.length > 0 ? "" : "hidden"}`}>
       {isAdmin && memberRequestNames.length > 0 && (
         <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
@@ -2048,7 +2063,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                       {p.note ? ` · ${p.note}` : ""}
                     </p>
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2 flex-wrap">
                     <button onClick={() => decide(p.id, "approve")} className="h-8 px-3 rounded-md bg-white border border-amber-300 text-xs hover:bg-amber-100">
                       Schválit
                     </button>
@@ -2090,7 +2105,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                       {s.note ? ` · ${s.note}` : ""}
                     </p>
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2 flex-wrap">
                     <button onClick={() => decideSignup(s.id, "approve")} className="h-8 px-3 rounded-md bg-white border border-blue-300 text-xs hover:bg-blue-100">
                       Schválit
                     </button>
@@ -2170,7 +2185,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                   ) : d.correctionNeeded && d.status !== "pending" ? (
                     <button onClick={() => dokladAction(d.id, "correction_done")} className="h-8 px-3 rounded-md border border-gray-300 text-xs shrink-0">Opravný doklad vystaven</button>
                   ) : (
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2">
                       <a
                         href="https://app.caflou.cz/login"
                         target="_blank"
@@ -2235,7 +2250,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2 flex-wrap shrink-0">
+                <div className="flex gap-2 flex-wrap">
                   <a href={"/api/vouchers/pdf?id=" + v.id} target="_blank" rel="noreferrer" className="h-8 px-3 rounded-md border border-gray-300 text-xs inline-flex items-center">
                     Stáhnout PDF
                   </a>
@@ -2253,7 +2268,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
       )}
 
       </div>
-      <div className="lg:order-1 space-y-6 min-w-0">
+      <div className="order-1 space-y-6 min-w-0">
       {view === "day" && (
         <>
           <div className="bg-white border border-gray-200 rounded-xl p-5">
@@ -2600,7 +2615,7 @@ function AdminDashboard({ session, onLogout }: { session: SessionUser; onLogout:
                               });
                             }}
                             title={title}
-                            className={`aspect-square rounded-sm text-[10px] flex items-center justify-center ${cellClasses(
+                            className={`${view === "month" ? "h-11 sm:h-14" : "aspect-square"} rounded-sm text-[10px] sm:text-xs flex items-center justify-center ${cellClasses(
                               kind as Effective["kind"]
                             )}`}
                           >
