@@ -6,6 +6,11 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-18 — Administrace na mobilu a měsíční pohled (PR #83, čeká na sloučení Milanem)
+- **Proč:** na telefonu byl kalendář až pod boxy (žádosti, nejbližší akce, doklady, poukazy), přitom přepínač měsíců je nahoře. Tlačítka u poukazů přetékala a byla useknutá. Měsíční pohled byl tak velký, že se i na velkém monitoru musel rolovat.
+- **Co:** na mobilu je kalendář první, nad ním proužek „Čeká na vyřízení“ s odkazem dolů; tlačítka se zalamují (zrušeno `shrink-0`, které způsobovalo přetékání i na desktopu); horní lišta a přepínač se zalamují; buňky měsíce mají pevnou výšku místo čtverců.
+- **Ověřeno:** Playwright s napodobeným API, šířky 390 a 1280 px, bez vodorovného přetékání, kalendář před boxy na mobilu, měsíc se vejde na monitor. Na živém webu čeká na pohled Milana. Další návrh (zatím neděláno): přilepit přepínač měsíců při rolování, přehlednější týdenní tabulka na mobilu.
+
 ## 2026-11-16 (odpoledne) — Bezpečnost: jednorázový přihlašovací odkaz a kratší přihlášení (S-04, zbytek)
 
 Větev `bezpecnost-magic-link-session` (Pull request ke schválení Milanem). Rezervace.
