@@ -249,17 +249,23 @@ function LoginForm() {
     e.preventDefault();
     setError(null);
     setSending(true);
-    const res = await fetch("/api/auth/request-link", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    setSending(false);
-    if (res.ok) {
-      setSent(true);
-    } else {
-      const data = await res.json();
-      setError(data.error || "Nepodařilo se odeslat odkaz.");
+    try {
+      const res = await fetch("/api/auth/request-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setSent(true);
+      } else {
+        // Chyba serveru nemusí vrátit JSON; formulář se v každém případě vrátí do výchozího stavu.
+        const data = await res.json().catch(() => null);
+        setError((data && data.error) || "Odkaz se nepodařilo odeslat. Zkuste to prosím za chvíli znovu.");
+      }
+    } catch {
+      setError("Odkaz se nepodařilo odeslat. Zkontrolujte připojení a zkuste to znovu.");
+    } finally {
+      setSending(false);
     }
   }
 

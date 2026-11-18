@@ -6,6 +6,16 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-16 (odpoledne) — Bezpečnost: jednorázový přihlašovací odkaz a kratší přihlášení (S-04, zbytek)
+
+Větev `bezpecnost-magic-link-session` (Pull request ke schválení Milanem). Rezervace.
+- Přihlašovací odkaz z e-mailu jde použít **jen jednou**. Kliknutí na odkaz nejdřív ukáže stránku s tlačítkem „Přihlásit se“, teprve tlačítko přihlásí (poštovní skenery, které odkaz jen otevřou, ho tak nespálí). Použité odkazy se evidují v nové tabulce `used_login_tokens` (vznikne sama).
+- Přihlášení platí **30 dní** místo 90. Starší přihlášení (vydaná na 90 dní) přestanou platit 30 dní od vydání, tj. někteří uživatelé se budou muset po nasazení znovu přihlásit.
+- Odkazy poslané před nasazením (bez id) fungují dál do svého vypršení (15 min, uvítací e-mail 7 dní), pak už jen jednorázové.
+- Texty stránky „Přihlášení do rezervací“ a „Odkaz už byl použit“ jsou návrh ke schválení.
+
+---
+
 ## 2026-11-16 (odpoledne) — Bezpečnost hlavního webu: S-05 a S-10 (web, Forpsi)
 
 - **S-05:** nový soubor `/www/.user.ini` (cookie relace PHPSESSID má HttpOnly, Secure a SameSite=Lax). Ověřeno živě: skript v prohlížeči už cookie nevidí.

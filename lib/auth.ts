@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import { SignJWT, jwtVerify } from "jose";
 import { users } from "@/lib/users";
+import { sql, ensureSchema } from "@/lib/db";
 
 // Jmenné účty s přihlášením přes "magic link" e-mailem — žádná hesla se
-// nikde neukládají. Session je podepsané JWT v httpOnly cookie (90 dní,
+// nikde neukládají. Session je podepsané JWT v httpOnly cookie (30 dní,
 // "zapamatuj toto zařízení"), magic-link token je krátkodobé JWT (15 min)
-// poslané v odkazu e-mailem.
+// poslané v odkazu e-mailem a jde použít jen jednou.
 //
 // AUTH_SECRET musí být nastavený ve Vercel Environment Variables (Production i Preview). Bez něj aplikace
 // na serveru (NODE_ENV=production, tj. i Vercel náhledy) odmítne podepisovat a ověřovat přihlášení: veřejný záložní
@@ -20,7 +21,7 @@ function secretKey() {
 }
 
 export const SESSION_COOKIE = "atelier_session";
-const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 90; // 90 dní
+const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 30; // 30 dní (dřív 90; bezpečnostní audit 2026-11-16, S-04)
 
 export type Role = "admin" | "member";
 
@@ -42,6 +43,8 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
 export async function verifySessionToken(token: string): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, secretKey());
+    // Přihlášení vydaná za dřívější 90denní doby přestanou platit po 30 dnech od vydání.
+    if (typeof payload.iat !== "number" || Date.now() / 1000 - payload.iat > SESSION_MAX_AGE_SEC) return null;
     return {
       id: payload.id as string,
       name: payload.name as string,
@@ -107,22 +110,50 @@ export function sessionCookieOptions() {
   };
 }
 
-// --- Magic-link přihlašovací token (krátkodobý, samostatný od session) ---
+// --- Magic-link přihlašovací token (krátkodobý, samostatný od session, jednorázový) ---
 export async function createMagicLinkToken(email: string, expiresIn: string = "15m"): Promise<string> {
   return await new SignJWT({ email, purpose: "login" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
+    .setJti(crypto.randomUUID())
     .setExpirationTime(expiresIn)
     .sign(secretKey());
 }
 
-export async function verifyMagicLinkToken(token: string): Promise<string | null> {
+export interface MagicLinkClaims {
+  email: string;
+  /** Id odkazu; chybí jen u odkazů poslaných před zavedením jednorázovosti (ty dožijí svou platnost). */
+  jti: string | null;
+}
+
+export async function verifyMagicLinkToken(token: string): Promise<MagicLinkClaims | null> {
   try {
     const { payload } = await jwtVerify(token, secretKey());
     if (payload.purpose !== "login" || typeof payload.email !== "string") return null;
-    return payload.email;
+    return { email: payload.email, jti: typeof payload.jti === "string" ? payload.jti : null };
   } catch {
     return null;
+  }
+}
+
+/**
+ * Označí odkaz za použitý. true = použit poprvé (přihlášení smí proběhnout), false = už byl použit.
+ * Zápis je atomický (PRIMARY KEY), takže dva souběžné požadavky nemají oba uspět.
+ * Při chybě databáze vrací false (bezpečnější než propustit odkaz podruhé).
+ */
+export async function consumeMagicLink(jti: string | null): Promise<boolean> {
+  if (!jti) return true; // starý odkaz bez id: platí jako dřív až do vypršení
+  try {
+    await ensureSchema();
+    const rows = await sql`INSERT INTO used_login_tokens (jti) VALUES (${jti}) ON CONFLICT (jti) DO NOTHING RETURNING jti`;
+    if (Math.random() < 0.02) {
+      // Odkazy platí nejvýše 7 dní, starší záznamy už nejsou potřeba.
+      await sql`DELETE FROM used_login_tokens WHERE used_at < now() - interval '8 days'`;
+    }
+    return rows.length === 1;
+  } catch (e) {
+    console.error("[auth] Označení odkazu za použitý selhalo:", e);
+    return false;
   }
 }
 
