@@ -20,6 +20,7 @@ Větev `bezpecnost-nizke-nalezy` (Pull request ke schválení Milanem).
 - **S-12:** token kalendáře (`/api/calendar.ics`) se porovnává v konstantním čase (`timingSafeEqual`). Chování pro uživatele se nemění.
 - **S-13:** projita celá historie repozitáře (466 commitů, všechny větve): žádné klíče, hesla ani připojovací řetězce. V historii jsou jen e-maily správců. Rozhodnutí o veřejném/soukromém repozitáři zůstává na Milanovi (viz tabulka nálezů).
 
+---
 
 ## 2026-11-16 (odpoledne) — Bezpečnost: jednorázový přihlašovací odkaz a kratší přihlášení (S-04, zbytek)
 
