@@ -6,6 +6,15 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-18 — Bezpečnost: drobné nálezy S-12, S-13, S-14 (web + rezervace)
+
+Větev `bezpecnost-nizke-nalezy` (Pull request ke schválení Milanem).
+- **S-14:** nový `/.well-known/security.txt` (kontakt pro nahlášení zranitelnosti, e-mail rezervace@, platí do 18. 11. 2027). Rezervace: `public/.well-known/security.txt` (PR). Hlavní web: `/www/.well-known/security.txt` nahrán přes FTP a ověřen živě (200). Před 18. 11. 2027 obnovit datum Expires.
+- **S-12:** token kalendáře (`/api/calendar.ics`) se porovnává v konstantním čase (`timingSafeEqual`). Chování pro uživatele se nemění.
+- **S-13:** projita celá historie repozitáře (466 commitů, všechny větve): žádné klíče, hesla ani připojovací řetězce. V historii jsou jen e-maily správců. Rozhodnutí o veřejném/soukromém repozitáři zůstává na Milanovi (viz tabulka nálezů).
+
+---
+
 ## 2026-11-16 (odpoledne) — Bezpečnost: jednorázový přihlašovací odkaz a kratší přihlášení (S-04, zbytek)
 
 Větev `bezpecnost-magic-link-session` (Pull request ke schválení Milanem). Rezervace.

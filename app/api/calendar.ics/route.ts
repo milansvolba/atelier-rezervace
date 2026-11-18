@@ -1,10 +1,18 @@
 import { NextRequest } from "next/server";
+import { createHash, timingSafeEqual } from "crypto";
 import { store } from "@/lib/data";
 import { RESOURCE_LABELS } from "@/lib/types";
 
 // Vždy čerstvá data z DB, žádné cachování response (viz commit "vypnout cache
 // na Neon fetch klientovi" — cache tu už jednou dělala problémy).
 export const dynamic = "force-dynamic";
+
+// Porovnání tokenu v konstantním čase (obyčejné !== by šlo teoreticky odhadovat podle doby odpovědi). Bezpečnostní audit 2026-11-16, S-12.
+function tokenOk(given: string, expected: string): boolean {
+  const a = createHash("sha256").update(given).digest();
+  const b = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(a, b);
+}
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -69,7 +77,7 @@ const VTIMEZONE_PRAGUE_LINES = [
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
   const expected = process.env.CALENDAR_FEED_TOKEN;
-  if (!expected || token !== expected) {
+  if (!expected || !token || !tokenOk(token, expected)) {
     return new Response("Neplatný nebo chybějící token.", { status: 403 });
   }
 
