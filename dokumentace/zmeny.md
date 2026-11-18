@@ -6,6 +6,13 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-18 — Administrace na mobilu a měsíční pohled (PR #83, čeká na sloučení Milanem)
+- **Proč:** na telefonu byl kalendář až pod boxy (žádosti, nejbližší akce, doklady, poukazy), přitom přepínač měsíců je nahoře. Tlačítka u poukazů přetékala a byla useknutá. Měsíční pohled byl tak velký, že se i na velkém monitoru musel rolovat.
+- **Co:** na mobilu je kalendář první, nad ním proužek „Čeká na vyřízení“ s odkazem dolů; tlačítka se zalamují (zrušeno `shrink-0`, které způsobovalo přetékání i na desktopu); horní lišta a přepínač se zalamují; buňky měsíce mají pevnou výšku místo čtverců.
+- **Ověřeno:** Playwright s napodobeným API, šířky 390 a 1280 px, bez vodorovného přetékání, kalendář před boxy na mobilu, měsíc se vejde na monitor. Na živém webu čeká na pohled Milana. Další návrh (zatím neděláno): přilepit přepínač měsíců při rolování, přehlednější týdenní tabulka na mobilu.
+
+---
+
 ## 2026-11-18 — Bezpečnost: drobné nálezy S-12, S-13, S-14 (web + rezervace)
 
 Větev `bezpecnost-nizke-nalezy` (Pull request ke schválení Milanem).
@@ -13,7 +20,6 @@ Větev `bezpecnost-nizke-nalezy` (Pull request ke schválení Milanem).
 - **S-12:** token kalendáře (`/api/calendar.ics`) se porovnává v konstantním čase (`timingSafeEqual`). Chování pro uživatele se nemění.
 - **S-13:** projita celá historie repozitáře (466 commitů, všechny větve): žádné klíče, hesla ani připojovací řetězce. V historii jsou jen e-maily správců. Rozhodnutí o veřejném/soukromém repozitáři zůstává na Milanovi (viz tabulka nálezů).
 
----
 
 ## 2026-11-16 (odpoledne) — Bezpečnost: jednorázový přihlašovací odkaz a kratší přihlášení (S-04, zbytek)
 
