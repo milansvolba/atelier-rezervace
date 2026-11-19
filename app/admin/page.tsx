@@ -1329,11 +1329,121 @@ function statusLabel(status: EmailLogEntry["status"]) {
   return { text: "Přeskočeno", cls: "text-gray-500 bg-gray-100" };
 }
 
+// Komu chodí e-maily správy (upozornění, podklady k dokladům, kontaktní formulář). Hodnota z tohoto formuláře
+// má přednost; když je pole prázdné, použije se záložní nastavení ve Vercelu. Ukládá se do databáze (app_settings).
+type RecipientRow = {
+  key: "admin" | "invoice" | "contact";
+  label: string;
+  help: string;
+  stored: string[];
+  effective: string[];
+  source: "settings" | "fallback";
+  updatedAt: string | null;
+  updatedBy: string | null;
+};
+
+function RecipientsTab() {
+  const [rows, setRows] = useState<RecipientRow[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    const res = await fetch("/api/admin/nastaveni-emailu");
+    if (res.ok) setRows(await res.json());
+    else setError("Nepodařilo se načíst příjemce.");
+  }
+
+  useEffect(() => {
+    load().finally(() => setLoading(false));
+  }, []);
+
+  function draftFor(r: RecipientRow) {
+    return drafts[r.key] ?? r.stored.join(", ");
+  }
+
+  async function save(r: RecipientRow) {
+    setSaving(r.key);
+    setSaved(null);
+    setError(null);
+    const res = await fetch("/api/admin/nastaveni-emailu", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ group: r.key, emails: draftFor(r) }),
+    });
+    setSaving(null);
+    if (res.ok) {
+      setDrafts((d) => {
+        const next = { ...d };
+        delete next[r.key];
+        return next;
+      });
+      await load();
+      setSaved(r.key);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Nepodařilo se uložit.");
+    }
+  }
+
+  if (loading) return <p className="text-sm text-gray-400">Načítám…</p>;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-gray-500">
+        Adresy oddělte čárkou. Změna platí hned. Když pole nevyplníte, použije se záložní nastavení ze serveru.
+      </p>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      {rows.map((r) => {
+        const changed = draftFor(r) !== r.stored.join(", ");
+        return (
+          <div key={r.key} className="border-t border-gray-100 pt-3 first:border-t-0 first:pt-0 space-y-1.5">
+            <p className="text-sm font-medium">{r.label}</p>
+            <p className="text-xs text-gray-500">{r.help}</p>
+            <textarea
+              className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm"
+              rows={2}
+              value={draftFor(r)}
+              placeholder="např. jmeno@example.cz, druhy@example.cz"
+              onChange={(e) => {
+                setSaved(null);
+                setDrafts((d) => ({ ...d, [r.key]: e.target.value }));
+              }}
+            />
+            <p className="text-xs text-gray-500">
+              Teď chodí na: <span className="text-gray-800">{r.effective.join(", ")}</span>
+              {r.source === "fallback" && " (záložní nastavení)"}
+            </p>
+            {r.updatedAt && r.source === "settings" && (
+              <p className="text-xs text-gray-400">
+                Naposledy upraveno {new Date(r.updatedAt).toLocaleString("cs-CZ")}
+                {r.updatedBy ? ", " + r.updatedBy : ""}
+              </p>
+            )}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => save(r)}
+                disabled={saving === r.key || !changed}
+                className="h-8 px-3 rounded-md bg-gray-900 text-white text-xs disabled:opacity-40"
+              >
+                {saving === r.key ? "Ukládám…" : "Uložit"}
+              </button>
+              {saved === r.key && <span className="text-xs text-green-700">Uloženo</span>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // Editace textů e-mailových šablon a přehled odeslaných e-mailů. Šablony se
 // needitují v kódu, ale přes tenhle formulář — text s {{promennymi}} se uloží
 // do databáze a při odesílání nahradí výchozí verzi v kódu.
 function EmailsPanel({ onClose }: { onClose: () => void }) {
-  const [tab, setTab] = useState<"templates" | "log">("templates");
+  const [tab, setTab] = useState<"templates" | "log" | "recipients">("templates");
   const [templates, setTemplates] = useState<EmailTemplateAdmin[]>([]);
   const [log, setLog] = useState<EmailLogEntry[]>([]);
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -1421,6 +1531,12 @@ function EmailsPanel({ onClose }: { onClose: () => void }) {
           >
             Log odeslaných
           </button>
+          <button
+            onClick={() => setTab("recipients")}
+            className={`h-7 px-2.5 rounded ${tab === "recipients" ? "bg-white shadow-sm font-medium" : "text-gray-500"}`}
+          >
+            Příjemci
+          </button>
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
@@ -1498,6 +1614,8 @@ function EmailsPanel({ onClose }: { onClose: () => void }) {
             })}
           </div>
         )}
+
+        {tab === "recipients" && <RecipientsTab />}
 
         {!loading && tab === "log" && (
           <div className="space-y-2">

@@ -11,24 +11,13 @@ import { signupNotifyTo } from "./signupContact";
 import { SIMPLIFIED_LIMIT_CZK } from "./billingInput";
 import { escapeHtml } from "./html";
 import { sql } from "./db";
+import { getRecipients } from "./settings";
 
 // Odesílatel musí být na doméně ověřené v Resendu (DNS záznam u ateliernapobrezi.cz).
 const FROM = "Ateliér na pobřeží <rezervace@ateliernapobrezi.cz>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://rezervace.ateliernapobrezi.cz";
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "milan.svolba@gmail.com,petr.svolba@gmail.com")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-// Zprávy z kontaktního formuláře na webu: výchozí příjemci jsou admini, jde změnit proměnnou CONTACT_EMAILS.
-const CONTACT_EMAILS = (process.env.CONTACT_EMAILS || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-// Podklady k dokladům jdou jen na tyto adresy (proměnná INVOICE_EMAILS, čárkou oddělené); výchozí je Milan.
-const INVOICE_EMAILS = (process.env.INVOICE_EMAILS || "milan.svolba@gmail.com")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+// Příjemci e-mailů správy (upozornění, doklady, kontakt) se berou z nastavení v administraci,
+// záložně z proměnných ve Vercelu — viz lib/settings.ts.
 
 let client: Resend | null = null;
 
@@ -102,10 +91,10 @@ async function sendFromTemplate(
 }
 
 // --- Zpráva z kontaktního formuláře na webu ---
-// Jde adminům (nebo na CONTACT_EMAILS). Reply-To je e-mail odesílatele, takže odpověď jde rovnou jemu.
+// Jde na příjemce kontaktních zpráv z nastavení v administraci (bez vlastního nastavení stejným lidem jako upozornění pro správce). Reply-To je e-mail odesílatele, takže odpověď jde rovnou jemu.
 // Systémový e-mail, pevný text v kódu. Text od návštěvníka se ošetřuje (escapeHtml).
 export async function sendContactMessageEmail(m: { name: string; email: string; message: string }) {
-  const to = CONTACT_EMAILS.length ? CONTACT_EMAILS : ADMIN_EMAILS;
+  const to = await getRecipients("contact");
   const subject = "Zpráva z webu od " + m.name.slice(0, 60);
   const html = wrap(`
     <p><strong>Nová zpráva z kontaktního formuláře na webu</strong></p>
@@ -166,7 +155,7 @@ async function sendAdminMemberSmsReminder(user: { name: string; email: string })
     }
     await sendFromTemplate(
       "membership_sms_admin",
-      ADMIN_EMAILS,
+      await getRecipients("admin"),
       {
         name: escapeHtml(user.name),
         email: `<a href="mailto:${escapeHtml(user.email)}">${escapeHtml(user.email)}</a>`,
@@ -208,7 +197,7 @@ export async function sendWelcomeEmail(
 export async function sendAdminMembershipRequestEmail(r: { name: string; email: string; phone: string | null; message: string | null }) {
   await sendFromTemplate(
     "membership_request",
-    ADMIN_EMAILS,
+    await getRecipients("admin"),
     {
       name: escapeHtml(r.name),
       email: `<a href="mailto:${escapeHtml(r.email)}">${escapeHtml(r.email)}</a>`,
@@ -234,7 +223,7 @@ export async function sendAdminNewRequestEmail(booking: Booking) {
     adminUrl: `${APP_URL}/admin`,
   };
   if (isCourse) {
-    await sendFromTemplate("admin_new_request_kurz", ADMIN_EMAILS, vars, { bookingId: booking.id });
+    await sendFromTemplate("admin_new_request_kurz", await getRecipients("admin"), vars, { bookingId: booking.id });
     return;
   }
   const what = isWholeSpace(booking.resource)
@@ -242,7 +231,7 @@ export async function sendAdminNewRequestEmail(booking: Booking) {
     : `rezervaci místa ${RESOURCE_LABELS[booking.resource]}`;
   await sendFromTemplate(
     "admin_new_request_pronajem",
-    ADMIN_EMAILS,
+    await getRecipients("admin"),
     { ...vars, what, resourceLabel: RESOURCE_LABELS[booking.resource] },
     { bookingId: booking.id }
   );
@@ -382,7 +371,7 @@ export async function sendBookingCancelledEmail(contact: string, booking: Bookin
 export async function sendAdminNewSignupEmail(booking: Booking, signup: CourseSignup) {
   await sendFromTemplate(
     "admin_new_signup",
-    ADMIN_EMAILS,
+    await getRecipients("admin"),
     {
       name: signup.name,
       people: String(signup.people),
@@ -537,7 +526,7 @@ export async function sendAdminNewVoucherEmail(
       warn +
       `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
   );
-  await send(ADMIN_EMAILS, "Nový dárkový poukaz " + v.code, html, { type: "voucher_admin", bookingId: opts.booking?.id });
+  await send(await getRecipients("admin"), "Nový dárkový poukaz " + v.code, html, { type: "voucher_admin", bookingId: opts.booking?.id });
 }
 
 // Adminům: kupující doplnil nebo změnil kontakt na obdarovaného.
@@ -547,7 +536,7 @@ export async function sendAdminVoucherContactEmail(v: Voucher, booking?: Booking
       `<p>${[v.recipientName, v.recipientEmail, v.recipientPhone].filter(Boolean).map((x) => esc(x as string)).join(", ")}</p>` +
       `<p><a href="${APP_URL}/admin">Otevřít admin</a></p>`
   );
-  await send(ADMIN_EMAILS, "Doplněn kontakt na obdarovaného: " + v.code, html, { type: "voucher_contact_admin", bookingId: booking?.id });
+  await send(await getRecipients("admin"), "Doplněn kontakt na obdarovaného: " + v.code, html, { type: "voucher_contact_admin", bookingId: booking?.id });
 }
 
 // Uplatnění poukazu v aplikaci: potvrzení obdarovanému + upozornění adminům.
@@ -576,7 +565,7 @@ export async function sendVoucherRedeemedEmails(v: Voucher, booking: Booking, si
       },
       { bookingId: booking.id, signupId: signup.id }
     ),
-    send(ADMIN_EMAILS, "Uplatněn poukaz " + v.code, adminHtml, { type: "voucher_redeemed_admin", bookingId: booking.id, signupId: signup.id }),
+    send(await getRecipients("admin"), "Uplatněn poukaz " + v.code, adminHtml, { type: "voucher_redeemed_admin", bookingId: booking.id, signupId: signup.id }),
   ]);
 }
 
@@ -654,7 +643,7 @@ export async function sendAdminInvoiceBasisEmail(item: InvoiceItem) {
       `<p>Doklad je už zaplacený (${membership ? "měsíční platba členství, Stripe" : "kartou, Stripe"}). Po vystavení ho v adminu odškrtněte tlačítkem „Vystaveno“.</p>` +
       emailButton(`${APP_URL}/admin`, "Otevřít frontu dokladů")
   );
-  await send(INVOICE_EMAILS, "Doklad k vystavení: " + who + ", " + fmtCzk(item.amountCzk) + (membership ? " (členství)" : ""), html, { type: "invoice_basis" });
+  await send(await getRecipients("invoice"), "Doklad k vystavení: " + who + ", " + fmtCzk(item.amountCzk) + (membership ? " (členství)" : ""), html, { type: "invoice_basis" });
 }
 
 
@@ -684,7 +673,7 @@ export async function sendFirmInquiryEmails(q: {
       (q.heardAbout ? `<p style="color:#888;font-size:13px;">Odkud se dozvěděli: ${escapeHtml(q.heardAbout)}</p>` : "") +
       `<p style="color:#888;font-size:13px;">Místo ani poukaz zatím nejsou rezervované. Odpovězte na tento e-mail (jde rovnou zákazníkovi), domluvte se a vystavte fakturu v Caflou.</p>`
   );
-  const okAdmin = await send(ADMIN_EMAILS, "Poptávka od firmy: " + q.company.slice(0, 60) + " (" + q.kindLabel + ")", adminHtml, { type: "firm_inquiry_admin" }, { replyTo: q.email });
+  const okAdmin = await send(await getRecipients("admin"), "Poptávka od firmy: " + q.company.slice(0, 60) + " (" + q.kindLabel + ")", adminHtml, { type: "firm_inquiry_admin" }, { replyTo: q.email });
   const summaryBlock = `<ul style="padding-left:18px;margin:8px 0;">${list}</ul>`;
   await sendFromTemplate("firm_inquiry_customer", q.email, { name: escapeHtml(q.name), summaryBlock }, {}).catch(() => false);
   return okAdmin;
@@ -693,7 +682,7 @@ export async function sendFirmInquiryEmails(q: {
 // Upozornění správcům na neobvyklou událost kolem slevového kódu (např. kód zaplacen podruhé). Nikdy nehází výjimku.
 export async function sendAdminAlertEmail(subject: string, text: string) {
   try {
-    await send(ADMIN_EMAILS, subject, wrap("<p>" + esc(text) + "</p>" + emailButton(APP_URL + "/admin", "Otevřít administraci")), { type: "promo_alert" });
+    await send(await getRecipients("admin"), subject, wrap("<p>" + esc(text) + "</p>" + emailButton(APP_URL + "/admin", "Otevřít administraci")), { type: "promo_alert" });
   } catch (e) {
     console.error("[email] Upozornění správci selhalo:", e);
   }

@@ -106,8 +106,9 @@ Každý pokus o odeslání (úspěch i chyba) se loguje do `email_log`, přehled
 - `DATABASE_URL` / `POSTGRES_URL` — připojení k Neon Postgres.
 - `AUTH_SECRET` — podepisování session a magic-link tokenů (**nutné nastavit na náhodný řetězec** v produkci).
 - `RESEND_API_KEY` — odesílání e-mailů.
-- `ADMIN_EMAILS` — nepovinné, čárkou oddělený seznam pro upozornění na nové žádosti/přihlášky.
-- `CONTACT_EMAILS` — nepovinné, čárkou oddělený seznam příjemců zpráv z kontaktního formuláře na webu. Když chybí, jdou zprávy na `ADMIN_EMAILS`. Zprávy se ukládají i do tabulky `contact_messages` (vidět jen v databázi).
+- `ADMIN_EMAILS` — záložní příjemci upozornění pro správce (od 2026-11-19 se běžně nastavují v administraci: E-maily → Příjemci; tahle proměnná se použije, když je pole v administraci prázdné).
+- `CONTACT_EMAILS` — záložní příjemci zpráv z kontaktního formuláře (běžně se nastavují v administraci). Když chybí, jdou zprávy stejným lidem jako upozornění pro správce.
+- `INVOICE_EMAILS` — záložní příjemci podkladů „Doklad k vystavení“ (běžně se nastavují v administraci; výchozí Milan). Zprávy se ukládají i do tabulky `contact_messages` (vidět jen v databázi).
 - `NEXT_PUBLIC_APP_URL` — nepovinné, výchozí `https://rezervace.ateliernapobrezi.cz`.
 - `WEBHOOK_URL` — nepovinné; pokud nastaveno, appka po každé změně rezervace notifikuje tuhle URL (viz sekce Webhook níže).
 - `WEBHOOK_SECRET` — sdílený tajný klíč pro autentizaci webhooku; stejná hodnota musí být i v `data/webhook_secret.php` na `ateliernapobrezi.cz`.

@@ -290,6 +290,15 @@ await sql`
           used_at timestamptz NOT NULL DEFAULT now()
         )
       `;
+      // Obecná nastavení klíč → hodnota (lib/settings.ts). Dnes příjemci e-mailů správy (klíče recipients.*).
+      await sql`
+        CREATE TABLE IF NOT EXISTS app_settings (
+          key text PRIMARY KEY,
+          value text NOT NULL,
+          updated_at timestamptz NOT NULL DEFAULT now(),
+          updated_by text
+        )
+      `;
       const existingTiers = await sql`SELECT COUNT(*)::int AS count FROM discount_tiers`;
       if (Number(existingTiers[0]?.count ?? 0) === 0) {
         await sql`

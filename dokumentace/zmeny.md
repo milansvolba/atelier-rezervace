@@ -6,6 +6,13 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-19 — Příjemci e-mailů správy se nastavují v administraci (rezervace, PR ke schválení)
+Komu chodí e-maily správy, se už nemění ve Vercelu, ale v administraci: **E-maily → záložka „Příjemci“**. Tři skupiny: **Upozornění pro správce** (nové žádosti, přihlášky, zaplacené a uplatněné poukazy, poptávky firem, upozornění na slevové kódy), **Podklady k dokladům** („Doklad k vystavení“) a **Zprávy z kontaktního formuláře** (bez vlastního nastavení chodí stejným lidem jako upozornění pro správce). Adresy se oddělují čárkou, změna platí hned, u každé skupiny je vidět, na koho e-maily chodí právě teď, a kdo ji naposledy upravil.
+
+**Pojistka:** pole z administrace má přednost, ale když je prázdné (nebo se databáze nepodaří přečíst), použije se dosavadní proměnná ve Vercelu (`ADMIN_EMAILS`, `INVOICE_EMAILS`, `CONTACT_EMAILS`) a nakonec výchozí adresa v kódu, takže e-mail nikdy nezůstane bez příjemce. Do prvního uložení se tedy nic nezmění. Proměnné ve Vercelu lze ponechat jako zálohu.
+
+Technicky: nová obecná tabulka `app_settings` (klíč → hodnota, kdo a kdy; vytvoří se sama jako ostatní tabulky), `lib/settings.ts` (čtení s pojistkou, uložení), `lib/recipients.ts` (čisté funkce: dělení a kontrola adres, nejvýš 10 adres na skupinu), API `GET/PUT /api/admin/nastaveni-emailu` (jen admin, kontrola původu požadavku), v `lib/email.ts` jsou konstanty příjemců nahrazené čtením z nastavení při každém odeslání. Lokálně ověřeno proti zkušební databázi: výchozí stav, přednost nastavení, kontakt sleduje správce, prázdné pole vrací zálohu, rozbitá databáze nic neshodí.
+
 ## 2026-11-18 — Administrace na mobilu a měsíční pohled (PR #83, čeká na sloučení Milanem)
 - **Proč:** na telefonu byl kalendář až pod boxy (žádosti, nejbližší akce, doklady, poukazy), přitom přepínač měsíců je nahoře. Tlačítka u poukazů přetékala a byla useknutá. Měsíční pohled byl tak velký, že se i na velkém monitoru musel rolovat.
 - **Co:** na mobilu je kalendář první, nad ním proužek „Čeká na vyřízení“ s odkazem dolů; tlačítka se zalamují (zrušeno `shrink-0`, které způsobovalo přetékání i na desktopu); horní lišta a přepínač se zalamují; buňky měsíce mají pevnou výšku místo čtverců.
