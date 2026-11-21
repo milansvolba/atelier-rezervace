@@ -102,6 +102,13 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     vars: ["spots", "remaining", "places"],
     text: "{{remaining}} {{spots}} {{places}}.",
   },
+  "kurzy.list.priceUnitOneOff": {
+    group: "Objednávka kurzu",
+    label: "Seznam kurzů: jednotka ceny u jednorázových kurzů",
+    description: "Text za cenou v seznamu kurzů u jednorázových kurzů (bez skupinové slevy), např. „/místo“. U běžných kurzů zůstává „/os.“.",
+    vars: [],
+    text: "/místo",
+  },
   "kurzy.step2.maxSeats": {
     group: "Objednávka kurzu",
     label: "Krok 2: upozornění na limit míst online",
