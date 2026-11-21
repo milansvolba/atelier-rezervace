@@ -1073,7 +1073,7 @@ export default function KurzyPage() {
                     <p className="font-medium">{c.title}</p>
                     <p className="text-sm text-gray-500">
                       {fmtDate(c.date)} · {c.startTime}–{c.endTime}
-                      {c.price && !voucherMode ? " · " + kc(c.price) + "/os." : ""}
+                      {c.price && !voucherMode ? " · " + kc(c.price) + (hasGroupDiscount(c) ? "/os." : t("kurzy.list.priceUnitOneOff")) : ""}
                     </p>
                     {c.note && <p className="text-sm text-gray-500 mt-1">{c.note}</p>}
                     <dl className="mt-3 space-y-1 text-sm text-gray-600">
