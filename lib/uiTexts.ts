@@ -95,6 +95,13 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     vars: ["spots", "remaining", "places"],
     text: "{{remaining}} {{spots}} {{places}}. Čím víc vás přijde, tím větší sleva.",
   },
+  "kurzy.step2.hintOneOff": {
+    group: "Objednávka kurzu",
+    label: "Krok 2: nápověda pod počtem míst (jednorázové kurzy)",
+    description: "Drobný text pod výběrem počtu míst u jednorázových kurzů (bez skupinové slevy). Proměnné: spots = počet volných míst, remaining = „Zbývá“/„Zbývají“, places = správně vyskloňované „volné místo/volná místa/volných míst“.",
+    vars: ["spots", "remaining", "places"],
+    text: "{{remaining}} {{spots}} {{places}}.",
+  },
   "kurzy.step2.maxSeats": {
     group: "Objednávka kurzu",
     label: "Krok 2: upozornění na limit míst online",
