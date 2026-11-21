@@ -859,7 +859,7 @@ export default function KurzyPage() {
                   </div>
                 )}
                 {selectedCourse.spotsLeft !== null && !voucherInfo && (
-                  <p className="text-xs text-gray-500">{t("kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft), ...spotsPhrase(selectedCourse.spotsLeft) })}</p>
+                  <p className="text-xs text-gray-500">{t(isOneOff ? "kurzy.step2.hintOneOff" : "kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft), ...spotsPhrase(selectedCourse.spotsLeft) })}</p>
                 )}
                 <div className="flex gap-2 flex-wrap pt-1">
                   {!(isOneOff && openedFromLink) && (
