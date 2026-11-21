@@ -6,6 +6,17 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-21 — Workshop Krmítka: jednorázové kurzy bez skupinové slevy, landing page, cena 739 Kč (web + rezervace)
+- **Landing page** `/workshop-krmitka` (hlavní web, jen na FTP, skrytá `noindex`, mimo menu a sitemap): záhlaví (desktop i mobil), kroky, ptáci, informace, časté otázky, tlačítko do rezervace (`/kurzy?termin=<id>`), náhled pro sdílení. Termín, cena a volná místa se berou živě z `/api/courses`. Texty jsou návrh ke schválení, upravitelné inline (klíče `krmitka_*`).
+- **Rezervace, PR #85:** u jednorázových kurzů (typ „none“) se nepočítá množstevní sleva (server `computeOrder` s parametrem `groupDiscount` i průvodce), první krok je zjednodušený (bez poukazu, bez „Kurz na míru pro skupinu“, bez „Vybrat jiný termín“ při příchodu odkazem). Nový text `kurzy.step2.titleOneOff` („Kolik míst chcete rezervovat?“).
+- **PR #86:** pod počtem míst u jednorázových kurzů už není věta o slevě (nový text `kurzy.step2.hintOneOff`).
+- **PR #87:** v seznamu kurzů je u jednorázových kurzů jednotka ceny „/místo“ místo „/os.“ (nový text `kurzy.list.priceUnitOneOff`, upravitelný v administraci).
+- **Přímo v databázi (ne v kódu):** u termínu Krmítek (`40da6428-c5fc-4489-93ea-0e73f8a1c4c1`, 11. 12. 2026) cena 399 → 689 → **739 Kč** (za skupinku včetně nápoje a DPH 21 %) a čas 12:00–21:00 → **16:00–19:00** (délka 3 hodiny). Původní 12:00–21:00 byla záměrná blokace ateliéru, Milan ji 21. 11. 2026 změnil na 3 hodiny.
+- **Ověřeno na živém webu (počítač):** krok 2 jednorázového kurzu bez slev a poukazu, seznam kurzů „739 Kč/místo“, „16:00–19:00“, „Délka 3 hodiny“; běžný kurz Modelování hlavy beze změny („/os.“). Mobil v rezervační aplikaci neověřen (aplikaci nejde vložit do zkušebního rámečku). Vercel hlásil u větví ERROR (náhledy), produkční nasazení po každém sloučení bylo READY.
+- **Zbývá:** u Krmítek obecný text „V ceně: … občerstvení po celou dobu kurzu“ v seznamu kurzů (sedí jen částečně), případně volitelné políčko „Otázka k počtu míst“ u termínu, grafika pro sociální sítě s cenou 739 Kč, před spuštěním odstranit `noindex` a přidat do `sitemap.xml`.
+
+---
+
 ## 2026-11-19 — Příjemci e-mailů správy se nastavují v administraci (rezervace, PR ke schválení)
 Komu chodí e-maily správy, se už nemění ve Vercelu, ale v administraci: **E-maily → záložka „Příjemci“**. Tři skupiny: **Upozornění pro správce** (nové žádosti, přihlášky, zaplacené a uplatněné poukazy, poptávky firem, upozornění na slevové kódy), **Podklady k dokladům** („Doklad k vystavení“) a **Zprávy z kontaktního formuláře** (bez vlastního nastavení chodí stejným lidem jako upozornění pro správce). Adresy se oddělují čárkou, změna platí hned, u každé skupiny je vidět, na koho e-maily chodí právě teď, a kdo ji naposledy upravil.
 
