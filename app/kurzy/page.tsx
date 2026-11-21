@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DAY_NAMES_MON_FIRST, MONTH_NAMES, iso, monthMatrix } from "@/lib/calendar";
 import { DEFAULT_UI_TEXTS, fillText } from "@/lib/uiTexts";
-import { groupDiscountPercent } from "@/lib/pricing";
+import { groupDiscountPercent, hasGroupDiscount } from "@/lib/pricing";
 import { resolveHeardAbout } from "@/lib/types";
 import { HeardAboutField } from "@/components/HeardAboutField";
 import { spotsPhrase } from "@/lib/invoiceFormat";
@@ -166,7 +166,9 @@ export default function KurzyPage() {
   }, []);
 
   // Vypocita procento skupinove slevy pro dany pocet lidi a kapacitu terminu.
-  function discountFor(people: number, _capacity: number | null) {
+  // Jednorázové kurzy (typ "none") mají jednu cenu za místo, bez množstevní slevy.
+  function discountFor(people: number, _capacity: number | null, course?: CourseCard | null) {
+    if (course && !hasGroupDiscount(course)) return 0;
     return groupDiscountPercent(people);
   }
 
@@ -342,11 +344,15 @@ export default function KurzyPage() {
   }, [loading, courses, kurzHandled]);
 
   const selectedCourse = signupFor ? courses.find((c) => c.id === signupFor) ?? null : null;
+  // Jednorázový kurz mimo web: zjednodušený první krok (bez nabídky jiného termínu, poukazu a skupinové poptávky).
+  const isOneOff = !!selectedCourse && !hasGroupDiscount(selectedCourse);
+  // Zákazník přišel odkazem z webu (/kurzy?termin=ID): nabídku jiného termínu u jednorázového kurzu neukazujeme.
+  const openedFromLink = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("termin");
   const maxSeats = selectedCourse ? Math.max(1, Math.min(6, selectedCourse.spotsLeft ?? 6)) : 6;
 
   function quoteFor(c: CourseCard, n: number) {
     if (!c.price) return null;
-    const discount = discountFor(n, c.capacity);
+    const discount = discountFor(n, c.capacity, c);
     const total = c.price * n;
     let totalAfter = Math.round(total * (1 - discount / 100));
     // Slevový kód se nesčítá s množstevní slevou: platí výhodnější z obou (stejně jako na serveru, lib/pricing.ts).
@@ -366,9 +372,9 @@ export default function KurzyPage() {
   // Nabídka "přidejte další místo", pokud by se tím zvýšila sleva.
   function nudgeFor(c: CourseCard, n: number, max: number) {
     if (!c.price) return null;
-    const current = discountFor(n, c.capacity);
+    const current = discountFor(n, c.capacity, c);
     for (let k = n + 1; k <= max; k++) {
-      const dk = discountFor(k, c.capacity);
+      const dk = discountFor(k, c.capacity, c);
       if (dk > current) {
         const more = k - n;
         return { label: "ještě " + more + " " + seatsWord(more), percent: dk };
@@ -700,7 +706,7 @@ export default function KurzyPage() {
             <div>
               {!voucherMode && <p className="text-xs text-gray-400">{t("kurzy.step.label", { step: String(step) })}</p>}
               <h2 className="text-lg font-semibold">
-                {step === 2 ? t(voucherInfo ? "kurzy.step2.titleVoucher" : "kurzy.step2.title") : step === 3 ? t("kurzy.step3.title") : t("kurzy.step4.title")}
+                {step === 2 ? t(voucherInfo ? "kurzy.step2.titleVoucher" : isOneOff ? "kurzy.step2.titleOneOff" : "kurzy.step2.title") : step === 3 ? t("kurzy.step3.title") : t("kurzy.step4.title")}
               </h2>
             </div>
 
@@ -804,7 +810,7 @@ export default function KurzyPage() {
                     )}
                   </div>
                 )}
-                {!voucherInfo && (
+                {!voucherInfo && !isOneOff && (
                   <div className="rounded-md border border-gray-200 p-3 space-y-2">
                     {!voucherOpen ? (
                       <button type="button" onClick={() => setVoucherOpen(true)} className="text-sm underline">
@@ -834,7 +840,7 @@ export default function KurzyPage() {
                     )}
                   </div>
                 )}
-                {!voucherInfo && signupPeople >= 6 && (selectedCourse.spotsLeft === null || selectedCourse.spotsLeft > 6) && (
+                {!voucherInfo && !isOneOff && signupPeople >= 6 && (selectedCourse.spotsLeft === null || selectedCourse.spotsLeft > 6) && (
                   <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3">
                     <p className="min-w-0 flex-1">{t("kurzy.step2.maxSeats", { max: "6" })}</p>
                     <button
@@ -856,6 +862,7 @@ export default function KurzyPage() {
                   <p className="text-xs text-gray-500">{t("kurzy.step2.hint", { spots: String(selectedCourse.spotsLeft), ...spotsPhrase(selectedCourse.spotsLeft) })}</p>
                 )}
                 <div className="flex gap-2 flex-wrap pt-1">
+                  {!(isOneOff && openedFromLink) && (
                   <button
                     type="button"
                     onClick={() => {
@@ -866,6 +873,7 @@ export default function KurzyPage() {
                   >
                     {t("kurzy.nav.change")}
                   </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setStep(3)}
@@ -1116,7 +1124,7 @@ export default function KurzyPage() {
         </p>
       )}
 
-      {!voucherMode && (
+      {!voucherMode && !isOneOff && (
       <div className="bg-white border border-gray-200 rounded-xl p-5" id="custom-form">
         <p className="font-medium mb-1">Kurz na míru pro skupinu</p>
         <p className="text-sm text-gray-500 mb-4">

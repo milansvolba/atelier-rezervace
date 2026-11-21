@@ -4,7 +4,7 @@ import { store } from "@/lib/data";
 import { signupStore } from "@/lib/signups";
 import { courseFlags } from "@/lib/courseFlags";
 import { cleanPhone } from "@/lib/signupContact";
-import { computeOrder, castingPriceFor, clampCastings } from "@/lib/pricing";
+import { computeOrder, castingPriceFor, clampCastings, hasGroupDiscount } from "@/lib/pricing";
 import { createCheckoutSession, paymentStore, MAX_ONLINE_SEATS } from "@/lib/stripe";
 import { parseBillingInput } from "@/lib/billingInput";
 import { promoStore, promoAttemptStart, promoAttemptSucceeded, clientIpHash, maxPeopleMessage, GENERIC_PROMO_ERROR, PROMO_MIN_FIXED_PRICE, type PromoCode } from "@/lib/promo";
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     await promoAttemptSucceeded(attempt.id);
     if (seats > promo.maxPeople) return NextResponse.json({ error: maxPeopleMessage(promo.maxPeople) }, { status: 400 });
   }
-  const price = computeOrder(booking.price, seats, castings, castingPrice ?? 0, promo);
+  const price = computeOrder(booking.price, seats, castings, castingPrice ?? 0, promo, hasGroupDiscount(booking));
   if (promo && !price.promoApplied) {
     return NextResponse.json({ error: "U vaší objednávky je výhodnější množstevní sleva, kód proto nepoužijeme (zůstává platný). Odeberte ho prosím z objednávky." }, { status: 400 });
   }

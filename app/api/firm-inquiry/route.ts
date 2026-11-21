@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ipLimited, TOO_MANY } from "@/lib/rateLimit";
 import { store } from "@/lib/data";
 import { courseFlags } from "@/lib/courseFlags";
-import { computeOrder, voucherCourse, castingPriceFor, clampCastings } from "@/lib/pricing";
+import { computeOrder, voucherCourse, castingPriceFor, clampCastings, hasGroupDiscount } from "@/lib/pricing";
 import { parseBillingInput } from "@/lib/billingInput";
 import { cleanPhone, validEmail } from "@/lib/signupContact";
 import { sendFirmInquiryEmails } from "@/lib/email";
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     if (await courseFlags.isCorporate(booking.id)) return NextResponse.json({ error: "Na tuto akci se nelze veřejně přihlásit." }, { status: 403 });
     const castingPrice = castingPriceFor(booking);
     const castings = castingPrice !== null ? clampCastings(casting, seats) : 0;
-    const price = computeOrder(booking.price, seats, castings, castingPrice ?? 0);
+    const price = computeOrder(booking.price, seats, castings, castingPrice ?? 0, undefined, hasGroupDiscount(booking));
     total = price.total;
     lines.push(booking.title + ", " + fmtDate(booking.date) + " " + booking.startTime + "–" + booking.endTime);
     lines.push("Počet osob: " + seats + (castings > 0 ? ", odlitků: " + castings : ""));

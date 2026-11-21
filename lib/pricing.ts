@@ -26,6 +26,11 @@ export function courseTypeKey(b: { title: string; courseType?: string | null }):
   return COURSE_TYPE_NONE;
 }
 
+// Množstevní (skupinová) sleva se nabízí jen u kurzů s typem (hlava, reliéf). Jednorázové kurzy mimo web mají jednu cenu za místo, bez slevy.
+export function hasGroupDiscount(b: { title: string; courseType?: string | null }): boolean {
+  return courseTypeKey(b) !== COURSE_TYPE_NONE;
+}
+
 export function isValidCourseType(v: unknown): v is string {
   return typeof v === "string" && (v === COURSE_TYPE_NONE || VOUCHER_COURSES.some((c) => c.key === v));
 }
@@ -64,8 +69,8 @@ export function clampCastings(raw: unknown, people: number): number {
   return Math.max(0, Math.min(people, n));
 }
 
-export function computeOrder(pricePerPerson: number, people: number, castings: number, castingPrice: number, promo?: PromoForPrice | null): OrderPrice {
-  const discountPercent = groupDiscountPercent(people);
+export function computeOrder(pricePerPerson: number, people: number, castings: number, castingPrice: number, promo?: PromoForPrice | null, groupDiscount = true): OrderPrice {
+  const discountPercent = groupDiscount ? groupDiscountPercent(people) : 0;
   const courseBefore = pricePerPerson * people;
   const groupAfter = Math.round(courseBefore * (1 - discountPercent / 100));
   let courseAfter = groupAfter;

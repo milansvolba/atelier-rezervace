@@ -74,6 +74,13 @@ export const DEFAULT_UI_TEXTS: Record<string, UiTextDef> = {
     vars: [],
     text: "Kolik míst chcete rezervovat?",
   },
+  "kurzy.step2.titleOneOff": {
+    group: "Objednávka kurzu",
+    label: "Krok 2: nadpis u jednorázového kurzu",
+    description: "Nadpis kroku, kde zákazník vybírá počet míst u jednorázového kurzu (workshopu mimo běžné kurzy).",
+    vars: [],
+    text: "Kolik míst chcete rezervovat?",
+  },
   "kurzy.step2.titleVoucher": {
     group: "Objednávka kurzu",
     label: "Krok 2: nadpis při uplatnění poukazu",
