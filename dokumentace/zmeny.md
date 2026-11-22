@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-22 (večer) — Nové logo na webu
+
+`/www/images/logo.png` nahrazeno novým logem z brandových podkladů (`export/web/logo.png`, 705×160, 9,5 kB). Původní soubor zálohován (FTP plugin + `CLAUDOVO/logo-nove/puvodni-logo.png`); favicon beze změny. Poučení: u obrázků server nenastavuje dobu platnosti, prohlížeč si starý soubor pamatuje a po výměně je potřeba obnovit natvrdo (Cmd+Shift+R). Logo je v každé stránce napsané ručně bez verze v odkazu; verzování (`?v=filemtime`) zatím nepřidáno, Milan nechal bez změny. Sdílecí obrázky v `/images/og/` mají zatím staré logo. Kde: web. Ověřeno živě (server posílá nový soubor).
+
 ## 2026-11-21 — Workshop Krmítka: jednorázové kurzy bez skupinové slevy, landing page, cena 739 Kč (web + rezervace)
 - **Landing page** `/workshop-krmitka` (hlavní web, jen na FTP, skrytá `noindex`, mimo menu a sitemap): záhlaví (desktop i mobil), kroky, ptáci, informace, časté otázky, tlačítko do rezervace (`/kurzy?termin=<id>`), náhled pro sdílení. Termín, cena a volná místa se berou živě z `/api/courses`. Texty jsou návrh ke schválení, upravitelné inline (klíče `krmitka_*`).
 - **Rezervace, PR #85:** u jednorázových kurzů (typ „none“) se nepočítá množstevní sleva (server `computeOrder` s parametrem `groupDiscount` i průvodce), první krok je zjednodušený (bez poukazu, bez „Kurz na míru pro skupinu“, bez „Vybrat jiný termín“ při příchodu odkazem). Nový text `kurzy.step2.titleOneOff` („Kolik míst chcete rezervovat?“).
