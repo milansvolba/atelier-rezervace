@@ -6,6 +6,11 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-23 (večer) — Logo v2 uloženo v repu: `brand/logo/` (dokumentace)
+Do repa přidána složka `brand/logo/` se 6 vektorovými soubory v `svg/` (logo vedle sebe, pod sebou a samostatný symbol, každé černé a bílé, průhledné pozadí) a `README.md` s tím, který soubor kdy použít, a stručnými pravidly loga (ochranná zóna 1 L, minima, co nedělat). Průhledná PNG a vektorová PDF zatím nejsou (Milan: počká, doplní se později ze SVG). Soubory jsou vektorové kopie z designového plátna loga (ověřeno: SVG jsou platná a vykreslení sedí). Originální exporty zůstávají na Milanově počítači (`CLAUDOVO/logo-nove`); při rozdílu mají přednost. Nic na webu ani v rezervacích se tím nemění (starší `public/logo.png` a `lib/voucher-assets/logo.png` zůstávají, výměna je samostatný krok). `DESIGN.md` 10.1 odkazuje na novou složku. Zjištěno: nápis v logu je „ATELIER“ bez čárky (otevřený bod v manuálu). Kde: repo (dokumentace).
+
+---
+
 ## 2026-11-23 (odpoledne) — Skrytá stránka „Připravujeme“ s nezávaznou předběžnou přihláškou (web)
 Nový soubor `www/pripravujeme.php` (adresa `/pripravujeme`), nahraný přes FTP. **Skrytá**: mimo menu, mimo `sitemap.xml`, s `noindex, nofollow` (před zveřejněním odebrat řádek `<meta name="robots">` a přidat adresu do sitemapy). Čtyři karty (návrh textů ke schválení): Mystery workshop, Valentýnský diptich (reliéf pro pár), Dárek pro maminku (Den matek 9. 5. 2027), Večer s kresbou. Karty se berou z pole `$napady` (nová karta = nový řádek v `$napady` a v `$optLabels`), texty jdou upravit inline přes `t()` (klíče `pripr_*`, `pripravujeme_*`), mřížka je po třech nebo po dvou podle počtu karet. Formulář (jméno, e-mail, workshop, počet osob, nepovinně preferovaný čas, honeypot) posílá zprávu „Předběžný zájem (stránka Připravujeme)“ na existující koncový bod `/api/contact-message`, takže rezervační systém se nemění. Ověřeno živě: stránka se vykreslí bez PHP chyb a obsahuje všechny čtyři karty i volby formuláře (načteno s parametrem `?cb=`, jinak WebFetch vrací starší uloženou verzi). Neověřeno: zobrazení na mobilu a skutečné odeslání formuláře. Kde: web. Podrobnosti a další kroky: `claude/pripravujeme-a-napady-2026-11-23.md` v projektu.
 

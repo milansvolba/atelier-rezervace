@@ -364,7 +364,7 @@ Platí pro vše, co se tiskne nebo posílá jako PDF (dárkový poukaz, později
 - **Barvy:** bílé karty, text `ink` a `ink-soft`, zlatý akcent `accent` jen na linky, ornamenty a velká písmena nadpisů. Malý text se zlatou nikdy nepíše (kontrast, viz sekce 2).
 - **Karty:** stejné jednoduché boxy jako na webu (sekce 5, Karta): bílá plocha, jemná linka `line`, zaoblené rohy.
 - **Motiv:** vrstevnicové vlnky (kurz Modelování reliéfu) nebo hlava z vlnek (kurz Modelování hlavy). Nový kurz = nový motiv. Motiv ani pruh vlnek se **nikdy neořezává**, všechny linie končí uvnitř obrázku.
-- **Logo:** vždy z `lib/voucher-assets/logo.png`, nepřekreslovat.
+- **Logo:** nepřekreslovat. Výchozí logo v2 (od 23. 11. 2026): soubory ve složce `brand/logo/` (zatím SVG, černé i bílé), pravidla v `brand/logo/README.md`. Do PDF zatím stále jde `lib/voucher-assets/logo.png` (starší rastr), dokud se nevymění.
 - **Podpis lektora:** je vymyšlený (`petr-podpis.png`), skutečný podpis se na tiskovinách nepoužívá.
 
 ### 10.2 Texty
