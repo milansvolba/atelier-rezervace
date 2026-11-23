@@ -1,11 +1,12 @@
 # Logo Ateliér na pobřeží – výchozí logo (v2, od 20. 11. 2026)
 
-Tady jsou **zdrojové soubory loga** pro web, e-maily, poukazy, tisk a sociální sítě. Každá session si je bere odsud. Pravidla použití: `claude/brandmanual-2026-11-15.md` v projektu a design plátno „Brandmanuál – Ateliér na pobřeží“ (listy 04–06).
+Tady jsou **zdrojové soubory loga** pro web, e-maily, poukazy, tisk a sociální sítě. Každá session si je bere odsud. Je to logo v2 v opravené podobě (stav plátna z 23. 11. 2026). Pravidla použití: `claude/brandmanual-2026-11-15.md` v projektu a design plátno „Brandmanuál – Ateliér na pobřeží“ (listy 04–06).
 
 ## Který soubor kdy
 | Podoba | Kdy | Soubory |
 |---|---|---|
 | **A · vedle sebe (VÝCHOZÍ)** | web, hlavičky, e-maily, poukaz, tiskoviny na šířku | `logo-2radky-cerne`, `logo-2radky-bile` |
+| **A · web (bez okraje)** | vložení do stránky: SVG oříznuté těsně na logo, s `aria-label` | `logo-web-cerne` |
 | **B · pod sebou** | merch, plakáty na výšku, štítky, čtvercové formáty | `logo-pod-sebou-cerne`, `logo-pod-sebou-bile` |
 | **C · samostatný symbol** | avatar, favicon, razítko, výšivka (jen kde je název uvedený jinde) | `symbol-cerne`, `symbol-bile` |
 

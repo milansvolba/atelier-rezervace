@@ -203,3 +203,9 @@ Vytvořit produkty (kurzy na míru, pronájem celého ateliéru, varianty proná
 - Členství: HOTOVO a otestováno v sandboxu (platba, zrušení, stav v Účtech, členství zdarma, děkovací stránka). Zbývá: zkontrolovat první fakturu ve Stripe (číslo, DPH 21 %, IČO/DIČ), aktivace Stripe účtu (probíhá, ověření totožnosti), při go-live vyměnit env `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_MEMBERSHIP_PRICE_ID`, `STRIPE_TAX_RATE_ID` (ostré sazba `txr_1USCoLGz8lhwKqiBQghyaobW`).
 - Rozhodnuto: účtování členství ke dni přihlášení (bez poměrných faktur); role „Partner“ odložena; výplaty ze Stripe měsíčně.
 - Další na řadě (návrh): dvousloupcový dashboard v adminu na širokých obrazovkách; potvrzovací e-mail při vytvoření rezervace členem; správa textů v adminu; skrytí dvou firemních akcí z /kurzy; storno a refundy.
+
+### ÚKOL: Logo v2 – dokončit nasazení (23. 11. 2026)
+- [x] SVG loga v2 uložena v repu: `brand/logo/svg/` (7 souborů) + `brand/logo/README.md`.
+- [ ] Doplnit průhledná PNG a vektorová PDF ze SVG (Milan: počká).
+- [ ] Vyměnit starší rastr `lib/voucher-assets/logo.png` a `public/logo.png` za logo v2 (poukaz PDF a rezervační aplikace; přes větev a Pull request).
+- [ ] Rozhodnout: nápis v logu je „ATELIER“ bez čárky. Záměr, nebo opravit?
