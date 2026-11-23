@@ -42,6 +42,7 @@
 | 18 | **Drobný prodej + QR + kiosk tablet:** tabulka zboží a zásob v appce, platba dynamicky přes Stripe, rezervace kusů jako u míst kurzů; hrnek zůstává testovací | Zásoby se hlídají u nás, ne ve Stripe |
 | 19 | **Půjčovna** (rozhodnutí o ceně, kauci, délce) | Čeká na Milana |
 | 20 | **Role Partner, samoobslužná registrace, tykání členům, slevy na kurzy.php** | Odloženo |
+| 22 | **Stránka „Připravujeme“ (skrytá, hotový základ 2026-11-23):** schválit texty karet, ověřit na mobilu, rozhodnout o zveřejnění (odebrat `noindex`, přidat do `sitemap.xml`, odkaz z webu); poptat lektory (šperkařka), zjistit pec a čas sádrového odlitku, rozhodnout miska × reliéf pro Den matek (vypsat do 1. 3. 2027), Valentýn (vypsat do 15.–20. 12. 2026), Velikonoce (do 15. 1. 2027). Podklady: `claude/pripravujeme-a-napady-2026-11-23.md` | Milan rozhodl 2026-11-23: Krmítka budou pravidelná akce; adventní kalendář jako nápad na rok 2027 (jaký, zatím neví) |
 | 21 | **Bílá čekací obrazovka s velkým logem** při přechodu z rezervací (klik na logo) na úvodní stránku hlavního webu: zjistit, jestli jde o záměrný splash na PHP webu (kontrola `index.php` a hlavičky přes FTP nebo Chrome), případně ho zobrazovat jen při první návštěvě za relaci | Nahlásil Milan 2026-10-25, nijak nevadí, nejnižší priorita. Rezervační appka čekací obrazovku nemá (v kódu žádná není), hlavní web jsem zatím neověřil |
 
 ### Hotovo a nasazeno v main (Vercel zelený)
