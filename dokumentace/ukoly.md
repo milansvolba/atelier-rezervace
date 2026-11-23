@@ -208,4 +208,4 @@ Vytvořit produkty (kurzy na míru, pronájem celého ateliéru, varianty proná
 - [x] SVG loga v2 uložena v repu: `brand/logo/svg/` (7 souborů) + `brand/logo/README.md`.
 - [ ] Doplnit průhledná PNG a vektorová PDF ze SVG (Milan: počká).
 - [ ] Vyměnit starší rastr `lib/voucher-assets/logo.png` a `public/logo.png` za logo v2 (poukaz PDF a rezervační aplikace; přes větev a Pull request).
-- [ ] Rozhodnout: nápis v logu je „ATELIER“ bez čárky. Záměr, nebo opravit?
+- [x] Nápis v logu „ATELIER“ bez čárky je záměr (Milan, 23. 11. 2026): chybělo dlouhé É a čárka by trčela nad horní hranu loga. Neopravovat.

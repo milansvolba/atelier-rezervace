@@ -20,7 +20,7 @@ Tady jsou **zdrojové soubory loga** pro web, e-maily, poukazy, tisk a sociáln�
 - **Alt text:** „Ateliér na pobřeží“ (v psaném textu vždy s diakritikou a malým p).
 
 ## Poznámky
-- Nápis v logu je **„ATELIER“ bez čárky** (druhý řádek „na pobřeží“ diakritiku má). Zda je to záměr, je otevřený bod v manuálu (list 14).
+- Nápis v logu je **„ATELIER“ bez čárky** (druhý řádek „na pobřeží“ diakritiku má). **Je to záměr** (Milan, 23. 11. 2026): při tvorbě loga chybělo v písmu dlouhé É a čárka by trčela nad horní hranu loga. Neopravovat ani nepřidávat čárku.
 - Tyto soubory jsou **vektorové kopie z designového plátna „Atelier na pobrezi Logo“** (23. 11. 2026). Originální exporty od Milana jsou na jeho počítači ve složce `CLAUDOVO/logo-nove`. Pokud se originály liší, mají přednost.
 - Rastrové logo, které je právě na webu (`public/logo.png`, `lib/voucher-assets/logo.png`), je starší soubor. Výměna za logo v2 je samostatný krok (viz `dokumentace/ukoly.md`).
 - Vlastní písmo loga (Atelier NP, projekt Glyphr) zde není, jen hotové logo.
