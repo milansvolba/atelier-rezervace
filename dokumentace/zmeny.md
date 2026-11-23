@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-23 (ráno) — Fotky lidí v kartách: ořez u hlavy, čtverec, zaoblené rohy
+
+V `styles.css`: fotky v kartách dvousloupcové mřížky mají poměr 1:1 (dřív 3:2) a rohy 10 px. Petrova fotka se ukotví k hlavě (`img[src*="person_petr_photo"] { object-position: 50% 12% }`), Milanova k pravé straně (`72% 30%`); pravidlo se řídí názvem souboru, takže platí na všech stránkách, kde fotka je (O ateliéru, Kurzy, Krmítka), bez úprav stránek. Důvod: při 3:2 se na O ateliéru uřízlo čelo a vlasy. Poznámka: zdrojový soubor Petrovy fotky (1323×1580) je oříznutý těsně vpravo, širší původní fotka by pomohla. Na Kurzech má Petrova fotka vlastní rámeček bez zaoblení (522×623), zatím beze změny. Kde: web. Ověřeno živě na O ateliéru (456×456, ukotvení a zaoblení platí) a na Kurzech (ukotvení platí).
+
 ## 2026-11-22 (večer) — Nové logo na webu
 
 `/www/images/logo.png` nahrazeno novým logem z brandových podkladů (`export/web/logo.png`, 705×160, 9,5 kB). Původní soubor zálohován (FTP plugin + `CLAUDOVO/logo-nove/puvodni-logo.png`); favicon beze změny. Poučení: u obrázků server nenastavuje dobu platnosti, prohlížeč si starý soubor pamatuje a po výměně je potřeba obnovit natvrdo (Cmd+Shift+R). Logo je v každé stránce napsané ručně bez verze v odkazu; verzování (`?v=filemtime`) zatím nepřidáno, Milan nechal bez změny. Sdílecí obrázky v `/images/og/` mají zatím staré logo. Kde: web. Ověřeno živě (server posílá nový soubor).
