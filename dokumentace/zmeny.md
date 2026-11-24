@@ -6,6 +6,10 @@ Historie do 13. 8. 2026 je zpětně sepsaná souhrnně (podle dokončených úko
 
 ---
 
+## 2026-11-24 — Kurzy: třetí box „Extra workshop“ (Krmítka), sám zmizí 11. 12. ve 14:00 (web)
+
+Na `/kurzy` je pod dvěma kurzy široký zlatý box s fotkou, štítkem „Extra workshop“, cenou a volnými místy z `/api/courses` (hledá termín s „krmítk“ v názvu). Zobrazuje se jen do 11. 12. 2026 14:00 (pražský čas), pak zmizí sám. Plný termín = místo tlačítka „Termín je plný“. Texty `krmbox_*` a fotka `krmitka_hero_image` jsou editovatelné. Soubory: `kurzy.php`, `styles.css` (sekce „Kurzy: třetí box“). Ověřeno naživo na počítači i mobilu (390 px, bez vodorovného posunu). Texty jsou návrh ke schválení. Nápad: obecné automatické vypsání jednorázových workshopů z rezervačního systému (zatím jen Krmítka natvrdo).
+
 ## 2026-11-23 (večer) — Logo v2 uloženo v repu: `brand/logo/` (dokumentace)
 Do repa přidána složka `brand/logo/` se 7 vektorovými soubory v `svg/` (logo vedle sebe, pod sebou a samostatný symbol, každé černé a bílé, plus oříznutá webová varianta `logo-web-cerne.svg`; průhledné pozadí) a `README.md` s tím, který soubor kdy použít, a stručnými pravidly loga (ochranná zóna 1 L, minima, co nedělat). Průhledná PNG a vektorová PDF zatím nejsou (Milan: počká, doplní se později ze SVG). Soubory jsou vektorové kopie z designového plátna loga (ověřeno: SVG jsou platná a vykreslení sedí). Originální exporty zůstávají na Milanově počítači (`CLAUDOVO/logo-nove`); při rozdílu mají přednost. Nic na webu ani v rezervacích se tím nemění (starší `public/logo.png` a `lib/voucher-assets/logo.png` zůstávají, výměna je samostatný krok). `DESIGN.md` 10.1 odkazuje na novou složku. Nápis v logu je „ATELIER“ bez čárky záměrně (Milan: chybělo dlouhé É a čárka by trčela nad horní hranu loga). Kde: repo (dokumentace).
 
